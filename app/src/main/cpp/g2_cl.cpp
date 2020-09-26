@@ -19,13 +19,11 @@
 //
 
 #include "g2_cl.h"
-#include "GLESAPI.h"
-#define CL_HPP_ENABLE_EXCEPTIONS
+#include "GLESAPI.h"//TODO: g2_common.h
 #define CL_TARGET_OPENCL_VERSION 120
 #include<CL/opencl.h>
 #include<dlfcn.h>
-#include<vector>
-//int cl_errorcode=0;
+//#include<vector>
 const int	g_buf_size=2048;
 char		cl_error_msg[2048]={0};
 static char g_buf[g_buf_size]={0};
@@ -372,216 +370,369 @@ struct 		CLKernel
 };
 namespace		CLSource
 {
-static const char program_src_pt1[]=R"CLSRC(
+	static const char program_src_pt1[]=R"CLSRC(
 //auxiliary constants
 enum Constants
 {
-	C_PI, C_2PI, C_SQRT2
+	C_PI, C_2PI, C_SQRT2, C_INV_LN10
 };
 __global float *constants;
-#define	_pi		constants[C_PI]
-#define	_2pi	constants[C_2PI]
-#define	_sqrt2	constants[C_SQRT2]
-
-//auxiliary functions
+#define	_pi			(constants[C_PI])
+#define	_2pi		(constants[C_2PI])
+#define	_sqrt2		(constants[C_SQRT2])
+#define	_inv_ln10	(constants[C_INV_LN10])
 __kernel void initialize_constants()
 {
 	_pi=acos(-1.f);
 	_2pi=_pi+_pi;
 	_sqrt2=sqrt(2.f);
-}
-int get_idx(__global const int *size)
-{
-	return size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
+	_inv_ln10=1/log(10.f);
 }
 
-//kernels
-__kernel void r_r_setzero(__global const int *size, __global float *rr, __global const float *xr){rr[get_idx(size)]=0;}
-__kernel void c_c_setzero(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr, __global const float *xi)
+//auxiliary functions
+int get_idx(__global const int *size){return size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);}
+void	equal_cc(float2 a, float2 b){return a.x==b.x&&a.y==b.y;}
+void	equal_qq(float4 a, float4 b){return a.x==b.x&&a.y==b.y&&a.z==b.z&&a.w==b.w;}
+float2	floor_c(float2 a){return (float2)(floor(a.x), floor(a.y));}
+float4	floor_q(float4 a){return (float4)(floor(a.x), floor(a.y), floor(a.z), floor(a.w));}
+float2	mul_rc(float a, float2 b){return (float2)(a*b.x, a*b.y);}
+float4	mul_rq(float a, float4 b){return (float4)(a*b.x, a*b.y, a*b.z, a*b.w);}
+float2	mul_cr(float2 a, float b){return (float2)(a.x*b, a.y*b);}
+float2	mul_cc(float2 a, float2 b){return (float2)(a.x*b.x-a.y*b.y, a.x*b.y+a.y*b.x);}
+float4	mul_cq(float2 a, float4 b)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=ri[idx]=0;
+	return (float4)
+	(
+		a.x*b.x-a.y*b.y,
+		a.x*b.y+a.y*b.x,
+		a.x*b.z-a.y*b.w,
+		a.x*b.w+a.y*b.z
+	);
 }
-__kernel void q_q_setzero(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
+float4	mul_qr(float4 a, float b){return (float4)(a.x*b, a.y*b, a.z*b, a.w*b);}
+float4	mul_qc(float4 a, float2 b)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=ri[idx]=rj[idx]=rk[idx]=0;
+	return (float4)
+	(
+		 a.x*b.x-a.y*b.y,
+		 a.x*b.y+a.y*b.x,
+		 a.z*b.x+a.w*b.y,
+		-a.z*b.y+a.w*b.x
+	);
+}
+float4	mul_qq(float4 a, float4 b)
+{
+	return (float4)
+	(
+		a.x*b.x-a.y*b.y-a.z*b.z-a.w*b.w,
+		a.x*b.y+a.y*b.x+a.z*b.w-a.w*b.z,
+		a.x*b.z-a.y*b.w+a.z*b.x+a.w*b.y,
+		a.x*b.w+a.y*b.z-a.z*b.y+a.w*b.x
+	);
+}
+float2	inv_c(float2 a)
+{
+	float inv_abs2=1/(a.x*a.x+a.y*a.y);
+	return (float2)(a.x*inv_abs2, -a.y*inv_abs2);
+}
+float4	inv_q(float4 a)
+{
+	float inv_abs2=1/(a.x*a.x+a.y*a.y+a.z*a.z+a.w*a.w);
+	return (float4)(a.x*inv_abs2, -a.y*inv_abs2, -a.z*inv_abs2, -a.w*inv_abs2);
+}
+float2	div_rc(float a, float2 b)
+{
+	float a_absb2=a/(b.x*b.x+b.y*b.y);
+	return (float2)(b.x*a_absb2, -b.y*a_absb2);
+}
+float4	div_rq(float a, float4 b)
+{
+	float a_absb2=a/(b.x*b.x+b.y*b.y+b.z*b.z+b.w*b.w);
+	return (float4)(b.x*a_absb2, -b.y*a_absb2, -b.z*a_absb2, -b.w*a_absb2);
+}
+float2	div_cr(float2 a, float b)
+{
+	float inv_b=1/b;
+	return (float2)(a.x*inv_b, a.y*inv_b);
+}
+float2	div_cc(float2 a, float2 b)
+{
+	float inv_absb2=1/(b.x*b.x+b.y*b.y);
+	return (float2)
+	(
+		(a.x*b.x+a.y*b.y)*inv_absb2,
+		(a.y*b.x-a.x*b.y)*inv_absb2
+	);
+}
+float4	div_cq(float2 a, float4 b)
+{
+	float inv_absb2=1/(b.x*b.x+b.y*b.y+b.z*b.z+b.w*b.w);
+	return (float4)
+	(
+		( a.x*b.x+a.y*b.y)*inv_absb2,
+		( a.y*b.x-a.x*b.y)*inv_absb2,
+		(-a.x*b.z-a.y*b.w)*inv_absb2,
+		( a.y*b.z-a.x*b.w)*inv_absb2
+	);
+}
+float4	div_qr(float4 a, float b)
+{
+	float inv_b=1/b;
+	return (float4)
+	(
+		a.x*inv_b,
+		a.y*inv_b,
+		a.z*inv_b,
+		a.w*inv_b
+	);
+}
+float4	div_qc(float4 a, float2 b)
+{
+	float inv_absb2=1/(b.x*b.x+b.y*b.y);
+	return (float4)
+	(
+		(a.x*b.x+a.y*b.y)*inv_absb2,
+		(a.y*b.x-a.x*b.y)*inv_absb2,
+		(a.z*b.x+a.w*b.y)*inv_absb2,
+		(a.w*b.x-a.z*b.y)*inv_absb2
+	);
+}
+float4	div_qq(float4 a, float4 b)
+{
+	float inv_absb2=1/(b.x*b.x+b.y*b.y+b.z*b.z+b.w*b.w);
+	return (float4)
+	(
+		(a.x*b.x+a.y*b.y+a.z*b.z+a.w*b.w)*inv_absb2,
+		(a.y*b.x-a.x*b.y-a.w*b.z+a.z*b.w)*inv_absb2,
+		(a.z*b.x+a.w*b.y-a.x*b.z-a.y*b.w)*inv_absb2,
+		(a.w*b.x-a.z*b.y+a.y*b.z-a.x*b.w)*inv_absb2
+	);
+}
+float2	exp_c(float2 a)
+{
+	float exp_r=exp(a.x);
+	return (float2)
+	(
+		exp_r*cos(a.y),
+		exp_r*sin(a.y)
+	);
+}
+float4	exp_q(float4 a)
+{
+	float exp_r=exp(a.x), abs_v=sqrt(a.y*a.y+a.z*a.z+a.w*a.w);
+	float cos_v, sin_v=sincos(abs_v, &cos_v);
+	float v_mul=exp_r*sin_v/mag_v;
+	return (float4)
+	(
+		exp_r*cos_v,
+		a.y*v_mul,
+		a.z*v_mul,
+		a.w*v_mul
+	);
+}
+float2	log_c(float2 a)
+{
+	return (float2)
+	(
+		log(sqrt(a.x*a.x+a.y*a.y)),
+		atan2(a.y, a.x),
+	);
+	return ret;
+}
+float4	log_q(float4 a)
+{
+	float absv2=a.y*a.y+a.z*a.z+a.w*a.w, abs_a=sqrt(a.x*a.x+absv2);
+	float v_mul=acos(a.x/abs_a)*rsqrt(absv2);
+	return (float4)
+	(
+		log(abs_a),
+		a.y*v_mul,
+		a.z*v_mul,
+		a.w*v_mul,
+	);
+}
+float2	pow_cr(float2 a, float b)
+{
+	float2 lna=log_c(a);
+	float2 temp=mul_cr(lna, b);
+	return exp_c(temp);
+}
+float2	pow_cc(float2 a, float2 b)
+{
+	float2 lna=log_c(a);
+	float2 temp=mul_cc(lna, b);
+	return exp_c(temp);
+}
+float4	pow_cq(float2 a, float4 b)
+{
+	float2 lna=log_c(a);
+	float4 temp=mul_cq(lna, b);
+	return exp_q(temp);
+}
+float4	pow_qr(float4 a, float b)
+{
+	float4 lna=log_q(a);
+	float4 temp=mul_qr(lna, b);
+	return exp_q(temp);
+}
+float4	pow_qc(float4 a, float2 b)
+{
+	float4 lna=log_q(a);
+	float4 temp=mul_qc(lna, b);
+	return exp_q(temp);
+}
+float4	pow_qq(float4 a, float4 b)
+{
+	float4 lna=log_q(a);
+	float4 temp=mul_qq(lna, b);
+	return exp_q(temp);
 }
 
-__kernel void r_r_ceil(__global const int *size, __global float *rr, __global const float *xr)
+//macros for G2 functions
+#define		ARG_CI(arg)		__global const int *arg
+#define		ARG_F(arg)		__global float *arg
+#define		ARG_CF(arg)		__global const float *arg
+#define		G2_R_R(func)	__kernel void  r_r_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr))
+#define		G2_C_C(func)	__kernel void  c_c_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr), ARG_CF(xi))
+#define		G2_Q_Q(func)	__kernel void  q_q_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_F(rj), ARG_F(rk), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk))
+#define		G2_R_RR(func)	__kernel void r_rr_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(yr))
+#define		G2_C_RC(func)	__kernel void r_rc_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr), ARG_CF(yr), ARG_CF(yi))
+#define		G2_Q_RQ(func)	__kernel void r_rq_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_F(rj), ARG_F(rk), ARG_CF(xr), ARG_CF(yr), ARG_CF(yi), ARG_CF(yj), ARG_CF(yk))
+#define		G2_C_CR(func)	__kernel void c_cr_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr), ARG_CF(xi), ARG_CF(yr))
+#define		G2_C_CC(func)	__kernel void c_cc_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr), ARG_CF(xi), ARG_CF(yr), ARG_CF(yi))
+#define		G2_Q_CQ(func)	__kernel void c_cq_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_F(rj), ARG_F(rk), ARG_CF(xr), ARG_CF(xi), ARG_CF(yr), ARG_CF(yi), ARG_CF(yj), ARG_CF(yk))
+#define		G2_Q_QR(func)	__kernel void q_qr_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_F(rj), ARG_F(rk), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk), ARG_CF(yr))
+#define		G2_Q_QC(func)	__kernel void q_qc_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_F(rj), ARG_F(rk), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk), ARG_CF(yr), ARG_CF(yi))
+#define		G2_Q_QQ(func)	__kernel void q_qq_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_F(rj), ARG_F(rk), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk), ARG_CF(yr), ARG_CF(yi), ARG_CF(yj), ARG_CF(yk))
+#define		G2_C_R(func)	__kernel void  c_r_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr))
+#define		G2_C_Q(func)	__kernel void  c_q_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk))
+#define		G2_R_C(func)	__kernel void  r_c_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi))
+#define		G2_R_Q(func)	__kernel void  r_q_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk))
+#define		G2_C_RR(func)	__kernel void c_rr_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr), ARG_CF(yr))
+#define		G2_R_RC(func)	__kernel void r_rc_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(yr), ARG_CF(yi))
+#define		G2_R_RQ(func)	__kernel void r_rq_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(yr), ARG_CF(yi), ARG_CF(yj), ARG_CF(yk))
+#define		G2_R_CR(func)	__kernel void r_cr_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi), ARG_CF(yr))
+#define		G2_R_CC(func)	__kernel void r_cc_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi), ARG_CF(yr), ARG_CF(yi))
+#define		G2_R_CQ(func)	__kernel void r_cq_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi), ARG_CF(yr), ARG_CF(yi), ARG_CF(yj), ARG_CF(yk))
+#define		G2_R_QR(func)	__kernel void r_qr_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk), ARG_CF(yr))
+#define		G2_R_QC(func)	__kernel void r_qc_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk), ARG_CF(yr), ARG_CF(yi))
+#define		G2_R_QQ(func)	__kernel void r_qq_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk), ARG_CF(yr), ARG_CF(yi), ARG_CF(yj), ARG_CF(yk))
+#define		G2_C_QC(func)	__kernel void c_qc_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk), ARG_CF(yr), ARG_CF(yi))
+
+#define		DISC_R_O(func)	__kernel bool disc_r_##func##_o(ARG_CI(size), const int offset, ARG_F(or))
+#define		DISC_C_O(func)	__kernel bool disc_c_##func##_o(ARG_CI(size), const int offset, ARG_F(or), ARG_F(oi))
+#define		DISC_Q_O(func)	__kernel bool disc_q_##func##_o(ARG_CI(size), const int offset, ARG_F(or), ARG_F(oi), ARG_F(oj), ARG_F(ok))
+#define		DISC_R_I(func)	__kernel bool disc_r_##func##_i(ARG_CI(size), const int offset, ARG_F(xr))
+#define		DISC_C_I(func)	__kernel bool disc_c_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi))
+#define		DISC_Q_I(func)	__kernel bool disc_q_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi), ARG_F(xj), ARG_F(xk))
+#define		DISC_RR_I(func)	__kernel bool disc_rr_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(yr))
+#define		DISC_RC_I(func)	__kernel bool disc_rc_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(yr), ARG_F(yi))
+#define		DISC_RQ_I(func)	__kernel bool disc_rq_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(yr), ARG_F(yi), ARG_F(yj), ARG_F(yk))
+#define		DISC_CR_I(func)	__kernel bool disc_cr_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi), ARG_F(yr))
+#define		DISC_CC_I(func)	__kernel bool disc_cc_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi), ARG_F(yr), ARG_F(yi))
+#define		DISC_CQ_I(func)	__kernel bool disc_cq_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi), ARG_F(yr), ARG_F(yi), ARG_F(yj), ARG_F(yk))
+#define		DISC_QR_I(func)	__kernel bool disc_qr_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi), ARG_F(xj), ARG_F(xk), ARG_F(yr))
+#define		DISC_QC_I(func)	__kernel bool disc_qc_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi), ARG_F(xj), ARG_F(xk), ARG_F(yr), ARG_F(yi))
+#define		DISC_QQ_I(func)	__kernel bool disc_qq_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi), ARG_F(xj), ARG_F(xk), ARG_F(yr), ARG_F(yi), ARG_F(yj), ARG_F(yk))
+
+#define		IDX						const unsigned idx=get_idx(size)
+#define		ASSIGN_R(r)				rr[idx]=r
+#define		ASSIGN_C(r, i)			rr[idx]=r, ri[idx]=i
+#define		ASSIGN_Q(r, i, j, k)	rr[idx]=r, ri[idx]=i, rj[idx]=j, rk[idx]=k
+#define		RET_C;					ASSIGN_C(ret.x, ret.y)
+#define		RET_Q					ASSIGN_Q(ret.x, ret.y, ret.z, ret.w)
+#define		VEC2(name)				(float2)(name##r[idx], name##i[idx])
+#define		VEC4(name)				(float4)(name##r[idx], name##i[idx], name##j[idx], name##k[idx])
+
+//kernels pt1
+G2_R_R(setzero){IDX; ASSIGN_R(0);}
+G2_C_C(setzero){IDX; ASSIGN_C(0, 0);}
+G2_Q_Q(setzero){IDX; ASSIGN_Q(0, 0, 0, 0);}
+
+G2_R_R(ceil){IDX; ASSIGN_R(ceil(xr[idx]));}
+G2_C_C(ceil){IDX; ASSIGN_C(ceil(xr[idx]), ceil(xi[idx]));}
+G2_Q_Q(ceil){IDX; ASSIGN_Q(ceil(xr[idx]), ceil(xi[idx]), ceil(xj[idx]), ceil(xk[idx]));}
+DISC_R_O(ceil)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=ceil(xr[idx]);
+	IDX;
+	return or[idx]!=or[idx+offset];
 }
-__kernel void c_c_ceil(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr, __global const float *xi)
+DISC_C_O(ceil)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	rr[idx]=ceil(xr[idx]);
-	ri[idx]=ceil(xi[idx]);
+	IDX;
+	return or[idx]!=or[idx+offset]||oi[idx]!=oi[idx+offset];
 }
-__kernel void q_q_ceil(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
+DISC_Q_O(ceil)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=ceil(xr[idx]);
-	ri[idx]=ceil(xi[idx]);
-	rj[idx]=ceil(xj[idx]);
-	rk[idx]=ceil(xk[idx]);
-}
-__kernel bool disc_r_ceil_o(__global const int *size, const int offset, __global const float *xr)
-{
-	const unsigned idx=get_idx(size);
-	return xr[idx]!=xr[idx+offset];
-}
-__kernel bool disc_c_ceil_o(__global const int *size, const int offset, __global const float *xr, __global const float *xi)
-{
-	const unsigned idx=get_idx(size);
-	return xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset];
-}
-__kernel bool disc_q_ceil_o(__global const int *size, const int offset, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
-{
-	const unsigned idx=get_idx(size);
-	return xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset]||xj[idx]!=xj[idx+offset]||xk[idx]!=xk[idx+offset];
+	IDX;
+	return or[idx]!=or[idx+offset]||oi[idx]!=oi[idx+offset]||oj[idx]!=oj[idx+offset]||ok[idx]!=ok[idx+offset];
 }
 
-__kernel void r_r_floor(__global const int *size, __global float *rr, __global const float *xr)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=floor(xr[idx]);
-}
-__kernel void c_c_floor(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr, __global const float *xi)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=floor(xr[idx]);
-	ri[idx]=floor(xi[idx]);
-}
-__kernel void q_q_floor(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=floor(xr[idx]);
-	ri[idx]=floor(xi[idx]);
-	rj[idx]=floor(xj[idx]);
-	rk[idx]=floor(xk[idx]);
-}
-__kernel bool disc_r_floor_o(__global const int *size, int offset, __global const float *xr){return disc_r_ceil_o(size, offset, xr);}
-__kernel bool disc_c_floor_o(__global const int *size, int offset, __global const float *xr, __global const float *xi){return disc_c_ceil_o(size, offset, xr, xi);}
-__kernel bool disc_q_floor_o(__global const int *size, int offset, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk){return disc_q_ceil_o(size, offset, xr, xi, xj, xk);}
+G2_R_R(floor){IDX; ASSIGN_R(floor(xr[idx]));}
+G2_C_C(floor){IDX; ASSIGN_C(floor(xr[idx]), floor(xi[idx]));}
+G2_Q_Q(floor){IDX; ASSIGN_Q(floor(xr[idx]), floor(xi[idx]), floor(xj[idx]), floor(xk[idx]));}
+DISC_R_O(floor){return disc_r_ceil_o(size, offset, or);}
+DISC_C_O(floor){return disc_c_ceil_o(size, offset, or, oi);}
+DISC_Q_O(floor){return disc_q_ceil_o(size, offset, or, oi, oj, ok);}
 
-__kernel void r_r_round(__global const int *size, __global float *rr, __global const float *xr)
+G2_R_R(round){IDX; ASSIGN_R(round(xr[idx]));}
+G2_C_C(round){IDX; ASSIGN_C(round(xr[idx]), round(xi[idx]));}
+G2_Q_Q(round)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=round(xr[idx]);
+	IDX;
+	ASSIGN_Q(round(xr[idx]), round(xi[idx]), round(xj[idx]), round(xk[idx]));
 }
-__kernel void c_c_round(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr, __global const float *xi)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=round(xr[idx]);
-	ri[idx]=round(xi[idx]);
-}
-__kernel void q_q_round(__global const int *size, __global float *rr, __global float *ri, __global float *rj, __global float *rk, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=round(xr[idx]);
-	ri[idx]=round(xi[idx]);
-	rj[idx]=round(xj[idx]);
-	rk[idx]=round(xk[idx]);
-}
-__kernel bool disc_r_round_o(__global const int *size, int offset, __global const float *xr){return disc_r_ceil_o(size, offset, xr);}
-__kernel bool disc_c_round_o(__global const int *size, int offset, __global const float *xr, __global const float *xi){return disc_c_ceil_o(size, offset, xr, xi);}
-__kernel bool disc_r_round_o(__global const int *size, int offset, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk){return disc_q_ceil_o(size, offset, xr, xi, xj, xk);}
+DISC_R_O(round){return disc_r_ceil_o(size, offset, or);}
+DISC_C_O(round){return disc_c_ceil_o(size, offset, or, oi);}
+DISC_Q_O(round){return disc_q_ceil_o(size, offset, or, oi, oj, ok);}
 
-__kernel void r_r_int(__global const int *size, __global float *rr, __global const float *xr)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=int(xr[idx]);
-}
-__kernel void c_c_int(__global const int *size, __global float *rr, __global float *ri, __global const float *xr, __global const float *xi)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=int(xr[idx]);
-	ri[idx]=int(xi[idx]);
-}
-__kernel void q_q_int(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=int(xr[idx]);
-	ri[idx]=int(xi[idx]);
-	rj[idx]=int(xj[idx]);
-	rk[idx]=int(xk[idx]);
-}
-__kernel bool disc_r_int_o(__global const int *size, int offset, __global const float *xr){return disc_r_ceil_o(size, offset, xr);}
-__kernel bool disc_c_int_o(__global const int *size, int offset, __global const float *xr, __global const float *xi){return disc_c_ceil_o(size, offset, xr, xi);}
-__kernel bool disc_r_int_o(__global const int *size, int offset, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk){return disc_q_ceil_o(size, offset, xr, xi, xj, xk);}
+G2_R_R(int){IDX; ASSIGN_R((int)xr[idx]);}
+G2_C_C(int){IDX; ASSIGN_C((int)xr[idx], (int)xi[idx]);}
+G2_Q_Q(int){IDX; ASSIGN_Q((int)xr[idx], (int)xi[idx], (int)xj[idx], (int)xk[idx]);}
+DISC_R_O(int){return disc_r_ceil_o(size, offset, or);}
+DISC_C_O(int){return disc_c_ceil_o(size, offset, or, oi);}
+DISC_Q_O(int){return disc_q_ceil_o(size, offset, or, oi, oj, ok);}
 
-__kernel void r_r_frac(__global const int *size, __global float *rr, __global const float *xr)
+G2_R_R(frac){IDX; ASSIGN_R(frac(xr[idx]));}
+G2_C_C(frac){IDX; ASSIGN_C(frac(xr[idx]), frac(xi[idx]));}
+G2_Q_Q(frac){IDX; ASSIGN_Q(frac(xr[idx]), frac(xi[idx]), frac(xj[idx]), frac(xk[idx]));}
+DISC_R_I(frac)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=frac(xr[idx]);
-}
-__kernel void c_c_frac(__global const int *size, __global float *rr, __global float *ri, __global const float *xr, __global const float *xi)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=frac(xr[idx]);
-	ri[idx]=frac(xi[idx]);
-}
-__kernel void q_q_frac(__global const int *size, __global float *rr, __global float *ri, __global float *rj, __global float *rk, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=frac(xr[idx]);
-	ri[idx]=frac(xi[idx]);
-	rj[idx]=frac(xj[idx]);
-	rk[idx]=frac(xk[idx]);
-}
-__kernel bool disc_r_frac_i(__global const int *size, int offset, __global const float *xr)
-{
-	const unsigned idx=get_idx(size);
+	IDX;
 	return floor(xr[idx])!=floor(xr[idx+offset]);
 }
-__kernel bool disc_c_frac_i(__global const int *size, int offset, __global const float *xr, __global const float *xi)
+DISC_C_I(frac)
 {
-	const unsigned idx=get_idx(size);
+	IDX;
 	return floor(xr[idx])!=floor(xr[idx+offset])||floor(xi[idx])!=floor(xi[idx+offset]);
 }
-__kernel bool disc_q_frac_i(__global const int *size, int offset, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
+DISC_Q_I(frac)
 {
-	const unsigned idx=get_idx(size);
+	IDX;
 	return floor(xr[idx])!=floor(xr[idx+offset])||floor(xi[idx])!=floor(xi[idx+offset])||floor(xj[idx])!=floor(xj[idx+offset])||floor(xk[idx])!=floor(xk[idx+offset]);
 }
 
-__kernel void r_r_abs(__global const int *size, __global float *rr, __global const float *xr)
+G2_R_R(abs)
 {
-	const unsigned idx=get_idx(size);
+	IDX;
 	rr[idx]=abs(xr[idx]);
 }
-__kernel void r_c_abs(__global const int *size, __global float *rr, __global const float *xr, __global const float *xi)
+G2_R_C(abs)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=sqrt(xr[idx]*xr[idx]+xi[idx]*xi[idx]);
+	IDX;
+	float2 a=VEC2(x);
+	rr[idx]=sqrt(a.x*a.x+a.y*a.y);
 }
-__kernel void r_q_abs(__global const int *size, __global float *rr, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
+G2_R_Q(abs)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=sqrt(xr[idx]*xr[idx]+xi[idx]*xi[idx]+xj[idx]*xj[idx]+xk[idx]*xk[idx]);
+	IDX;
+	float4 a=VEC4(x);
+	rr[idx]=sqrt(a.x*a.x+a.y*a.y+a.z*a.z+a.w*a.w);
 }
 
-__kernel void r_r_arg(__global const int *size, __global float *rr, __global const float *xr)
+G2_R_R(arg)
 {
-	const unsigned idx=get_idx(size);
+	IDX;
 	const float _pi=acos(-1.f);
 	if(xr[idx]<0)
 		rr[idx]=_pi;
@@ -590,112 +741,80 @@ __kernel void r_r_arg(__global const int *size, __global float *rr, __global con
 	else
 		rr[idx]=0;
 }
-__kernel void r_c_arg(__global const int *size, __global float *rr, __global const float *xr, __global const float *xi)
+G2_R_C(arg){IDX; rr[idx]=atan2(xi[idx], xr[idx]);}
+G2_R_Q(arg)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=atan2(xi[idx], xr[idx]);
-}
-__kernel void r_q_arg(__global const int *size, __global float *rr, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
-{
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float abs_x=xr[idx]*xr[idx]+xi[idx]*xi[idx]+xj[idx]*xj[idx]+xk[idx]*xk[idx];
-	if(!abs_x)
+	IDX;
+	float4 a=VEC4(x);
+	float abs_a=a.x*a.x+a.y*a.y+a.z*a.z+a.w*a.w;
+	if(!abs_a)
 		rr[idx]=nan(0);
 	else
 	{
-		abs_x=sqrt(abx_x);
-		rr[idx]=acos(xr[idx]/abs_x);
+		abs_a=sqrt(abs_a);
+		rr[idx]=acos(a.x/abs_a);
 	}
 }
-__kernel bool disc_r_arg_i(__global const int *size, int offset, __global const float *xr)
+DISC_R_I(arg)
 {
-	const unsigned idx=get_idx(size);
+	IDX;
 	if(xr[idx]<0)
 		return xr[idx+offset]>=0;
 	if(xr[idx]>0)
 		return xr[idx+offset]<=0;
 	return xr[idx+offset]!=0;
-//	return xr[idx]<0?xr[idx+offset]>=0:xr[idx]>0?xr[idx+offset]<=0:xr[idx+offset]!=0;
 }
-__kernel bool disc_c_arg_i(__global const int *size, int offset, __global const float *xr, __global const float *xi){return false;}//TODO
-__kernel bool disc_r_arg_i(__global const int *size, int offset, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk){return false;}//TODO
+DISC_C_I(arg){return false;}//TODO
+DISC_Q_I(arg){return false;}//TODO
 
-__kernel void r_c_arg(__global const int *size, __global float *rr, __global const float *xr, __global const float *xi)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx];
-}
+G2_R_C(real){IDX; rr[idx]=xr[idx];}
 
-__kernel void r_c_imag(__global const int *size, __global float *rr, __global const float *xr, __global const float *xi)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=xi[idx];
-}
+G2_R_C(imag){IDX; rr[idx]=xi[idx];}
 
-__kernel void c_c_conjugate(__global const int *size, __global float *rr, __global float *ri, __global const float *xr, __global const float *xi)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx];
-	ri[idx]=-xi[idx];
-}
-__kernel void q_q_conjugate(__global const int *size, __global float *rr, __global float *ri, __global float *rj, __global float *rk, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx];
-	ri[idx]=-xi[idx];
-	rj[idx]=-xj[idx];
-	rk[idx]=-xk[idx];
-}
+G2_C_C(conjugate){IDX; ASSIGN_C(xr[idx], -xi[idx]);}
+G2_Q_Q(conjugate){IDX; ASSIGN_Q(xr[idx], -xi[idx], -xj[idx], -xk[idx]);}
 
-__kernel void c_r_polar(__global const int *size, __global float *rr, __global float *ri, __global const float *xr)
+G2_C_R(polar)
 {
-	const unsigned idx=get_idx(size);
-	float retr=abs(xr[idx]), reti;
-	if(xr[idx]<0)
-		reti=_pi;
-	else if(xr[idx]==0)
-		reti=nan(0);
-	else
-		reti=0;
-	rr[idx]=retr, rr[idx]=reti;
+	IDX;
+	float a=xr[idx];
+	float2 ret=(float2)(abs(a), a<0?_pi:a==0?nan(0):0);
+	RET_C;
 }
-__kernel void c_c_polar(__global const int *size, __global float *rr, __global float *ri, __global const float *xr, __global const float *xi)
+G2_C_C(polar)
 {
-	const unsigned idx=get_idx(size);
-	float r1=xr[idx], i1=xi[idx];
-	rr[idx]=sqrt(r1*r1+i1*i1);
-	ri[idx]=atan2(i1, r1);
+	IDX;
+	float2 a=VEC2(x);
+	ASSIGN_C(sqrt(a.x*a.x+a.y*a.y), atan2(a.y, a.x));
 }
-__kernel void c_q_polar(__global const int *size, __global float *rr, __global float *ri, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
+G2_C_Q(polar)
 {
-	const unsigned idx=get_idx(size);
-	float r1=xr[idx], i1=xi[idx], j1=xj[idx], k1=xk[idx];
-	rr[idx]=sqrt(r1*r1+i1*i1+j1*j1+k1*k1);
-	ri[idx]=acos(r1/rr[idx]);
+	IDX;
+	float4 a=VEC4(x);
+	rr[idx]=sqrt(a.x*a.x+a.y*a.y+a.z*a.z+a.w*a.w);
+	ri[idx]=acos(a.x/rr[idx]);
 }
-__kernel bool disc_r_polar_i(__global const int *size, int offset, __global const float *xr)
+DISC_R_I(polar)
 {
-	const unsigned idx=get_idx(size);
+	IDX;
 	if(xr[idx]<0)
 		return xr[idx+offset]>=0;
 	if(xr[idx]>0)
 		return xr[idx+offset]<=0;
 	return xr[idx+offset]!=0;
-//	return xr[idx]<0?xr[idx+offset]>=0:xr[idx]>0?xr[idx+offset]<=0:xr[idx+offset]!=0;
 }
-__kernel bool disc_c_polar_i(__global const int *size, int offset, __global const float *xr){return false;}//TODO
-__kernel bool disc_q_polar_i(__global const int *size, int offset, __global const float *xr){return false;}//TODO
+DISC_C_I(polar){return false;}//TODO
+DISC_Q_I(polar){return false;}//TODO
 
-__kernel void c_c_cartesian(__global const int *size, __global float *rr, __global float *ri, __global const float *xr, __global const float *xi)
+G2_C_C(cartesian)
 {
-	const unsigned idx=get_idx(size);
-	float r=xr[idx], i=xi[idx];
-	rr[idx]=r*cos(i);
-	ri[idx]=r*sin(i);
+	IDX;
+	float2 a=VEC2(x);
+	ASSIGN_C(a.x*cos(a.y), a.x*sin(a.y));
 }
-__kernel void q_q_cartesian(__global const int *size, __global float *rr, __global float *ri, __global float *rj, __global float *rk, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
+G2_Q_Q(cartesian)
 {
-	const unsigned idx=get_idx(size);
+	IDX;
 	float r=xr[idx], i=xi[idx], j=xj[idx], k=xk[idx];
 	float cos_j=cos(j), r_cos_k=r*cos(k);
 	rr[idx]=cos(i)*cos_j*r_cos_k;
@@ -704,543 +823,232 @@ __kernel void q_q_cartesian(__global const int *size, __global float *rr, __glob
 	rk[idx]=r*sin(k);
 }
 
-__kernel void r_rr_plus(__global const int *size, __global float *rr, __global const float *xr, __global const float *yr)
+G2_R_RR(plus){IDX; ASSIGN_R(xr[idx]+yr[idx]);}
+G2_C_RC(plus){IDX; ASSIGN_C(xr[idx]+yr[idx], yi[idx]);}
+G2_Q_RQ(plus){IDX; ASSIGN_Q(xr[idx]+yr[idx], yi[idx], yj[idx], yk[idx]);}
+G2_C_CR(plus){IDX; ASSIGN_C(xr[idx]+yr[idx], xi[idx]);}
+G2_C_CC(plus){IDX; ASSIGN_C(xr[idx]+yr[idx], xi[idx]+yi[idx]);}
+G2_Q_CQ(plus){IDX; ASSIGN_Q(xr[idx]+yr[idx], xi[idx]+yi[idx], yj[idx], yk[idx]);}
+G2_Q_QR(plus){IDX; ASSIGN_Q(xr[idx]+yr[idx], xi[idx], xj[idx], xk[idx]);}
+G2_Q_QC(plus){IDX; ASSIGN_Q(xr[idx]+yr[idx], xi[idx]+yi[idx], xj[idx], xk[idx]);}
+G2_Q_QQ(plus){IDX; ASSIGN_Q(xr[idx]+yr[idx], xi[idx]+yi[idx], xj[idx]+yj[idx], xk[idx]+yk[idx]);}
+
+G2_R_R(minus){IDX; ASSIGN_R(-xr[idx]);}
+G2_C_C(minus){IDX; ASSIGN_C(-xr[idx], -xi[idx]);}
+G2_Q_Q(minus){IDX; ASSIGN_Q(-xr[idx], -xi[idx], -xj[idx], -xk[idx]);}
+G2_R_RR(minus){IDX; ASSIGN_R(xr[idx]-yr[idx]);}
+G2_C_RC(minus){IDX; ASSIGN_C(xr[idx]-yr[idx], -yi[idx]);}
+G2_Q_RQ(minus){IDX; ASSIGN_Q(xr[idx]-yr[idx], -yi[idx], -yj[idx], -yk[idx]);}
+G2_C_CR(minus){IDX; ASSIGN_C(xr[idx]-yr[idx], xi[idx]);}
+G2_C_CC(minus){IDX; ASSIGN_C(xr[idx]-yr[idx], xi[idx]-yi[idx]);}
+G2_Q_CQ(minus){IDX; ASSIGN_Q(xr[idx]-yr[idx], xi[idx]-yi[idx], -yj[idx], -yk[idx]);}
+G2_Q_QR(minus){IDX; ASSIGN_Q(xr[idx]-yr[idx], xi[idx], xj[idx], xk[idx]);}
+G2_Q_QC(minus){IDX; ASSIGN_Q(xr[idx]-yr[idx], xi[idx]-yi[idx], xj[idx], xk[idx]);}
+G2_Q_QQ(minus){IDX; ASSIGN_Q(xr[idx]-yr[idx], xi[idx]-yi[idx], xj[idx]-yj[idx], xk[idx]-yk[idx]);}
+
+G2_R_RR(multiply){IDX; ASSIGN_R(xr[idx]*yr[idx]);}
+G2_C_RC(multiply)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]+yr[idx];
+	IDX;
+	float2 ret=mul_rc(xr[idx], VEC2(y));
+	RET_C;
 }
-__kernel void c_rc_plus(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr,
-	__global const float *yr, __global const float *yi)
+G2_Q_RQ(multiply)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]+yr[idx];
-	ri[idx]=yi[idx];
+	IDX;
+	float4 ret=mul_rq(xr[idx], VEC4(y));
+	RET_Q;
 }
-__kernel void q_rq_plus(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk)
+G2_C_CR(multiply)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]+yr[idx];
-	ri[idx]=yi[idx];
-	rj[idx]=yj[idx];
-	rk[idx]=yk[idx];
+	IDX;
+	float2 ret=mul_cr(VEC2(x), yr[idx]);
+	RET_C;
 }
-__kernel void c_cr_plus(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr, __global const float *xi,
-	__global const float *yr)
+G2_C_CC(multiply)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]+yr[idx];
-	ri[idx]=xi[idx];
+	IDX;
+	float2 ret=mul_cc(VEC2(x), VEC2(y));
+	RET_C;
 }
-__kernel void c_cc_plus(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr, __global const float *xi,
-	__global const float *yr, __global const float *yi)
+G2_Q_CQ(multiply)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]+yr[idx];
-	ri[idx]=xi[idx]+yi[idx];
+	IDX;
+	float4 ret=mul_cq(VEC2(x), VEC4(y));
+	RET_Q;
 }
-__kernel void q_cq_plus(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk)
+G2_Q_QR(multiply)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]+yr[idx];
-	ri[idx]=xi[idx]+yi[idx];
-	rj[idx]=yj[idx];
-	rk[idx]=yk[idx];
+	IDX;
+	float4 ret=mul_qr(VEC4(x), yr[idx]);
+	RET_Q;
 }
-__kernel void q_qr_plus(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr)
+G2_Q_QC(multiply)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]+yr[idx];
-	ri[idx]=xi[idx];
-	rj[idx]=xj[idx];
-	rk[idx]=xk[idx];
+	IDX;
+	float4 ret=mul_qc(VEC4(x), VEC2(y));
+	RET_Q;
 }
-__kernel void q_qc_plus(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr, __global const float *yi)
+G2_Q_QQ(multiply)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]+yr[idx];
-	ri[idx]=xi[idx]+yi[idx];
-	rj[idx]=xj[idx];
-	rk[idx]=xk[idx];
-}
-__kernel void q_qq_plus(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]+yr[idx];
-	ri[idx]=xi[idx]+yi[idx];
-	rj[idx]=xj[idx]+yj[idx];
-	rk[idx]=xk[idx]+yk[idx];
+	IDX;
+	float4 ret=mul_qq(VEC4(x), VEC4(y));
+	RET_Q;
 }
 
-__kernel void r_r_minus(__global const int *size, __global float *rr, __global const float *xr)
+G2_R_R(divide)
 {
-	const unsigned idx=get_idx(size);
-	rr[idx]=-xr[idx];
-}
-__kernel void c_c_minus(__global const int *size, __global float *rr, __global float *ri, __global const float *xr, __global const float *xi)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=-xr[idx];
-	ri[idx]=-xi[idx];
-}
-__kernel void q_q_minus(__global const int *size, __global float *rr, __global float *ri, __global float *rj, __global float *rk, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=-xr[idx];
-	ri[idx]=-xi[idx];
-	rj[idx]=-xj[idx];
-	rk[idx]=-xk[idx];
-}
-__kernel void r_rr_minus(__global const int *size, __global float *rr, __global const float *xr, __global const float *yr)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]-yr[idx];
-}
-__kernel void c_rc_minus(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr,
-	__global const float *yr, __global const float *yi)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]-yr[idx];
-	ri[idx]=-yi[idx];
-}
-__kernel void q_rq_minus(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]-yr[idx];
-	ri[idx]=-yi[idx];
-	rj[idx]=-yj[idx];
-	rk[idx]=-yk[idx];
-}
-__kernel void c_cr_minus(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr, __global const float *xi,
-	__global const float *yr)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]-yr[idx];
-	ri[idx]=xi[idx];
-}
-__kernel void c_cc_minus(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr, __global const float *xi,
-	__global const float *yr, __global const float *yi)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]-yr[idx];
-	ri[idx]=xi[idx]-yi[idx];
-}
-__kernel void q_cq_minus(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rk, __global float *rk,
-	__global const float *xr, __global const float *xi,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]-yr[idx];
-	ri[idx]=xi[idx]-yi[idx];
-	rj[idx]=-yj[idx];
-	rk[idx]=-yk[idx];
-}
-__kernel void q_qr_minus(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]-yr[idx];
-	ri[idx]=xi[idx];
-	rj[idx]=xj[idx];
-	rk[idx]=xk[idx];
-}
-__kernel void q_qc_minus(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr, __global const float *yi)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]-yr[idx];
-	ri[idx]=xi[idx]-yi[idx];
-	rj[idx]=xj[idx];
-	rk[idx]=xk[idx];
-}
-__kernel void q_qq_minus(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]-yr[idx];
-	ri[idx]=xi[idx]-yi[idx];
-	rj[idx]=xj[idx]-yj[idx];
-	rk[idx]=xk[idx]-yk[idx];
-}
-
-__kernel void r_rr_multiply(__global const int *size, __global float *rr, __global const float *xr, __global const float *yr)
-{
-	const unsigned idx=get_idx(size);
-	rr[idx]=xr[idx]*yr[idx];
-}
-__kernel void c_rc_multiply(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr,
-	__global const float *yr, __global const float *yi)
-{
-	const unsigned idx=get_idx(size);
-	float
-		r1=xr[idx],
-		r2=yr[idx], i2=yi[idx];
-	rr[idx]=r1*r2;
-	ri[idx]=r1*i2;
-}
-__kernel void q_rq_multiply(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk)
-{
-	const unsigned idx=get_idx(size);
-	float
-		r1=xr[idx],
-		r2=yr[idx], i2=yi[idx], j2=yj[idx], k2=yk[idx];
-	rr[idx]=r1*r2;
-	ri[idx]=r1*i2;
-	rj[idx]=r1*j2;
-	rk[idx]=r1*k2;
-}
-__kernel void c_cr_multiply(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr, __global const float *xi,
-	__global const float *yr)
-{
-	const unsigned idx=get_idx(size);
-	float
-		r1=xr[idx], i1=xi[idx],
-		r2=yr[idx];
-	rr[idx]=r1*r2;
-	ri[idx]=i1*r2;
-}
-__kernel void c_cc_multiply(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr, __global const float *xi,
-	__global const float *yr, __global const float *yi)
-{
-	const unsigned idx=get_idx(size);
-	float
-		r1=xr[idx], i1=xi[idx],
-		r2=yr[idx], i2=yi[idx];
-	rr[idx]=r1*r2-i1*i2;
-	ri[idx]=r1*i2+i1*r2;
-}
-__kernel void q_cq_multiply(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk)
-{
-	const unsigned idx=get_idx(size);
-	float
-		r1=xr[idx], i1=xi[idx],
-		r2=yr[idx], i2=yi[idx], j2=yj[idx], k2=yk[idx];
-	rr[idx]=r1*r2-i1*i2;
-	ri[idx]=r1*i2+i1*r2;
-	rj[idx]=r1*j2-i1*k2;
-	rk[idx]=r1*k2+i1*j2;
-}
-__kernel void q_qr_multiply(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr)
-{
-	const unsigned idx=get_idx(size);
-	float
-		r1=xr[idx], i1=xi[idx], j1=xj[idx], k1=xk[idx],
-		r2=yr[idx];
-	rr[idx]=r1*r2;
-	ri[idx]=i1*r2;
-	rj[idx]=j1*r2;
-	rk[idx]=k1*r2;
-}
-__kernel void q_qc_multiply(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr, __global const float *yi)
-{
-	const unsigned idx=get_idx(size);
-	float
-		r1=xr[idx], i1=xi[idx], j1=xj[idx], k1=xk[idx],
-		r2=yr[idx], i2=yi[idx];
-	rr[idx]=r1*r2-i1*i2;
-	ri[idx]=r1*i2+i1*r2;
-	rj[idx]=j1*r2+k1*i2;
-	rk[idx]=-j1*i2+k1*r2;
-}
-__kernel void q_qq_multiply(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk)
-{
-	const unsigned idx=get_idx(size);
-	float
-		r1=xr[idx], i1=xi[idx], j1=xj[idx], k1=xk[idx],
-		r2=yr[idx], i2=yi[idx], j2=yi[idx], k2=yi[idx];
-	rr[idx]=r1*r2-i1*i2-j1*j2-k1*k2;
-	ri[idx]=r1*i2+i1*r2+j1*k2-k1*j2;
-	rj[idx]=r1*j2-i1*k2+j1*r2+k1*i2;
-	rk[idx]=r1*k2+i1*j2-j1*i2+k1*r2;
-}
-
-__kernel void r_r_divide(__global const int *size, __global float *rr, __global const float *xr)
-{
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
+	IDX;
 	rr[idx]=1/xr[idx];
 }
-__kernel void c_c_divide(__global const int *size, __global float *rr, __global float *ri, __global const float *xr, __global const float *xi)
+G2_C_C(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float r=xr[idx], i=xi[idx];
-	float inv_abs_x=rsqrt(r*r+i*i);
-	rr[idx]= r*inv_abs_x;
-	ri[idx]=-i*inv_abs_x;
+	IDX;
+	float2 ret=inv_c(VEC2(x));
+	RET_C;
 }
-__kernel void q_q_divide(__global const int *size, __global float *rr, __global float *ri, __global float *rj, __global float *rk, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
+G2_Q_Q(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float r=xr[idx], i=xi[idx], j=xj[idx], k=xk[idx];
-	float inv_abs_x=rsqrt(r*r+i*i+j*j+k*k);
-	rr[idx]= r*inv_abs_x;
-	ri[idx]=-i*inv_abs_x;
-	rj[idx]=-j*inv_abs_x;
-	rk[idx]=-k*inv_abs_x;
+	IDX;
+	float4 ret=inv_q(VEC4(x));
+	RET_Q;
 }
-__kernel void r_rr_divide(__global const int *size, __global float *rr, __global const float *xr, __global const float *yr)
+G2_R_RR(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	rr[idx]=xr[idx]/yr[idx];
+	IDX;
+	ASSIGN_R(xr[idx]/yr[idx]);
 }
-__kernel void c_rc_divide(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr,
-	__global const float *yr, __global const float *yi)
+G2_C_RC(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float
-		ra=xr[idx],
-		rb=yr[idx], ib=yi[idx];
-	float a_absb=ra/(rb*rb+ib*ib);
-	rr[idx]= rb*a_absb;
-	ri[idx]=-ib*a_absb;
+	IDX;
+	float2 ret=div_rc(xr[idx], VEC2(y));
+	RET_C;
 }
-__kernel void q_rq_divide(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk)
+G2_Q_RQ(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float
-		ra=xr[idx],
-		rb=yr[idx], ib=yi[idx], jb=yj[idx], kb=yk[idx];
-	float a_absb=ra/(rb*rb+ib*ib+jb*jb+kb*kb);
-	rr[idx]= rb*a_absb;
-	ri[idx]=-ib*a_absb;
-	rj[idx]=-jb*a_absb;
-	rk[idx]=-kb*a_absb;
+	IDX;
+	float4 ret=div_rq(xr[idx], VEC2(y));
+	RET_Q;
 }
-__kernel void c_cr_divide(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr, __global const float *xi,
-	__global const float *yr)
+G2_C_CR(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float
-		ra=xr[idx], ia=xi[idx],
-		rb=yr[idx];
-	rr[idx]=ra/rb;
-	ri[idx]=ia/rb;
+	IDX;
+	float2 ret=div_cr(VEC2(x), yr[idx]);
+	RET_C;
 }
-__kernel void c_cc_divide(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr, __global const float *xi,
-	__global const float *yr, __global const float *yi)
+G2_C_CC(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float
-		ra=xr[idx], ia=xi[idx],
-		rb=yr[idx], ib=yi[idx];
-	float inv_absb=1/(rb*rb+ib*ib);
-	rr[idx]=(ra*rb+ia*ib)*inv_absb;
-	ri[idx]=(ia*rb-ra*ib)*inv_absb;
+	IDX;
+	float2 ret=div_cc(VEC2(x), VEC2(y));
+	RET_C;
 }
-__kernel void q_cq_divide(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk)
+G2_Q_CQ(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float
-		ra=xr[idx], ia=xi[idx],
-		rb=yr[idx], ib=yi[idx], jb=yj[idx], kb=yk[idx];
-	float inv_absb=1/(rb*rb+ib*ib+jb*jb+kb*kb);
-	rr[idx]=(ra*rb+ia*ib)*inv_absb;
-	ri[idx]=(ia*rb-ra*ib)*inv_absb;
-	rr[idx]=(-ra*jb-ia*kb)*inv_absb;
-	ri[idx]=(ia*jb-ra*bk)*inv_absb;
+	IDX;
+	float4 ret=div_cq(VEC2(x), VEC4(y));
+	RET_Q;
 }
-__kernel void q_qr_divide(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr)
+G2_Q_QR(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float
-		ra=xr[idx], ia=xi[idx], ja=xj[idx], ka=xk[idx],
-		rb=yr[idx];
-	float inv_b=1/rb;
-	rr[idx]=ra/rb;
-	ri[idx]=ia/rb;
-	rr[idx]=ja/rb;
-	ri[idx]=ka/rb;
+	IDX;
+	float4 ret=div_qr(VEC4(x), yr[idx]);
+	RET_Q;
 }
-__kernel void q_qc_divide(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr, __global const float *yi)
+G2_Q_QC(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float
-		ra=xr[idx], ia=xi[idx], ja=xj[idx], ka=xk[idx],
-		rb=yr[idx], ib=yi[idx];
-	float inv_absb2=1/(rb*rb+ib*ib);
-	rr[idx]=(ra*rb+ia*ib)*inv_absb2;
-	ri[idx]=(ia*rb-ra*ib)*inv_absb2;
-	rr[idx]=(ja*rb+ka*ib)*inv_absb2;
-	ri[idx]=(ka*rb-ja*ib)*inv_absb2;
+	IDX;
+	float4 ret=div_qc(VEC4(x), VEC2(y));
+	RET_Q;
 }
-__kernel void q_qq_divide(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk)
+G2_Q_QQ(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float
-		ra=xr[idx], ia=xi[idx], ja=xj[idx], ka=xk[idx],
-		rb=yr[idx], ib=yi[idx], jb=yj[idx], kb=yk[idx];
-	float inv_absb2=1/(rb*rb+ib*ib+jb*jb+kb*kb);
-	rr[idx]=(ra*rb+ia*ib+ja*jb+ka*kb)*inv_absb2;
-	ri[idx]=(ia*rb-ra*ib-ka*jb+ja*kb)*inv_absb2;
-	rr[idx]=(ja*rb+ka*ib-ra*jb-ia*kb)*inv_absb2;
-	ri[idx]=(ka*rb-ja*ib+ia*jb-ra*kb)*inv_absb2;
+	IDX;
+	float4 ret=div_qq(VEC4(x), VEC4(y));
+	RET_Q;
 }
-__kernel bool disc_r_divide_i(__global const int *size, int offset, __global const float *xr)
+DISC_R_I(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
+	IDX;
 	float x0r=xr[idx], x1r=xr[idx+offset];
 	return x0r<0?x1r>=0:x0r>0?x1r<=0:x1r!=0;
 }
-__kernel bool disc_c_divide_i(__global const int *size, int offset, __global const float *xr, __global const float *xi)
+DISC_C_I(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
+	IDX;
 	float
 		x0r=xr[idx], x1r=xr[idx+offset],
 		x0i=xi[idx], x1i=xi[idx+offset];
-	return false;
+	return false;//TODO
 }
-__kernel bool disc_q_divide_i(__global const int *size, int offset, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk)
+DISC_Q_I(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
+	IDX;
 	float
 		x0r=xr[idx], x1r=xr[idx+offset],
 		x0i=xi[idx], x1i=xi[idx+offset],
 		x0j=xj[idx], x1j=xj[idx+offset],
 		x0k=xk[idx], x1k=xk[idx+offset];
-	return false;
+	return false;//TODO
 }
-__kernel bool disc_rr_divide_i(__global const int *size, int offset, __global const float *xr, __global const float *yr)
+DISC_RR_I(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
+	IDX;
 	float y0r=yr[idx], y1r=yr[idx+offset];
 	return y0r<0?y1r>=0:y0r>0?y1r<=0:y1r!=0;
 }
-__kernel bool disc_rc_divide_i(__global const int *size, int offset, __global const float *xr, __global const float *yr, __global const float *yi)
+DISC_RC_I(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float
-		y0r=yr[idx], y1r=yr[idx+offset],
-		y0i=yi[idx], y1i=yi[idx+offset];
-	return false;
-}
-__kernel bool disc_rq_divide_i(__global const int *size, int offset, __global const float *xr, __global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk)
-{
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float
-		y0r=yr[idx], y1r=yr[idx+offset],
-		y0i=yi[idx], y1i=yi[idx+offset],
-		y0j=yj[idx], y1j=yj[idx+offset],
-		y0k=yk[idx], y1k=yk[idx+offset];
-	return false;
-}
-__kernel bool disc_cr_divide_i(__global const int *size, int offset, __global const float *xr, __global const float *xi, __global const float *yr)
-{
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float y0r=yr[idx], y1r=yr[idx+offset];
-	return y0r<0?y1r>=0:y0r>0?y1r<=0:y1r!=0;
-}
-__kernel bool disc_cc_divide_i(__global const int *size, int offset, __global const float *xr, __global const float *xi, __global const float *yr, __global const float *yi)
-{
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float y0r=yr[idx], y1r=yr[idx+offset];
-	return false;
-}
-__kernel bool disc_cq_divide_i(__global const int *size, int offset, __global const float *xr, __global const float *xi, __global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk)
-{
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float y0r=yr[idx], y1r=yr[idx+offset];
-	return false;
-}
-__kernel bool disc_qr_divide_i(__global const int *size, int offset,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr)
-{
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float y0r=yr[idx], y1r=yr[idx+offset];
-	return y0r<0?y1r>=0:y0r>0?y1r<=0:y1r!=0;
-}
-__kernel bool disc_qc_divide_i(__global const int *size, int offset,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr, __global const float *yi)
-{
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
+	IDX;
 	float
 		y0r=yr[idx], y1r=yr[idx+offset],
 		y0i=yi[idx], y1i=yi[idx+offset];
 	return false;//TODO
 }
-__kernel bool disc_qq_divide_i(__global const int *size, int offset,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk)
+DISC_RQ_I(divide)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
+	IDX;
+	float
+		y0r=yr[idx], y1r=yr[idx+offset],
+		y0i=yi[idx], y1i=yi[idx+offset],
+		y0j=yj[idx], y1j=yj[idx+offset],
+		y0k=yk[idx], y1k=yk[idx+offset];
+	return false;//TODO
+}
+DISC_CR_I(divide)
+{
+	IDX;
+	float y0r=yr[idx], y1r=yr[idx+offset];
+	return y0r<0?y1r>=0:y0r>0?y1r<=0:y1r!=0;
+}
+DISC_CC_I(divide)
+{
+	IDX;
+	float y0r=yr[idx], y1r=yr[idx+offset];
+	return false;//TODO
+}
+DISC_CQ_I(divide)
+{
+	IDX;
+	float y0r=yr[idx], y1r=yr[idx+offset];
+	return false;//TODO
+}
+DISC_QR_I(divide)
+{
+	IDX;
+	float y0r=yr[idx], y1r=yr[idx+offset];
+	return y0r<0?y1r>=0:y0r>0?y1r<=0:y1r!=0;
+}
+DISC_QC_I(divide)
+{
+	IDX;
+	float
+		y0r=yr[idx], y1r=yr[idx+offset],
+		y0i=yi[idx], y1i=yi[idx+offset];
+	return false;//TODO
+}
+DISC_QQ_I(divide)
+{
+	IDX;
 	float
 		y0r=yr[idx], y1r=yr[idx+offset],
 		y0i=yi[idx], y1i=yi[idx+offset],
@@ -1250,64 +1058,415 @@ __kernel bool disc_qq_divide_i(__global const int *size, int offset,
 }
 )CLSRC";
 
-static const char program_src_pt2[]=R"CLSRC(
-//declarations
-int get_idx(__global const int *size);
-
-__kernel void r_r_divide(__global const int *size, __global float *rr, __global const float *xr);
-__kernel void c_c_divide(__global const int *size, __global float *rr, __global float *ri, __global const float *xr, __global const float *xi);
-__kernel void q_q_divide(__global const int *size, __global float *rr, __global float *ri, __global float *rj, __global float *rk, __global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk);
-__kernel void r_rr_divide(__global const int *size, __global float *rr, __global const float *xr, __global const float *yr);
-__kernel void c_rc_divide(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr,
-	__global const float *yr, __global const float *yi);
-__kernel void q_rq_divide(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk);
-__kernel void c_cr_divide(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr, __global const float *xi,
-	__global const float *yr);
-__kernel void c_cc_divide(__global const int *size,
-	__global float *rr, __global float *ri,
-	__global const float *xr, __global const float *xi,
-	__global const float *yr, __global const float *yi);
-__kernel void q_cq_divide(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk);
-__kernel void q_qr_divide(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr);
-__kernel void q_qc_divide(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr, __global const float *yi);
-__kernel void q_qq_divide(__global const int *size,
-	__global float *rr, __global float *ri, __global float *rj, __global float *rk,
-	__global const float *xr, __global const float *xi, __global const float *xj, __global const float *xk,
-	__global const float *yr, __global const float *yi, __global const float *yj, __global const float *yk);
-
-//kernels
-__kernel void r_rr_logic_divides(__global const int *size,
-	__global float *rr,
-	__global const float *xr,
-	__global const float *yr)
+	static const char program_src_pt2[]=R"CLSRC(
+//auxiliary constants
+enum Constants
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
-	float
-		ra=xr[idx],
-		rb=yr[idx];
-	float q=ra/rb;
+	C_PI, C_2PI, C_SQRT2, C_INV_LN10
+};
+__global float *constants;
+#define	_pi			(constants[C_PI])
+#define	_2pi		(constants[C_2PI])
+#define	_sqrt2		(constants[C_SQRT2])
+#define	_inv_ln10	(constants[C_INV_LN10])
+
+//declarations for pt2
+int get_idx(__global const int *size);
+void	equal_cc(float2 a, float2 b);
+void	equal_qq(float4 a, float4 b);
+float2	floor_c(float2 a);
+float4	floor_q(float4 a);
+float2	mul_rc(float a, float2 b);
+float4	mul_rq(float a, float4 b);
+float2	mul_cr(float2 a, float b);
+float2	mul_cc(float2 a, float2 b);
+float4	mul_cq(float2 a, float4 b);
+float4	mul_qr(float4 a, float b);
+float4	mul_qc(float4 a, float2 b);
+float4	mul_qq(float4 a, float4 b);
+float2	inv_c(float2 a);
+float4	inv_q(float4 a);
+float2	div_rc(float a, float2 b);
+float4	div_rq(float a, float4 b);
+float2	div_cr(float2 a, float b);
+float2	div_cc(float2 a, float2 b);
+float4	div_cq(float2 a, float4 b);
+float4	div_qr(float4 a, float b);
+float4	div_qc(float4 a, float2 b);
+float4	div_qq(float4 a, float4 b);
+float2	exp_c(float2 a);
+float4	exp_q(float4 a);
+float2	log_c(float2 a);
+float4	log_q(float4 a);
+float2	pow_cr(float2 a, float b);
+float2	pow_cc(float2 a, float2 b);
+float4	pow_cq(float2 a, float4 b);
+float4	pow_qr(float4 a, float b);
+float4	pow_qc(float4 a, float2 b);
+float4	pow_qq(float4 a, float4 b);
+
+//macros for G2 functions
+#define		ARG_CI(arg)		__global const int *arg
+#define		ARG_F(arg)		__global float *arg
+#define		ARG_CF(arg)		__global const float *arg
+#define		G2_R_R(func)	__kernel void  r_r_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr))
+#define		G2_C_C(func)	__kernel void  c_c_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr), ARG_CF(xi))
+#define		G2_Q_Q(func)	__kernel void  q_q_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_F(rj), ARG_F(rk), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk))
+#define		G2_R_RR(func)	__kernel void r_rr_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(yr))
+#define		G2_C_RC(func)	__kernel void r_rc_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr), ARG_CF(yr), ARG_CF(yi))
+#define		G2_Q_RQ(func)	__kernel void r_rq_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_F(rj), ARG_F(rk), ARG_CF(xr), ARG_CF(yr), ARG_CF(yi), ARG_CF(yj), ARG_CF(yk))
+#define		G2_C_CR(func)	__kernel void c_cr_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr), ARG_CF(xi), ARG_CF(yr))
+#define		G2_C_CC(func)	__kernel void c_cc_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr), ARG_CF(xi), ARG_CF(yr), ARG_CF(yi))
+#define		G2_Q_CQ(func)	__kernel void c_cq_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_F(rj), ARG_F(rk), ARG_CF(xr), ARG_CF(xi), ARG_CF(yr), ARG_CF(yi), ARG_CF(yj), ARG_CF(yk))
+#define		G2_Q_QR(func)	__kernel void q_qr_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_F(rj), ARG_F(rk), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk), ARG_CF(yr))
+#define		G2_Q_QC(func)	__kernel void q_qc_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_F(rj), ARG_F(rk), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk), ARG_CF(yr), ARG_CF(yi))
+#define		G2_Q_QQ(func)	__kernel void q_qq_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_F(rj), ARG_F(rk), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk), ARG_CF(yr), ARG_CF(yi), ARG_CF(yj), ARG_CF(yk))
+#define		G2_C_R(func)	__kernel void  c_r_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr))
+#define		G2_C_Q(func)	__kernel void  c_q_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk))
+#define		G2_R_C(func)	__kernel void  r_c_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi))
+#define		G2_R_Q(func)	__kernel void  r_q_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk))
+#define		G2_C_RR(func)	__kernel void c_rr_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr), ARG_CF(yr))
+#define		G2_R_RC(func)	__kernel void r_rc_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(yr), ARG_CF(yi))
+#define		G2_R_RQ(func)	__kernel void r_rq_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(yr), ARG_CF(yi), ARG_CF(yj), ARG_CF(yk))
+#define		G2_R_CR(func)	__kernel void r_cr_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi), ARG_CF(yr))
+#define		G2_R_CC(func)	__kernel void r_cc_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi), ARG_CF(yr), ARG_CF(yi))
+#define		G2_R_CQ(func)	__kernel void r_cq_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi), ARG_CF(yr), ARG_CF(yi), ARG_CF(yj), ARG_CF(yk))
+#define		G2_R_QR(func)	__kernel void r_qr_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk), ARG_CF(yr))
+#define		G2_R_QC(func)	__kernel void r_qc_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk), ARG_CF(yr), ARG_CF(yi))
+#define		G2_R_QQ(func)	__kernel void r_qq_##func(ARG_CI(size), ARG_F(rr), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk), ARG_CF(yr), ARG_CF(yi), ARG_CF(yj), ARG_CF(yk))
+#define		G2_C_QC(func)	__kernel void c_qc_##func(ARG_CI(size), ARG_F(rr), ARG_F(ri), ARG_CF(xr), ARG_CF(xi), ARG_CF(xj), ARG_CF(xk), ARG_CF(yr), ARG_CF(yi))
+
+#define		DISC_R_O(func)	__kernel bool disc_r_##func##_o(ARG_CI(size), const int offset, ARG_F(or))
+#define		DISC_C_O(func)	__kernel bool disc_c_##func##_o(ARG_CI(size), const int offset, ARG_F(or), ARG_F(oi))
+#define		DISC_Q_O(func)	__kernel bool disc_q_##func##_o(ARG_CI(size), const int offset, ARG_F(or), ARG_F(oi), ARG_F(oj), ARG_F(ok))
+#define		DISC_R_I(func)	__kernel bool disc_r_##func##_i(ARG_CI(size), const int offset, ARG_F(xr))
+#define		DISC_C_I(func)	__kernel bool disc_c_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi))
+#define		DISC_Q_I(func)	__kernel bool disc_q_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi), ARG_F(xj), ARG_F(xk))
+#define		DISC_RR_I(func)	__kernel bool disc_rr_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(yr))
+#define		DISC_RC_I(func)	__kernel bool disc_rc_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(yr), ARG_F(yi))
+#define		DISC_RQ_I(func)	__kernel bool disc_rq_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(yr), ARG_F(yi), ARG_F(yj), ARG_F(yk))
+#define		DISC_CR_I(func)	__kernel bool disc_cr_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi), ARG_F(yr))
+#define		DISC_CC_I(func)	__kernel bool disc_cc_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi), ARG_F(yr), ARG_F(yi))
+#define		DISC_CQ_I(func)	__kernel bool disc_cq_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi), ARG_F(yr), ARG_F(yi), ARG_F(yj), ARG_F(yk))
+#define		DISC_QR_I(func)	__kernel bool disc_qr_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi), ARG_F(xj), ARG_F(xk), ARG_F(yr))
+#define		DISC_QC_I(func)	__kernel bool disc_qc_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi), ARG_F(xj), ARG_F(xk), ARG_F(yr), ARG_F(yi))
+#define		DISC_QQ_I(func)	__kernel bool disc_qq_##func##_i(ARG_CI(size), const int offset, ARG_F(xr), ARG_F(xi), ARG_F(xj), ARG_F(xk), ARG_F(yr), ARG_F(yi), ARG_F(yj), ARG_F(yk))
+
+#define		IDX						const unsigned idx=get_idx(size)
+#define		ASSIGN_R(r)				rr[idx]=r
+#define		ASSIGN_C(r, i)			rr[idx]=r, ri[idx]=i
+#define		ASSIGN_Q(r, i, j, k)	rr[idx]=r, ri[idx]=i, rj[idx]=j, rk[idx]=k
+#define		RET_C;					ASSIGN_C(ret.x, ret.y)
+#define		RET_Q					ASSIGN_Q(ret.x, ret.y, ret.z, ret.w)
+
+//kernels pt2
+G2_R_RR(logic_divides)
+{
+	IDX;
+	float q=xr[idx]/yr[idx];
 	rr[idx]=q==floor(q);
 }
-__kernel bool disc_r_logic_divides_o(__global const int *size, int offset, __global const float *or)
+G2_R_RC(logic_divides)
 {
-	const unsigned idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
+	IDX;
+	float2 q=div_rc(xr[idx], VEC2(y));
+	float2 fq=floor_c(q);
+	rr[idx]=equal_cc(q, fq);
+}
+G2_R_RQ(logic_divides)
+{
+	IDX;
+	float4 q=div_rq(xr[idx], VEC4(y));
+	float4 fq=floor_q(q);
+	rr[idx]=equal_qq(q, fq);
+}
+G2_R_CR(logic_divides)
+{
+	IDX;
+	float2 q=div_cr(VEC2(x), yr[idx]);
+	float2 fq=floor_c(q);
+	rr[idx]=equal_cc(q, fq);
+}
+G2_R_CC(logic_divides)
+{
+	IDX;
+	float2 q=div_cc(VEC2(x), VEC2(y));
+	float2 fq=floor_c(q);
+	rr[idx]=equal_cc(q, fq);
+}
+G2_R_CQ(logic_divides)
+{
+	IDX;
+	float4 q=div_cq(VEC2(x), VEC4(y));
+	float4 fq=floor_q(q);
+	rr[idx]=equal_qq(q, fq);
+}
+G2_R_QR(logic_divides)
+{
+	IDX;
+	float4 q=div_qr(VEC4(x), yr[idx]);
+	float4 fq=floor_q(q);
+	rr[idx]=equal_qq(q, fq);
+}
+G2_R_QC(logic_divides)
+{
+	IDX;
+	float4 q=div_qc(VEC4(x), VEC2(y));
+	float4 fq=floor_q(q);
+	rr[idx]=equal_qq(q, fq);
+}
+G2_R_QQ(logic_divides)
+{
+	IDX;
+	float4 q=div_qq(VEC4(x), VEC4(y));
+	float4 fq=floor_q(q);
+	rr[idx]=equal_qq(q, fq);
+}
+DISC_R_O(logic_divides)//for all logic_divides functions
+{
+	IDX;
 	return or[idx]!=or[idx+offset];
+}
+
+G2_R_RR(power_real)
+{
+	IDX;
+	float a=xr[idx];
+	int b=(int)yr[idx];
+	float m[]={1, 0}, r=1;//may not compile
+	if(b<0)
+		m[1]=1/a, b=-b;
+	else
+		m[1]=a;
+	for(;;)
+	{
+		r*=m[b&1], b>>=1;
+		if(!b)
+			break;
+		m[1]*=m[1];
+	}
+	rr[idx]=r;
+}
+G2_R_CR(power_real)
+{
+	IDX;
+	float2 a=VEC2(x), r=(float2)(1, 0);
+	int b=(int)yr[idx], p=abs(b);
+	for(;;)
+	{
+		if(p&1)
+			r=mul_cc(r, a);
+		p>>=1;
+		if(!p)
+			break;
+		a=mul_cc(a, a);
+	}
+	if(b<0)
+		r=inv_c(r);
+	rr[idx]=r.x, ri[idx]=r.y;
+}
+G2_R_QR(power_real)
+{
+	IDX;
+	float4 a=VEC4(x), r=(float4)(1, 0, 0, 0);
+	int b=(int)yr[idx], p=abs(b);
+	for(;;)
+	{
+		if(p&1)
+			r=mul_qq(r, a);
+		p>>=1;
+		if(!p)
+			break;
+		a=mul_qq(a, a);
+	}
+	if(b<0)
+		r=inv_q(r);
+	rr[idx]=r.x, ri[idx]=r.y, ri[idx]=r.z, ri[idx]=r.w;
+}
+DISC_RR_I(power_real)
+{
+	IDX;
+	return floor(yr[idx])!=floor(yr[idx+offset]);
+}
+DISC_CR_I(power_real)
+{
+	IDX;
+	return floor(yr[idx])!=floor(yr[idx+offset]);
+}
+DISC_QR_I(power_real)
+{
+	IDX;
+	return floor(yr[idx])!=floor(yr[idx+offset]);
+}
+
+DISC_C_CR(pow)
+{
+	IDX;
+	float2 a=VEC2(x);
+	float b=yr[idx];
+	if(!a.x&&!a.y && !b)
+		ASSIGN_C(1, 0);
+	else
+	{
+		float2 ret=pow_cr(a, b);
+		RET_C;
+	}
+}
+DISC_C_CC(pow)
+{
+	IDX;
+	float2 a=VEC2(x);
+	float2 b=VEC2(y);
+	if(!a.x&&!a.y && !b.x&&!b.y)
+		ASSIGN_C(1, 0);
+	else
+	{
+		float2 ret=pow_cc(a, b);
+		RET_C;
+	}
+}
+DISC_Q_CQ(pow)
+{
+	IDX;
+	float2 a=VEC2(x);
+	float4 b=VEC4(y);
+	if(!a.x&&!a.y && !b.x&&!b.y&&!b.z&&!b.w)
+		ASSIGN_Q(1, 0, 0, 0);
+	else
+	{
+		float4 ret=pow_cq(a, b);
+		RET_Q;
+	}
+}
+DISC_Q_QR(pow)
+{
+	IDX;
+	float4 a=VEC4(x);
+	float b=yr[idx];
+	if(!a.x&&!a.y&&!a.z&&!a.w && !b)
+		ASSIGN_Q(1, 0, 0, 0);
+	else
+	{
+		float4 ret=pow_qr(a, b);
+		RET_Q;
+	}
+}
+DISC_Q_QC(pow)
+{
+	IDX;
+	float4 a=VEC4(x);
+	float2 b=VEC2(y);
+	if(!a.x&&!a.y&&!a.z&&!a.w && !b.x&&!b.y)
+		ASSIGN_Q(1, 0, 0, 0);
+	else
+	{
+		float4 ret=pow_qc(a, b);
+		RET_Q;
+	}
+}
+DISC_Q_QQ(pow)
+{
+	IDX;
+	float4 a=VEC4(x);
+	float4 b=VEC4(y);
+	if(!a.x&&!a.y&&!a.z&&!a.w && !b.x&&!b.y&&!b.z&&!b.w)
+		ASSIGN_Q(1, 0, 0, 0);
+	else
+	{
+		float4 ret=pow_qq(a, b);
+		RET_Q;
+	}
+}
+DISC_CR_I(pow){return false;}//TODO
+DISC_CC_I(pow){return false;}//TODO
+DISC_CQ_I(pow){return false;}//TODO
+DISC_QR_I(pow){return false;}//TODO
+DISC_QC_I(pow){return false;}//TODO
+DISC_QQ_I(pow){return false;}//TODO
+
+G2_C_C(ln)
+{
+	IDX;
+	float2 ret=log_c(VEC2(x));
+	RET_C;
+}
+G2_Q_Q(ln)
+{
+	IDX;
+	float4 ret=log_q(VEC4(x));
+	RET_Q;
+}
+DISC_C_I(ln){return disc_c_arg_i(size, offset, xr, xi);}
+DISC_Q_I(ln){return disc_q_arg_i(size, offset, xr, xi, xj, xk);}
+
+G2_C_C(log)
+{
+	IDX;
+	float2 log_a=log_c(VEC2(x));
+	float2 ret=mul_cr(log_a, _inv_ln10);
+	RET_C;
+}
+G2_Q_Q(log)
+{
+	IDX;
+	float4 log_a=log_q(VEC4(x));
+	float4 ret=mul_qr(log_a, _inv_ln10);
+	RET_Q;
+}
+G2_C_CR(log)
+{
+	IDX;
+	float2 log_a=log_c(VEC2(x));
+	float2 log_b=log_c((float2)(yr[idx], 0));
+	float2 ret=div_cr(log_a, log_b);
+	RET_C;
+}
+G2_C_CC(log)
+{
+	IDX;
+	float2 log_a=log_c(VEC2(x));
+	float2 log_b=log_c(VEC2(y));
+	float2 ret=div_cc(log_a, log_b);
+	RET_C;
+}
+G2_C_CQ(log)
+{
+	IDX;
+	float2 log_a=log_c(VEC2(x));
+	float4 log_b=log_q(VEC4(y));
+	float4 ret=div_cq(log_a, log_b);
+	RET_Q;
+}
+G2_C_QC(log)
+{
+	IDX;
+	float4 log_a=log_q(VEC4(x));
+	float2 log_b=log_c(VEC2(y));
+	float4 ret=div_qc(log_a, log_b);
+	RET_Q;
+}
+G2_C_QQ(log)
+{
+	IDX;
+	float4 log_a=log_q(VEC4(x));
+	float4 log_b=log_q(VEC4(y));
+	float4 ret=div_qc(log_a, log_b);
+	RET_Q;
+}
+DISC_C_I(log){return disc_c_arg_i(size, offset, xr, xi);}
+DISC_Q_I(log){return false;}//TODO
+DISC_CR_I(log){return false;}//TODO
+DISC_CC_I(log){return false;}//TODO
+DISC_CQ_I(log){return false;}//TODO
+DISC_QC_I(log){return false;}//TODO
+DISC_QQ_I(log){return false;}//TODO
+
+//tetrate
+
+//pentate
+
+G2_R_R(bitwise_shift_left_l)
+{
 }
 )CLSRC";
 }//end CLSource
@@ -1413,6 +1572,17 @@ namespace 	G2_CL
 
 		{R_RR_LOGIC_DIVIDES, CL_R_RR, DISC_OUTPUT, "r_rr_logic_divides", "disc_r_logic_divides_o"},
 		{R_RC_LOGIC_DIVIDES, CL_R_RC, DISC_OUTPUT, "r_rc_logic_divides", "disc_r_logic_divides_o"},
+		{R_RQ_LOGIC_DIVIDES, CL_R_RQ, DISC_OUTPUT, "r_rq_logic_divides", "disc_r_logic_divides_o"},
+		{R_CR_LOGIC_DIVIDES, CL_R_CR, DISC_OUTPUT, "r_cr_logic_divides", "disc_r_logic_divides_o"},
+		{R_CC_LOGIC_DIVIDES, CL_R_CC, DISC_OUTPUT, "r_cc_logic_divides", "disc_r_logic_divides_o"},
+		{R_CQ_LOGIC_DIVIDES, CL_R_CQ, DISC_OUTPUT, "r_cq_logic_divides", "disc_r_logic_divides_o"},
+		{R_QR_LOGIC_DIVIDES, CL_R_QR, DISC_OUTPUT, "r_qr_logic_divides", "disc_r_logic_divides_o"},
+		{R_QC_LOGIC_DIVIDES, CL_R_QC, DISC_OUTPUT, "r_qc_logic_divides", "disc_r_logic_divides_o"},
+		{R_QQ_LOGIC_DIVIDES, CL_R_QQ, DISC_OUTPUT, "r_qq_logic_divides", "disc_r_logic_divides_o"},
+
+		{R_RR_LOGIC_DIVIDES, CL_R_RR, DISC_INPUT, "r_rr_power_real", "disc_rr_power_real_i"},
+		{R_CR_LOGIC_DIVIDES, CL_R_CR, DISC_INPUT, "c_cr_power_real", "disc_cr_power_real_i"},
+		{R_QR_LOGIC_DIVIDES, CL_R_QR, DISC_INPUT, "q_qr_power_real", "disc_qr_power_real_i"},
 	};
 	const int CLKernel_size=sizeof(CLKernel), nkernels=sizeof(kernels)/CLKernel_size;
 }
