@@ -19,22 +19,27 @@
 //
 
 #include "g2_cl.h"
-#include "GLESAPI.h"//TODO: g2_common.h
+#include "GLESAPI.h"
 #define CL_TARGET_OPENCL_VERSION 120
 #include<CL/opencl.h>
+#include<EGL/egl.h>
 #include<dlfcn.h>
 #include<string>
 //#include<vector>
-const int		cl_e_size=2048;
-char			cl_error_msg[cl_e_size]={0};//TODO: one error API	TODO: print multiple errors
+#include"g2_common.h"
+//const int		cl_e_size=2048;
+//char			cl_error_msg[cl_e_size]={0};//TODO: one error API	TODO: print multiple errors
 const int		g_buf_size=1048576;
 static char		g_buf[g_buf_size]={0};//
+bool			OCL_API_not_loaded=true;
 void 			p_check(void *p, int line, const char *func_name)
 {
 	if(!p)
 	{
-		LOGE("Line %d error: %s is %lld.", line, func_name, (long long)p);
-		abort();
+		LOGERROR_LINE(line, "Error: %s is 0x%08llx", func_name, (long long)p);
+	//	LOGE("Line %d error: %s is %lld.", line, func_name, (long long)p);
+		OCL_API_not_loaded=true;
+	//	abort();
 	}
 }
 #define 		P_CHECK(pointer)	p_check(pointer, __LINE__, #pointer)
@@ -123,45 +128,33 @@ const char*		clerr2str(int error)
 	return a;
 #undef				EC
 }
-void			cl_error(const char *msg, int line)
+//void			cl_error(const char *msg, int line)
+//{
+//	if(!cl_error_msg[0])
+//		snprintf(cl_error_msg, cl_e_size, "Line %d: %s", line, msg);
+//}
+//#define 		CL_ERROR(msg)	cl_error(msg, __LINE__)
+void			cl_check(int err, int line)
 {
-	if(!cl_error_msg[0])
-		snprintf(cl_error_msg, cl_e_size, "Line %d: %s", line, msg);
-}
-#define 		CL_ERROR(msg)	cl_error(msg, __LINE__)
-void			cl_check(int error, int line)
-{//check writes first error only
-	if(error)
-	{
-		if(!cl_error_msg[0])
-		{
-			snprintf(cl_error_msg, cl_e_size, "Line %d error %d: %s", line, error, clerr2str(error));
-			LOGE("%s", cl_error_msg);
-		}
-		else
-		{
-			snprintf(g_buf, g_buf_size, "Line %d error %d: %s", line, error, clerr2str(error));
-			LOGE("%s", g_buf);
-		}
-	}
+	if(err)
+		LOGERROR_LINE(line, "CL Error %d: %s", err, clerr2str(err));
 }
 #define 		CL_CHECK(error)	cl_check(error, __LINE__)
-void 			cl_check2(int error, int line)
-{//check2 overwrites error every time
-	if(error)
-	{
-		snprintf(cl_error_msg, cl_e_size, "Line %d error %d: %s", line, error, clerr2str(error));
-		LOGE("%s", cl_error_msg);
-	}
-}
-#define 		CL_CHECK2(error)	cl_check2(error, __LINE__)
+//void 			cl_check2(int error, int line)
+//{//check2 overwrites error every time
+//	if(error)
+//	{
+//		snprintf(cl_error_msg, cl_e_size, "Line %d error %d: %s", line, error, clerr2str(error));
+//		LOGE("%s", cl_error_msg);
+//	}
+//}
+//#define 		CL_CHECK2(error)	cl_check2(error, __LINE__)
 void			LOGE_long(const char *msg, int length)
 {
 	const int quota=1000;
 	for(int k=0;k+quota-1<length;k+=quota)
 		LOGE("%*s", quota, msg+k);
 }
-bool			API_not_loaded=true;
 #define 		DECL_CL_FUNC(clFunc)	decltype(clFunc) *p_##clFunc __attribute__((weak))=nullptr
 DECL_CL_FUNC(clGetPlatformIDs);
 DECL_CL_FUNC(clGetDeviceIDs);
@@ -177,11 +170,13 @@ DECL_CL_FUNC(clEnqueueWriteBuffer);
 DECL_CL_FUNC(clEnqueueNDRangeKernel);
 DECL_CL_FUNC(clEnqueueReadBuffer);
 DECL_CL_FUNC(clFinish);
+DECL_CL_FUNC(clCreateFromGLBuffer);
+DECL_CL_FUNC(clCreateFromGLTexture);
 #undef			DECL_CL_FUNC
 void			*hOpenCL=nullptr;
 void 			load_OpenCL_API()
 {
-	if(API_not_loaded)
+	if(OCL_API_not_loaded)
 	{
 		static const char *opencl_so_paths[]=//https://stackoverflow.com/questions/31611790/using-opencl-in-the-new-android-studio
 		{
@@ -204,10 +199,10 @@ void 			load_OpenCL_API()
 		for(int k=0;k<npaths&&!hOpenCL;++k)
 			hOpenCL=dlopen(opencl_so_paths[k], RTLD_LAZY);
 		if(!hOpenCL)
-			CL_ERROR("Cannot find OpenCL library");
+			ERROR("Cannot find OpenCL library");
 		else
 		{
-			API_not_loaded=false;
+			OCL_API_not_loaded=false;
 #ifdef RELEASE
 #define		GET_CL_FUNC(h, clFunc)		p_##clFunc=(decltype(p_##clFunc))dlsym(h, #clFunc)
 #else
@@ -227,6 +222,7 @@ void 			load_OpenCL_API()
 			GET_CL_FUNC(hOpenCL, clEnqueueNDRangeKernel);
 			GET_CL_FUNC(hOpenCL, clEnqueueReadBuffer);
 			GET_CL_FUNC(hOpenCL, clFinish);
+			GET_CL_FUNC(hOpenCL, clCreateFromGLTexture);
 #undef		GET_CL_FUNC
 		}
 	}
@@ -236,7 +232,7 @@ void 			unload_OpenCL_API()
 	if(hOpenCL)//when finishing opencl session
 	{
 		dlclose(hOpenCL), hOpenCL=nullptr;
-		API_not_loaded=true;
+		OCL_API_not_loaded=true;
 	}
 }
 
@@ -244,6 +240,7 @@ enum 			CLKernelIdx
 {
 //	V_INITIALIZE_CONSTANTS,
 	V_INITIALIZE_PARAMETER,
+	V_C2D_RGB,
 
 	R_R_SETZERO, C_C_SETZERO, Q_Q_SETZERO,
 	R_R_CEIL, C_C_CEIL, Q_Q_CEIL,
@@ -388,7 +385,7 @@ struct 			CLKernel
 		*disc_name;//if 0 then always continuous, signature: bool(const int *size, const int idx_offset, const float *r[, const float *i, const float *j, const float *k])
 //	cl_kernel g2, disc;
 };
-struct KernelDB
+struct			KernelDB
 {
 	CLKernel *kernels;
 	int nkernels;
@@ -3287,6 +3284,36 @@ __kernel void initialize_parameter(__global const int *size, __global float *buf
 	//args[2]: int 0:x, 1:y, 2:z
 	buffer[idx]=args[0]+args[1]*get_global_id(((int*)args)[2]);
 }
+
+#define		COS_PI_6		0.866025403784439f
+#define		SIN_PI_6		0.5f
+#define		THRESHOLD		10
+#define		INV_THRESHOLD	0.1f
+#define		COMP_MUL		0.00392156862745098f
+__kernel void c2d_rgb(__global const int *size, __global const float *xr, __global const float *xi, __write_only image2d_t rgb)
+{//size{Xplaces, Yplaces}
+	const int2 coords=(int2)(get_global_id(0), get_global_id(1));
+	const uint idx=size[0]*coords.y+coords.x;
+	float r=xr[idx], i=xi[idx];
+	float4 color;
+	if(r!=r||i!=i)
+		color=(float4)(1, 0.5f, 0.5f, 0.5f);
+	else if(fabs(r)==INFINITY||fabs(i)==INFINITY)
+		color=(float4)(1, 1, 1, 1);
+	else
+	{
+		float hyp=sqrt(r*r+i*i), cosx=r/hyp, sinx=i/hyp,
+			mag=255*exp(-hyp*_ln2*INV_THRESHOLD);
+		float red=1+cosx*COS_PI_6-sinx*SIN_PI_6, green=1+sinx, blue=1+cosx*-COS_PI_6-sinx*SIN_PI_6;
+		if(hyp<THRESHOLD)
+			mag=255-mag, red*=mag, green*=mag, blue*=mag;
+		else
+			red=255-mag*(2-red), green=255-mag*(2-green), blue=255-mag*(2-blue);
+		color=(float4)(1, blue*COMP_MUL, green*COMP_MUL, red*COMP_MUL);
+	//	rgb[idx]=0xFF<<24|(uchar)blue<<16|(uchar)green<<8|(uchar)red;
+	}
+	write_imagef(rgb, coords, color);
+}
 )CLSRC";
 
 	const char *programs[]=
@@ -4104,6 +4131,7 @@ namespace 		G2_CL
 
 		//special kernels
 		{V_INITIALIZE_PARAMETER, 0, 0, "initialize_parameter", nullptr},
+		{V_C2D_RGB, 0, 0, "c2d_rgb", nullptr},
 		//{V_INITIALIZE_CONSTANTS, 0, 0, "initialize_constants", nullptr},
 	};
 	KernelDB kernel_db[]=
@@ -4140,20 +4168,7 @@ void 			cl_initiate()
 	load_OpenCL_API();
 	using namespace G2_CL;
 	static_assert(sizeof(kernel_db)/sizeof(KernelDB)==nprograms, "kernel_db size is wrong");
-	//if(sizeof(kernel_db)/sizeof(KernelDB)!=nprograms)
-	//	LOGE("Error line %d:\n\n\tkernel_db size is wrong.\n\n", __LINE__);
-	//for(int k=0;k<nkernels;++k)//idx check
-	//{
-	//	auto &kernel=kernels[k];
-	//	if(kernel.idx!=k)
-	//	{
-	//		if(kernel.name)
-	//			LOGE("Error line %d:\n\n\t%s\n\tkernels[%d].idx == %d\n\n", __LINE__, kernel.name, k, kernels[k].idx);
-	//		else
-	//			LOGE("Error line %d:\n\n\tkernels[%d].idx == %d\n\n", __LINE__, k, kernels[k].idx);
-	//		break;
-	//	}
-	//}
+
 	cl_int error;
 	cl_platform_id platform;
 	cl_device_id device;
@@ -4161,12 +4176,18 @@ void 			cl_initiate()
 	// Fetch the Platform and Device IDs; we only want one.
 	error=p_clGetPlatformIDs(1, &platform, &platforms);							CL_CHECK(error);
 	error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &devices);	CL_CHECK(error);
-	cl_context_properties properties[]=
+	cl_context_properties properties[]=//https://stackoverflow.com/questions/26802905/getting-opengl-buffers-using-opencl
 	{
-		CL_CONTEXT_PLATFORM,
-		(cl_context_properties)platform,
-		0
+		CL_GL_CONTEXT_KHR,   (cl_context_properties)eglGetCurrentContext(),
+		CL_EGL_DISPLAY_KHR,  (cl_context_properties)eglGetCurrentDisplay(),
+		CL_CONTEXT_PLATFORM, (cl_context_properties)platform, // OpenCL platform object
+		0, 0,
 	};
+	//cl_context_properties properties[]=
+	//{
+	//	CL_CONTEXT_PLATFORM, (cl_context_properties)platform,
+	//	0
+	//};
 	cl_context context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);
 	cl_command_queue cq=p_clCreateCommandQueue(context, device, 0, &error);					CL_CHECK(error);
 
@@ -4189,7 +4210,7 @@ void 			cl_initiate()
 			if(error)
 			{
 				size_t length=0;
-				error=p_clGetProgramBuildInfo(programs[kp], device, CL_PROGRAM_BUILD_LOG, g_buf_size, g_buf, &length);	CL_CHECK2(error);
+				error=p_clGetProgramBuildInfo(programs[kp], device, CL_PROGRAM_BUILD_LOG, g_buf_size, g_buf, &length);	CL_CHECK(error);
 				err_msg+="\n\n\tPROGRAM "+std::to_string(kp)+"\n\n"+g_buf;
 			//	LOGE_long(g_buf, length);
 			//	LOGE("%*s", length, g_buf);
@@ -4210,28 +4231,18 @@ void 			cl_initiate()
 					//TODO: disc_idx
 				}
 			}
-			//for(int k=0;k<nkernels;++k)
-			//{
-			//	auto &kernel=kernels[k];
-			//	kernel.g2	=p_clCreateKernel(program[kp], kernel.name, &error);		CL_CHECK(error);
-			//	if(error)
-			//		LOGE("Error line %d:\n\n\tFailed to retrieve kernel %d:\t%s\n\n", __LINE__, k, kernel.name);
-			//	//kernel.disc	=p_clCreateKernel(program, kernel.disc_name, &error);	CL_CHECK(error);
-			//	//if(error)
-			//	//	LOGE("Error line %d:\n\n\tFailed to retrieve kernel %d:\t%s\n\n", __LINE__, k, kernel.disc_name);
-			//	kernel.disc=nullptr;
-			//}
 		}
 		if(!err_msg.empty())
 			LOGE_long(err_msg.c_str(), err_msg.size());
 	}
 #if 0
+	//hellocl.c		//https://donkey.vernier.se/~yann/hellocl.c
 	cl_int error;
 	cl_platform_id platform;
 	cl_device_id device;
 	unsigned platforms, devices;
 	// Fetch the Platform and Device IDs; we only want one.
-	error=p_clGetPlatformIDs(1, &platform, &platforms);							CL_CHECK(error);
+	error=p_clGetPlatformIDs(1, &platform, &platforms);							CL_CHECK(error);//get available OpenCL platforms & devices
 	error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &devices);	CL_CHECK(error);
 	cl_context_properties properties[]=
 	{
@@ -4239,8 +4250,10 @@ void 			cl_initiate()
 		(cl_context_properties)platform,
 		0
 	};
-	cl_context context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);
+	cl_context context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);//create OpenCL context
 	cl_command_queue cq=p_clCreateCommandQueue(context, device, 0, &error);				CL_CHECK(error);
+
+	//compile program & extract kernels
 	const char src[]=R"CLSRC(
 __kernel void myfunc(__global const float *in1, __global const float *in2, __global float *out)
 {
@@ -4259,32 +4272,57 @@ __kernel void myfunc(__global const float *in1, __global const float *in2, __glo
 	};
 	cl_program program=p_clCreateProgramWithSource(context, 1, sources, srclen, &error);CL_CHECK(error);
 	error=p_clBuildProgram(program, 0, nullptr, "", nullptr, nullptr);					CL_CHECK(error);
-	cl_kernel k_add=p_clCreateKernel(program, "myfunc", &error);						CL_CHECK(error);
 	if(error)
 	{
 		size_t length=0;
-		error=p_clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, g_buf_size, g_buf, &length);	CL_CHECK2(error);
+		error=p_clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, g_buf_size, g_buf, &length);	CL_CHECK(error);
 	}
+	cl_kernel k_add=p_clCreateKernel(program, "myfunc", &error);						CL_CHECK(error);
+
+	//use kernel
+//	glFlush();
 	for(int k=0;k<worksize;++k)//initialize	TODO: ititialize in kernel
 	{
 		in1[k]=k;
 		in2[k]=worksize-1-k;
 		out[k]=rand();//
 	}
-	cl_mem mem_in1=p_clCreateBuffer(context, CL_MEM_READ_ONLY, worksize*sizeof(float), nullptr, &error);	CL_CHECK(error);
+	cl_mem mem_in1=p_clCreateBuffer(context, CL_MEM_READ_ONLY, worksize*sizeof(float), nullptr, &error);	CL_CHECK(error);//create OpenCL buffers (or use OpenGL buffers)
 	cl_mem mem_in2=p_clCreateBuffer(context, CL_MEM_READ_ONLY, worksize*sizeof(float), nullptr, &error);	CL_CHECK(error);
 	cl_mem mem_out=p_clCreateBuffer(context, CL_MEM_WRITE_ONLY, worksize*sizeof(float), nullptr, &error);	CL_CHECK(error);
-	error=p_clSetKernelArg(k_add, 0, sizeof(cl_mem), &mem_in1); CL_CHECK(error);
+	error=p_clSetKernelArg(k_add, 0, sizeof(cl_mem), &mem_in1); CL_CHECK(error);//set arguments
 	error=p_clSetKernelArg(k_add, 1, sizeof(cl_mem), &mem_in2); CL_CHECK(error);
 	error=p_clSetKernelArg(k_add, 2, sizeof(cl_mem), &mem_out); CL_CHECK(error);
-	error=p_clEnqueueWriteBuffer(cq, mem_in1, CL_FALSE, 0, worksize*sizeof(float), in1, 0, nullptr, nullptr);	CL_CHECK(error);
+	error=p_clEnqueueWriteBuffer(cq, mem_in1, CL_FALSE, 0, worksize*sizeof(float), in1, 0, nullptr, nullptr);	CL_CHECK(error);//send arguments
 	error=p_clEnqueueWriteBuffer(cq, mem_in2, CL_FALSE, 0, worksize*sizeof(float), in2, 0, nullptr, nullptr);	CL_CHECK(error);
-	error=p_clEnqueueNDRangeKernel(cq, k_add, 1, nullptr, &worksize, &worksize, 0, nullptr, nullptr);			CL_CHECK(error);
+	error=p_clEnqueueNDRangeKernel(cq, k_add, 1, nullptr, &worksize, &worksize, 0, nullptr, nullptr);			CL_CHECK(error);//execute
 	error=p_clEnqueueReadBuffer(cq, mem_out, CL_FALSE, 0, worksize*sizeof(float), out, 0, nullptr, nullptr);	CL_CHECK(error);
 	error=p_clFinish(cq);	CL_CHECK(error);
 	unload_OpenCL_API();//
 #endif
 }
-void 			cl_step()
+struct			CLTerm
 {
+	int mathSet;
+	cl_mem r, i, j, k;
+};
+void 			solve_c2d(Expression const &ex, double VX, double DX, double VY, double DY, int Xplaces, int Yplaces)
+{//expresstion -> OpenGL texture
+	if(OCL_API_not_loaded)
+		LOGERROR("Can't solve without OpenCL API");
+	else
+	{
+		std::vector<CLTerm> terms;
+	}
 }
+void 			show_c2d()
+{//show texture
+	//if(OCL_API_not_loaded)
+	//	LOGERROR("Can't draw without OpenCL API");
+	//else
+	//{
+	//}
+}
+//void 			cl_step()
+//{
+//}

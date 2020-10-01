@@ -20,8 +20,8 @@
 
 #ifndef GRAPHER_2_GLESAPI_H
 #define GRAPHER_2_GLESAPI_H
-#include <jni.h>
-#include <android/log.h>
+//#include <jni.h>
+//#include <android/log.h>
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -33,16 +33,17 @@
 #include<vector>
 //#include<arm_neon.h>
 //#include<immintrin.h>
-#define  LOG_TAG    "libgl2jni"
-#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+//#define  LOG_TAG    "libgl2jni"
+//#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+//#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#include"g2_common.h"
 extern int		w, h, X0, Y0;
 
 extern const unsigned char *GLversion;//OpenGL version info
 extern int					glMajorVer, glMinorVer;
 
-extern int		broken_line;//ill state API
-extern char 	broken_msg[2048];
+//extern int		broken_line;//ill state API
+//extern char 	broken_msg[2048];
 void			error(const char *msg, int line);
 void 			check(int line);
 #define 		ERROR(msg)	error(msg, __LINE__)
@@ -535,8 +536,14 @@ struct		Font
 void			display_texture(int x1, int x2, int y1, int y2, int *rgb, int txw, int txh, unsigned char alpha=0xFF);
 inline void 	print_if_error()//ill state API
 {
-	if(broken_line||broken_msg[0])
-		print(0, h>>2, "%s", broken_msg);
+	if(*first_error_msg)
+	{
+		print(0, h>>2, "%s", first_error_msg);
+		if(strcmp(first_error_msg, latest_error_msg))
+			print(0, (h>>2)+fontH, "%s", latest_error_msg);
+	}
+	//if(broken_line||broken_msg[0])
+	//	print(0, h>>2, "%s", broken_msg);
 	//	print(0, h>>2, "Line %d: %s", broken_line, broken_msg);
 	//	print(0, h>>2, "Error at line %d: %s", broken_line, broken_msg);
 }

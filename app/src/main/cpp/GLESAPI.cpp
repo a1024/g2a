@@ -38,8 +38,8 @@ static char			g_buf[g_buf_size]={0};
 const unsigned char *GLversion;//OpenGL version info
 int					glMajorVer, glMinorVer;
 
-int					broken_line=0;//ill state API
-char 				broken_msg[g_buf_size]={0};
+//int					broken_line=0;//ill state API
+//char 				broken_msg[g_buf_size]={0};
 const char*			glerr2str(int error)
 {
 #define 			EC(x)	case x:a=(const char*)#x;break
@@ -61,24 +61,28 @@ const char*			glerr2str(int error)
 }
 void				error(const char *msg, int line)
 {
-	if(!*broken_msg)
-	{
-		broken_line=line;
-		sprintf(broken_msg, "Line %d: %s", line, msg);
-	//	sprintf(broken_msg, "Error at line %d: %s", line, msg);
-		LOGE("%s", broken_msg);
-	}
+	LOGERROR_LINE(line, msg);
+//	LOGERROR_LINE(line, "%s", msg);
+	//if(!*broken_msg)
+	//{
+	//	broken_line=line;
+	//	sprintf(broken_msg, "Line %d: %s", line, msg);
+	////	sprintf(broken_msg, "Error at line %d: %s", line, msg);
+	//	LOGE("%s", broken_msg);
+	//}
 }
 void 				check(int line)
 {
 	int err=glGetError();
-	if(err&&!*broken_msg)
-	{
-		broken_line=line;
-		sprintf(broken_msg, "Line %d: 0x%x - %s.", line, err, glerr2str(err));
-	//	sprintf(broken_msg, "Error 0x%x: %s, line %d.", err, glerr2str(err), line);
-		LOGE("%s", broken_msg);
-	}
+	if(err)
+		LOGERROR_LINE(line, "GL Error %d: %s", err, glerr2str(err));
+	//if(err&&!*broken_msg)
+	//{
+	//	broken_line=line;
+	//	sprintf(broken_msg, "Line %d: 0x%x - %s.", line, err, glerr2str(err));
+	////	sprintf(broken_msg, "Error 0x%x: %s, line %d.", err, glerr2str(err), line);
+	//	LOGE("%s", broken_msg);
+	//}
 }
 #define 			ERROR(msg)	error(msg, __LINE__)
 #define 			CHECK()		check(__LINE__)
@@ -318,8 +322,8 @@ unsigned			LoadShaders(const char *vertSrc, const char *fragSrc, ShaderVar *attr
 	for(int ku=0;ku<n_unif;++ku)
 		if((*uniforms[ku].pvar=glGetUniformLocation(ProgramID, uniforms[ku].name))==-1)
 			error("Can\'t get uniform location", uniforms[ku].lineNo);
-	if(broken_line)//
-		return 0;//
+	//if(broken_line)//
+	//	return 0;//
 	return ProgramID;
 }
 unsigned			make_gpu_buffer(unsigned target, const void *pointer, int size_bytes)
@@ -370,10 +374,10 @@ void				send_color(unsigned location, int color)
 	auto p=(unsigned char*)&color;
 	glUniform4f(location, p[0]*inv255, p[1]*inv255, p[2]*inv255, p[3]*inv255);
 	CHECK();
-	if(broken_msg[0])
-	{
-		return;
-	}
+	//if(broken_msg[0])
+	//{
+	//	return;
+	//}
 }
 void				send_color_rgb(unsigned location, int color)
 {
@@ -522,6 +526,7 @@ namespace			GL2_2D
 		glDrawArrays(GL_LINE_STRIP, 0, 5);	CHECK();
 	//	glDrawArrays(GL_POINTS, 5, 1);					CHECK();
 	}
+	//warning: y1 & x2 are swapped
 	void		draw_rectangle_hollow(ivec4 const &p)
 	{
 		draw_rectangle_hollow((float)p.x1, (float)p.y1, (float)p.x2, (float)p.y2);

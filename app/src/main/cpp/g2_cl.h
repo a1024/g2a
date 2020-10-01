@@ -20,7 +20,10 @@
 
 #ifndef GRAPHER_2_G2_CL_H
 #define GRAPHER_2_G2_CL_H
-extern char	cl_error_msg[2048];
-void 		cl_initiate();
-void 		cl_step();
+#include		"g2_common.h"
+//extern char		cl_error_msg[2048];
+void 			cl_initiate();
+void 			solve_c2d(Expression const &ex, double VX, double DX, double VY, double DY, int Xplaces, int Yplaces);
+void 			show_c2d();
+//void 			cl_step();
 #endif //GRAPHER_2_G2_CL_H

@@ -24,6 +24,7 @@ add_library( # Sets the name of the library.
         SHARED
 
         # Provides a relative path to your source file(s).
+        g2_common.cpp
         native-lib.cpp
         GLESAPI.cpp
         g2_cl.cpp
