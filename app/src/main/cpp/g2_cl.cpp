@@ -389,19 +389,15 @@ struct 			CLKernel
 namespace		CLSource
 {
 	static const char program_common[]=R"CLSRC(
-//auxiliary constants
-enum Constants
-{
-	C_PI, C_2PI, SQRT_2PI, C_SQRT2, C_LN2, C_INV_LN10, C_LN_PHI, C_INV_SQRT5,
-};
-#define	_pi			(constants[C_PI])
-#define	_2pi		(constants[C_2PI])
-#define	_sqrt_2pi	(constants[SQRT_2PI])
-#define	_sqrt2		(constants[C_SQRT2])
-#define	_ln2		(constants[C_LN2])
-#define	_inv_ln10	(constants[C_INV_LN10])
-#define	_ln_phi		(constants[C_LN_PHI])
-#define	_inv_sqrt5	(constants[C_INV_SQRT5])
+//math constants
+#define	_pi			3.14159265358979f
+#define	_2pi		6.28318530717959f
+#define	_sqrt_2pi	2.506628274631f
+#define	_sqrt2		1.4142135623731f
+#define	_ln2		0.693147180559945f
+#define	_inv_ln10	0.434294481903252f
+#define	_ln_phi		0.481211825059603f
+#define	_inv_sqrt5	0.447213595499958f
 
 //macros for G2 functions
 #define		ARG_CI(arg)		__global const int *arg
@@ -659,6 +655,143 @@ float4	log_q(float4 a)
 		a.w*v_mul
 	);
 }
+//complex trig & hyp functions
+float2 coshsinh(float x)
+{
+	float exp_x=exp(x);
+	float2 e=(float2)(exp_x, 1/exp_x)*0.5f;
+	return (float2)(e.x+e.y, e.x-e.y);
+}
+float2 cos_c(float2 a){return (float2)(cos(a.x)*cosh(a.y), -sin(a.x)*sinh(a.y));}
+float4 cos_q(float4 a)
+{
+	float cos_r, sin_r=sincos(a.x, &cos_r);
+	float abs_v=sqrt(a.y*a.y+a.z*a.z+a.w*a.w);
+	float2 chsh_absv=coshsinh(abs_v);
+	float v_mul=-sin_r*chsh_absv.y/abs_v;
+	return (float4)(cos_r*chsh_absv.x, v_mul*a.y, v_mul*a.z, v_mul*a.w);
+}
+float2 acos_c(float2 a)
+{
+	const float2 m_i=(float2)(0, -1);
+	float2 temp=sq_c(a);
+	temp.x-=1;
+	return mul_cc(log_c(a+sqrt_c(temp)), m_i);
+}
+float4 acos_q(float4 a)
+{
+	const float2 m_i=(float2)(0, -1);
+	float4 temp=sq_q(a);
+	temp.x-=1;
+	return mul_qc(log_q(a+sqrt_q(temp)), m_i);
+}
+float2 cosh_c(float2 a){return (float2)(cos(a.x)*cosh(a.y), -sin(a.x)*sinh(a.y));}
+float4 cosh_q(float4 a)
+{
+	float4 exp_a=exp_q(a), exp_ma=inv_q(exp_a);
+	return mul_qr(exp_a+exp_ma, 0.5f);
+}
+float2 acosh_c(float2 a)
+{
+	float2 temp=sq_c(a);
+	temp.x-=1;
+	return log_c(a+sqrt_c(temp));
+}
+float4 acosh_q(float4 a)
+{
+	float4 temp=sq_q(a);
+	temp.x-=1;
+	return log_q(a+sqrt_q(temp));
+}
+float2 sin_c(float2 a){return (float2)(sin(a.x)*cosh(a.y), cos(a.x)*sinh(a.y));}
+float4 sin_q(float4 a)
+{
+	float cos_r, sin_r=sincos(a.x, &cos_r);
+	float abs_v=sqrt(a.y*a.y+a.z*a.z+a.w*a.w);
+	float2 chsh_absv=coshsinh(abs_v);
+	float v_mul=-cos_r*chsh_absv.y/abs_v;
+	return (float4)(sin_r*chsh_absv.x, v_mul*a.y, v_mul*a.z, v_mul*a.w);
+}
+float2 asin_c(float2 a)
+{
+	const float2 i=(float2)(0, 1), m_i=(float2)(0, -1);
+	float2 temp=sq_c(a);
+	temp.x=1-temp.x, temp.y=-temp.y;
+	return mul_cc(log_c(mul_cc(a, i)+sqrt_c(temp)), m_i);
+}
+float4 asin_q(float4 a)
+{
+	const float2 i=(float2)(0, 1), m_i=(float2)(0, -1);
+	float4 temp=sq_q(a);
+	temp=(float4)(1, 0, 0, 0)-temp;
+	return mul_qc(log_q(mul_qc(a, i)+sqrt_q(temp)), m_i);
+}
+float2 sinh_c(float2 a){return (float2)(sinh(a.x)*cos(a.y), cosh(a.x)*sin(a.y));}
+float4 sinh_q(float4 a)
+{
+	float4 exp_a=exp_q(a), exp_ma=inv_q(exp_a);
+	return mul_qr(exp_a-exp_ma, 0.5f);
+}
+float2 asinh_c(float2 a)
+{
+	float2 temp=sq_c(a);
+	temp.x+=1;
+	return log_c(a+sqrt_c(temp));
+}
+float4 asinh_q(float4 a)
+{
+	float4 temp=sq_q(a);
+	temp.x+=1;
+	return log_q(a+sqrt_q(temp));
+}
+float2 tan_c(float2 a)
+{
+	const float2 _2i=(float2)(0, 2), one=(float2)(1, 0);
+	float2 exp2ia=exp_c(mul_cc(_2i, a));
+	return div_cc(exp2ia-one, exp2ia+one);
+}
+float4 tan_q(float4 a)
+{
+	const float2 _2i=(float2)(0, 2);
+	const float4 one=(float4)(1, 0, 0, 0);
+	float4 exp2ia=exp_q(mul_cq(_2i, a));
+	return div_qq(exp2ia-one, exp2ia+one);
+}
+float2 atan_c(float2 a)
+{
+	const float2 i=(float2)(0, 1), i_2=(float2)(0, 0.5f);
+	return mul_cc(i_2, log_c(div_cc(i+a, i-a)));
+}
+float4 atan_q(float4 a)
+{
+	const float4 i=(float4)(0, 1, 0, 0);
+	const float2 i_2=(float2)(0, 0.5f);
+	return mul_cq(i_2, log_q(div_qq(i+a, i-a)));
+}
+float2 tanh_c(float2 a)
+{
+	const float2 one=(float2)(1, 0);
+	float2 exp2a=exp_c(a+a);
+	return div_cc(exp2a-one, exp2a+one);
+}
+float4 tanh_q(float4 a)
+{
+	const float4 one=(float4)(1, 0, 0, 0);
+	float4 exp2a=exp_q(a+a);
+	return div_qq(exp2a-one, exp2a+one);
+}
+float2 atanh_c(float2 a)
+{
+	const float2 one=(float2)(1, 0);
+	return mul_rc(0.5f, log_c(div_cc(one+a, one-a)));
+}
+float4 atanh_q(float4 a)
+{
+	const float4 one=(float4)(1, 0, 0, 0);
+	return mul_rq(0.5f, log_q(div_qq(one+a, one-a)));
+}
+//end complex trig & hyp functions
+
 float2	pow_cr(float2 a, float b)
 {
 	float2 lna=log_c(a);
@@ -694,64 +827,6 @@ float4	pow_qq(float4 a, float4 b)
 	float4 lna=log_q(a);
 	float4 temp=mul_qq(lna, b);
 	return exp_q(temp);
-}
-float2	tgamma_c(float2 a)//http://en.wikipedia.org/wiki/Lanczos_approximation
-{
-	const float g=7, p[]={0.99999999999980993f, 676.5203681218851f, -1259.1392167224028f, 771.32342877765313f, -176.61502916214059f, 12.507343278686905f, -0.13857109526572012f, 9.9843695780195716e-6f, 1.5056327351493116e-7f};
-	if(a.x<0.5f)
-	{
-		float2 t1=(float2)(p[0], 0);
-		for(int k=1;k<g+2;++k)
-			t1+=div_rc(p[k], (float2)(k-a.x, -a.y));
-		float2 t2=(float2)(g+0.5f-a.x, -a.y);
-
-		float2 spa_s2p=mul_cr(sin_c(mul_rc(_pi, a)), _sqrt_2pi);
-		float2 temp2=pow_cc(t2, (float2)(0.5f-a.x, -a.y));
-		float2 temp3=mul_cc(exp_c((float2)(-t2.x, -t2.y)), t1);
-		return div_rc(_pi, mul_cc(mul_cc(spa_s2p, temp2), temp3));
-	//	return _pi/(sin(_pi*a)*_sqrt_2pi*pow(t2, 0.5f-a)*exp(-t2)*t1);//C++
-	}
-	else
-	{
-		float2 t1=(float2)(p[0], 0);
-		for(int k=1;k<g+2;++k)
-			t1+=div_rc(p[k], (float2)(k-1+a.x, a.y));
-		float2 t2=(float2)(g+0.5f-1+a.x, a.y);
-
-		float2 temp=mul_rc(_sqrt_2pi, pow_cc(t2, (float2)(0.5f-1+a.x, a.y)));
-		float2 temp2=mul_cc(exp_c((float2)(-t2.x, -t2.y)), t1);
-		return mul_cc(temp, temp2);
-	//	return _sqrt_2pi*pow(t2, 0.5f-1.+x)*exp(-t2)*t1;//C++
-	}
-}
-float4	tgamma_q(float4 a)
-{
-	const float g=7, p[]={0.99999999999980993f, 676.5203681218851f, -1259.1392167224028f, 771.32342877765313f, -176.61502916214059f, 12.507343278686905f, -0.13857109526572012f, 9.9843695780195716e-6f, 1.5056327351493116e-7f};
-	if(a.x<0.5f)
-	{
-		float4 t1=(float4)(p[0], 0, 0, 0);
-		for(int k=1;k<g+2;++k)
-			t1+=div_rq(p[k], (float4)(k-a.x, -a.y, -a.z, -a.w));
-		float4 t2=(float4)(g+0.5f-a.x, -a.y, -a.z, -a.w);
-
-		float4 spa_s2p=mul_qr(sin_q(mul_rq(_pi, a)), _sqrt_2pi);
-		float4 temp2=pow_qq(t2, (float4)(0.5f-a.x, -a.y, -a.z, -a.w));
-		float4 temp3=mul_qq(exp_q((float4)(-t2.x, -t2.y, -t2.z, -t2.w)), t1);
-		return div_rq(_pi, mul_qq(mul_qq(spa_s2p, temp2), temp3));
-	//	return _pi/(sin(_pi*a)*_sqrt_2pi*pow(t2, 0.5f-a)*exp(-t2)*t1);//C++
-	}
-	else
-	{
-		float4 t1=(float4)(p[0], 0, 0, 0);
-		for(int k=1;k<g+2;++k)
-			t1+=div_rq(p[k], (float4)(k-1+a.x, a.y, a.z, a.w));
-		float4 t2=(float4)(g+0.5f-1+a.x, a.y, a.z, a.w);
-
-		float4 temp=mul_rq(_sqrt_2pi, pow_qq(t2, (float4)(0.5f-1+a.x, a.y, a.z, a.w)));
-		float4 temp2=mul_qq(exp_q((float4)(-t2.x, -t2.y, -t2.z, -t2.w)), t1);
-		return mul_qq(temp, temp2);
-	//	return _sqrt_2pi*pow(t2, 0.5f-1.f+x)*exp(-t2)*t1;//C++
-	}
 }
 )CLSRC";
 	static const char program01[]=R"CLSRC(
@@ -805,7 +880,7 @@ G2_R_R(arg)
 	if(xr[idx]<0)
 		rr[idx]=_pi;
 	else if(xr[idx]==0)
-		rr[idx]=nan(0u);
+		rr[idx]=NAN;
 	else
 		rr[idx]=0;
 }
@@ -816,7 +891,7 @@ G2_R_Q(arg)
 	float4 a=VEC4(x);
 	float abs_a=a.x*a.x+a.y*a.y+a.z*a.z+a.w*a.w;
 	if(!abs_a)
-		rr[idx]=nan(0u);
+		rr[idx]=NAN;
 	else
 	{
 		abs_a=sqrt(abs_a);
@@ -844,7 +919,7 @@ G2_C_R(polar)
 {
 	IDX;
 	float a=xr[idx];
-	float2 ret=(float2)(fabs(a), a<0?_pi:a==0?nan(0u):0);
+	float2 ret=(float2)(fabs(a), a<0?_pi:a==0?NAN:0);
 	RET_C;
 }
 G2_C_C(polar)
@@ -1104,8 +1179,8 @@ DISC_QQ_I(pow){IDX; disc[idx]=false;}//TODO
 
 G2_C_C(ln){IDX; float2 ret=log_c(VEC2(x)); RET_C;}
 G2_Q_Q(ln){IDX; float4 ret=log_q(VEC4(x)); RET_Q;}
-DISC_C_I(ln){disc_c_arg_i(size, offset, disc, xr, xi);}
-DISC_Q_I(ln){disc_q_arg_i(size, offset, disc, xr, xi, xj, xk);}
+DISC_C_I(ln){IDX; disc[idx]=false;}//TODO
+DISC_Q_I(ln){IDX; disc[idx]=false;}
 
 G2_C_C(log)
 {
@@ -1161,7 +1236,7 @@ G2_Q_QQ(log)
 	float4 ret=div_qq(log_a, log_b);
 	RET_Q;
 }
-DISC_C_I(log){disc_c_arg_i(size, offset, disc, xr, xi);}
+DISC_C_I(log){IDX; disc[idx]=false;}//TODO disc c arg
 DISC_Q_I(log){IDX; disc[idx]=false;}//TODO
 DISC_CR_I(log){IDX; disc[idx]=false;}//TODO
 DISC_CC_I(log){IDX; disc[idx]=false;}//TODO
@@ -1267,9 +1342,9 @@ G2_Q_QQ(bitwise_shift_left)
 	float4 ret=mul_qq(a, exp_q(mul_qr(floor_q(b), _ln2)));
 	RET_Q;
 }
-DISC_R_O(bitwise_shift_left_l){disc_r_ceil_o(size, offset, disc, xr);}
-DISC_C_O(bitwise_shift_left_l){disc_c_ceil_o(size, offset, disc, xr, xi);}
-DISC_Q_O(bitwise_shift_left_l){disc_q_ceil_o(size, offset, disc, xr, xi, xj, xk);}
+DISC_R_O(bitwise_shift_left_l){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}
+DISC_C_O(bitwise_shift_left_l){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset];}
+DISC_Q_O(bitwise_shift_left_l){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset]||xj[idx]!=xj[idx+offset]||xk[idx]!=xk[idx+offset];}
 DISC_RR_I(bitwise_shift_left){IDX; disc[idx]=floor(xr[idx])!=floor(xr[idx+offset]);}
 DISC_RC_I(bitwise_shift_left){IDX; disc[idx]=floor(xr[idx])!=floor(xr[idx+offset]);}
 DISC_RQ_I(bitwise_shift_left){IDX; disc[idx]=floor(xr[idx])!=floor(xr[idx+offset]);}
@@ -1371,9 +1446,9 @@ G2_Q_QQ(bitwise_shift_right)
 	float4 ret=mul_qq(a, exp_q(mul_qr(floor_q(b), -_ln2)));
 	RET_Q;
 }
-DISC_R_O(bitwise_shift_right_l){disc_r_ceil_o(size, offset, disc, xr);}
-DISC_C_O(bitwise_shift_right_l){disc_c_ceil_o(size, offset, disc, xr, xi);}
-DISC_Q_O(bitwise_shift_right_l){disc_q_ceil_o(size, offset, disc, xr, xi, xj, xk);}
+DISC_R_O(bitwise_shift_right_l){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}
+DISC_C_O(bitwise_shift_right_l){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset];}
+DISC_Q_O(bitwise_shift_right_l){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset]||xj[idx]!=xj[idx+offset]||xk[idx]!=xk[idx+offset];}
 DISC_RR_I(bitwise_shift_right){disc_rr_bitwise_shift_left_i(size, offset, disc, xr, yr);}
 DISC_RC_I(bitwise_shift_right){disc_rc_bitwise_shift_left_i(size, offset, disc, xr, yr, yi);}
 DISC_RQ_I(bitwise_shift_right){disc_rq_bitwise_shift_left_i(size, offset, disc, xr, yr, yi, yj, yk);}
@@ -1385,7 +1460,7 @@ DISC_QC_I(bitwise_shift_right){disc_qc_bitwise_shift_left_i(size, offset, disc, 
 DISC_QQ_I(bitwise_shift_right){disc_qq_bitwise_shift_left_i(size, offset, disc, xr, xi, xj, xk, yr, yi, yj, yk);}
 )CLSRC";
 	static const char program06[]=R"CLSRC(
-float bitwise_not(float x){return iscastable2int(x)?~f2i(x):nan(0u);}
+float bitwise_not(float x){return iscastable2int(x)?~f2i(x):NAN;}
 G2_R_R(bitwise_not){IDX; float a=xr[idx]; ASSIGN_R(bitwise_not(a));}
 G2_C_C(bitwise_not){IDX; float2 a=VEC2(x); ASSIGN_C(bitwise_not(a.x), bitwise_not(a.y));}
 G2_Q_Q(bitwise_not){IDX; float4 a=VEC4(x); ASSIGN_Q(bitwise_not(a.x), bitwise_not(a.y), bitwise_not(a.z), bitwise_not(a.w));}
@@ -1393,8 +1468,8 @@ DISC_R_I(bitwise_not){IDX; disc[idx]=sign(xr[idx])!=sign(xr[idx+offset]);}
 DISC_C_I(bitwise_not){IDX; disc[idx]=sign(xr[idx])!=sign(xr[idx+offset])||sign(xi[idx])!=sign(xi[idx+offset]);}
 DISC_Q_I(bitwise_not){IDX; disc[idx]=sign(xr[idx])!=sign(xr[idx+offset])||sign(xi[idx])!=sign(xi[idx+offset])||sign(xj[idx])!=sign(xj[idx+offset])||sign(xk[idx])!=sign(xk[idx+offset]);}
 
-float bitwise_and1(float x){return iscastable2int(x)?f2i(x)==-1:nan(0u);}
-float bitwise_and2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?f2i(a)&f2i(b):nan(0u);}
+float bitwise_and1(float x){return iscastable2int(x)?f2i(x)==-1:NAN;}
+float bitwise_and2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?f2i(a)&f2i(b):NAN;}
 G2_R_R(bitwise_and){IDX; ASSIGN_R(bitwise_and1(xr[idx]));}
 G2_C_C(bitwise_and){IDX; ASSIGN_C(bitwise_and1(xr[idx]), bitwise_and1(xi[idx]));}
 G2_Q_Q(bitwise_and){IDX; ASSIGN_Q(bitwise_and1(xr[idx]), bitwise_and1(xi[idx]), bitwise_and1(xj[idx]), bitwise_and1(xk[idx]));}
@@ -1407,12 +1482,12 @@ G2_Q_CQ(bitwise_and){IDX; ASSIGN_Q(bitwise_and2(xr[idx], yr[idx]), bitwise_and2(
 G2_Q_QR(bitwise_and){IDX; ASSIGN_Q(bitwise_and2(xr[idx], yr[idx]), 0, 0, 0);}
 G2_Q_QC(bitwise_and){IDX; ASSIGN_Q(bitwise_and2(xr[idx], yr[idx]), bitwise_and2(xi[idx], yi[idx]), 0, 0);}
 G2_Q_QQ(bitwise_and){IDX; ASSIGN_Q(bitwise_and2(xr[idx], yr[idx]), bitwise_and2(xi[idx], yi[idx]), bitwise_and2(xj[idx], yj[idx]), bitwise_and2(xk[idx], yk[idx]));}
-DISC_R_O(bitwise_and){disc_r_ceil_o(size, offset, disc, xr);}//repeat r,c,q for R_RR...Q_QQ
-DISC_C_O(bitwise_and){disc_c_ceil_o(size, offset, disc, xr, xi);}
-DISC_Q_O(bitwise_and){disc_q_ceil_o(size, offset, disc, xr, xi, xj, xk);}
+DISC_R_O(bitwise_and){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}//repeat r,c,q for R_RR...Q_QQ
+DISC_C_O(bitwise_and){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset];}
+DISC_Q_O(bitwise_and){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset]||xj[idx]!=xj[idx+offset]||xk[idx]!=xk[idx+offset];}
 
-float bitwise_nand1(float x){return iscastable2int(x)?f2i(x)!=-1:nan(0u);}
-float bitwise_nand2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?~(f2i(a)&f2i(b)):nan(0u);}
+float bitwise_nand1(float x){return iscastable2int(x)?f2i(x)!=-1:NAN;}
+float bitwise_nand2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?~(f2i(a)&f2i(b)):NAN;}
 G2_R_R(bitwise_nand){IDX; ASSIGN_R(bitwise_nand1(xr[idx]));}
 G2_C_C(bitwise_nand){IDX; ASSIGN_C(bitwise_nand1(xr[idx]), bitwise_nand1(xi[idx]));}
 G2_Q_Q(bitwise_nand){IDX; ASSIGN_Q(bitwise_nand1(xr[idx]), bitwise_nand1(xi[idx]), bitwise_nand1(xj[idx]), bitwise_nand1(xk[idx]));}
@@ -1425,12 +1500,12 @@ G2_Q_CQ(bitwise_nand){IDX; ASSIGN_Q(bitwise_nand2(xr[idx], yr[idx]), bitwise_nan
 G2_Q_QR(bitwise_nand){IDX; ASSIGN_Q(bitwise_nand2(xr[idx], yr[idx]), 0, 0, 0);}
 G2_Q_QC(bitwise_nand){IDX; ASSIGN_Q(bitwise_nand2(xr[idx], yr[idx]), bitwise_nand2(xi[idx], yi[idx]), 0, 0);}
 G2_Q_QQ(bitwise_nand){IDX; ASSIGN_Q(bitwise_nand2(xr[idx], yr[idx]), bitwise_nand2(xi[idx], yi[idx]), bitwise_nand2(xj[idx], yj[idx]), bitwise_nand2(xk[idx], yk[idx]));}
-DISC_R_O(bitwise_nand){disc_r_ceil_o(size, offset, disc, xr);}//repeat r,c,q for R_RR...Q_QQ
-DISC_C_O(bitwise_nand){disc_c_ceil_o(size, offset, disc, xr, xi);}
-DISC_Q_O(bitwise_nand){disc_q_ceil_o(size, offset, disc, xr, xi, xj, xk);}
+DISC_R_O(bitwise_nand){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}//repeat r,c,q for R_RR...Q_QQ
+DISC_C_O(bitwise_nand){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset];}
+DISC_Q_O(bitwise_nand){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset]||xj[idx]!=xj[idx+offset]||xk[idx]!=xk[idx+offset];}
 
-float bitwise_or1(float x){return iscastable2int(x)?f2i(x)!=0:nan(0u);}
-float bitwise_or2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?f2i(a)|f2i(b):nan(0u);}
+float bitwise_or1(float x){return iscastable2int(x)?f2i(x)!=0:NAN;}
+float bitwise_or2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?f2i(a)|f2i(b):NAN;}
 G2_R_R(bitwise_or){IDX; ASSIGN_R(bitwise_or1(xr[idx]));}
 G2_C_C(bitwise_or){IDX; ASSIGN_C(bitwise_or1(xr[idx]), bitwise_or1(xi[idx]));}
 G2_Q_Q(bitwise_or){IDX; ASSIGN_Q(bitwise_or1(xr[idx]), bitwise_or1(xi[idx]), bitwise_or1(xj[idx]), bitwise_or1(xk[idx]));}
@@ -1443,13 +1518,13 @@ G2_Q_CQ(bitwise_or){IDX; ASSIGN_Q(bitwise_or2(xr[idx], yr[idx]), bitwise_or2(xi[
 G2_Q_QR(bitwise_or){IDX; ASSIGN_Q(bitwise_or2(xr[idx], yr[idx]), xi[idx], xj[idx], xk[idx]);}
 G2_Q_QC(bitwise_or){IDX; ASSIGN_Q(bitwise_or2(xr[idx], yr[idx]), bitwise_or2(xi[idx], yi[idx]), xj[idx], xk[idx]);}
 G2_Q_QQ(bitwise_or){IDX; ASSIGN_Q(bitwise_or2(xr[idx], yr[idx]), bitwise_or2(xi[idx], yi[idx]), bitwise_or2(xj[idx], yj[idx]), bitwise_or2(xk[idx], yk[idx]));}
-DISC_R_O(bitwise_or){disc_r_ceil_o(size, offset, disc, xr);}//repeat r,c,q for R_RR...Q_QQ
-DISC_C_O(bitwise_or){disc_c_ceil_o(size, offset, disc, xr, xi);}
-DISC_Q_O(bitwise_or){disc_q_ceil_o(size, offset, disc, xr, xi, xj, xk);}
+DISC_R_O(bitwise_or){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}//repeat r,c,q for R_RR...Q_QQ
+DISC_C_O(bitwise_or){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset];}
+DISC_Q_O(bitwise_or){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset]||xj[idx]!=xj[idx+offset]||xk[idx]!=xk[idx+offset];}
 )CLSRC";
 	static const char program07[]=R"CLSRC(
-float bitwise_nor1(float x){return iscastable2int(x)?!f2i(x):nan(0u);}
-float bitwise_nor2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?~(f2i(a)|f2i(b)):nan(0u);}
+float bitwise_nor1(float x){return iscastable2int(x)?!f2i(x):NAN;}
+float bitwise_nor2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?~(f2i(a)|f2i(b)):NAN;}
 G2_R_R(bitwise_nor){IDX; ASSIGN_R(bitwise_nor1(xr[idx]));}
 G2_C_C(bitwise_nor){IDX; ASSIGN_C(bitwise_nor1(xr[idx]), bitwise_nor1(xi[idx]));}
 G2_Q_Q(bitwise_nor){IDX; ASSIGN_Q(bitwise_nor1(xr[idx]), bitwise_nor1(xi[idx]), bitwise_nor1(xj[idx]), bitwise_nor1(xk[idx]));}
@@ -1462,9 +1537,9 @@ G2_Q_CQ(bitwise_nor){IDX; ASSIGN_Q(bitwise_nor2(xr[idx], yr[idx]), bitwise_nor2(
 G2_Q_QR(bitwise_nor){IDX; ASSIGN_Q(bitwise_nor2(xr[idx], yr[idx]), bitwise_nor2(xi[idx], 0), bitwise_nor2(xj[idx], 0), bitwise_nor2(xk[idx], 0));}
 G2_Q_QC(bitwise_nor){IDX; ASSIGN_Q(bitwise_nor2(xr[idx], yr[idx]), bitwise_nor2(xi[idx], yi[idx]), bitwise_nor2(xj[idx], 0), bitwise_nor2(xk[idx], 0));}
 G2_Q_QQ(bitwise_nor){IDX; ASSIGN_Q(bitwise_nor2(xr[idx], yr[idx]), bitwise_nor2(xi[idx], yi[idx]), bitwise_nor2(xj[idx], yj[idx]), bitwise_nor2(xk[idx], yk[idx]));}
-DISC_R_O(bitwise_nor){disc_r_ceil_o(size, offset, disc, xr);}//repeat r,c,q for R_RR...Q_QQ
-DISC_C_O(bitwise_nor){disc_c_ceil_o(size, offset, disc, xr, xi);}
-DISC_Q_O(bitwise_nor){disc_q_ceil_o(size, offset, disc, xr, xi, xj, xk);}
+DISC_R_O(bitwise_nor){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}//repeat r,c,q for R_RR...Q_QQ
+DISC_C_O(bitwise_nor){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset];}
+DISC_Q_O(bitwise_nor){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset]||xj[idx]!=xj[idx+offset]||xk[idx]!=xk[idx+offset];}
 
 float bitwise_xor1(float x)
 {
@@ -1475,9 +1550,9 @@ float bitwise_xor1(float x)
 		a&=15;
 		return (0x6996>>a)&1;
 	}
-	return nan(0u);
+	return NAN;
 }
-float bitwise_xor2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?f2i(a)^f2i(b):nan(0u);}
+float bitwise_xor2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?f2i(a)^f2i(b):NAN;}
 G2_R_R(bitwise_xor){IDX; ASSIGN_R(bitwise_xor1(xr[idx]));}
 G2_C_C(bitwise_xor){IDX; ASSIGN_C(bitwise_xor1(xr[idx]), bitwise_xor1(xi[idx]));}
 G2_Q_Q(bitwise_xor){IDX; ASSIGN_Q(bitwise_xor1(xr[idx]), bitwise_xor1(xi[idx]), bitwise_xor1(xj[idx]), bitwise_xor1(xk[idx]));}
@@ -1490,9 +1565,9 @@ G2_Q_CQ(bitwise_xor){IDX; ASSIGN_Q(bitwise_xor2(xr[idx], yr[idx]), bitwise_xor2(
 G2_Q_QR(bitwise_xor){IDX; ASSIGN_Q(bitwise_xor2(xr[idx], yr[idx]), xi[idx], xj[idx], xk[idx]);}
 G2_Q_QC(bitwise_xor){IDX; ASSIGN_Q(bitwise_xor2(xr[idx], yr[idx]), bitwise_xor2(xi[idx], yi[idx]), xj[idx], xk[idx]);}
 G2_Q_QQ(bitwise_xor){IDX; ASSIGN_Q(bitwise_xor2(xr[idx], yr[idx]), bitwise_xor2(xi[idx], yi[idx]), bitwise_xor2(xj[idx], yj[idx]), bitwise_xor2(xk[idx], yk[idx]));}
-DISC_R_O(bitwise_xor){disc_r_ceil_o(size, offset, disc, xr);}//repeat r,c,q for R_RR...Q_QQ
-DISC_C_O(bitwise_xor){disc_c_ceil_o(size, offset, disc, xr, xi);}
-DISC_Q_O(bitwise_xor){disc_q_ceil_o(size, offset, disc, xr, xi, xj, xk);}
+DISC_R_O(bitwise_xor){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}//repeat r,c,q for R_RR...Q_QQ
+DISC_C_O(bitwise_xor){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset];}
+DISC_Q_O(bitwise_xor){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset]||xj[idx]!=xj[idx+offset]||xk[idx]!=xk[idx+offset];}
 
 float bitwise_xnor1(float x)
 {
@@ -1503,9 +1578,9 @@ float bitwise_xnor1(float x)
 		a&=15;
 		return !((0x6996>>a)&1);
 	}
-	return nan(0u);
+	return NAN;
 }
-float bitwise_xnor2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?~(f2i(a)^f2i(b)):nan(0u);}
+float bitwise_xnor2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?~(f2i(a)^f2i(b)):NAN;}
 G2_R_R(bitwise_xnor){IDX; ASSIGN_R(bitwise_xnor1(xr[idx]));}
 G2_C_C(bitwise_xnor){IDX; ASSIGN_C(bitwise_xnor1(xr[idx]), bitwise_xnor1(xi[idx]));}
 G2_Q_Q(bitwise_xnor){IDX; ASSIGN_Q(bitwise_xnor1(xr[idx]), bitwise_xnor1(xi[idx]), bitwise_xnor1(xj[idx]), bitwise_xnor1(xk[idx]));}
@@ -1518,9 +1593,9 @@ G2_Q_CQ(bitwise_xnor){IDX; ASSIGN_Q(bitwise_xnor2(xr[idx], yr[idx]), bitwise_xno
 G2_Q_QR(bitwise_xnor){IDX; ASSIGN_Q(bitwise_xnor2(xr[idx], yr[idx]), bitwise_xnor2(xi[idx], 0), bitwise_xnor2(xj[idx], 0), bitwise_xnor2(xk[idx], 0));}
 G2_Q_QC(bitwise_xnor){IDX; ASSIGN_Q(bitwise_xnor2(xr[idx], yr[idx]), bitwise_xnor2(xi[idx], yi[idx]), bitwise_xnor2(xj[idx], 0), bitwise_xnor2(xk[idx], 0));}
 G2_Q_QQ(bitwise_xnor){IDX; ASSIGN_Q(bitwise_xnor2(xr[idx], yr[idx]), bitwise_xnor2(xi[idx], yi[idx]), bitwise_xnor2(xj[idx], yj[idx]), bitwise_xnor2(xk[idx], yk[idx]));}
-DISC_R_O(bitwise_xnor){disc_r_ceil_o(size, offset, disc, xr);}//repeat r,c,q for R_RR...Q_QQ
-DISC_C_O(bitwise_xnor){disc_c_ceil_o(size, offset, disc, xr, xi);}
-DISC_Q_O(bitwise_xnor){disc_q_ceil_o(size, offset, disc, xr, xi, xj, xk);}
+DISC_R_O(bitwise_xnor){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}//repeat r,c,q for R_RR...Q_QQ
+DISC_C_O(bitwise_xnor){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset];}
+DISC_Q_O(bitwise_xnor){IDX; disc[idx]=xr[idx]!=xr[idx+offset]||xi[idx]!=xi[idx+offset]||xj[idx]!=xj[idx+offset]||xk[idx]!=xk[idx+offset];}
 )CLSRC";
 	static const char program08[]=R"CLSRC(
 G2_R_R(logic_equal){IDX; ASSIGN_R(xr[idx]==0);}
@@ -1535,7 +1610,7 @@ G2_R_CQ(logic_equal){IDX; ASSIGN_R(equal_cq(VEC2(x), VEC4(y)));}
 G2_R_QR(logic_equal){IDX; ASSIGN_R(equal_qr(VEC4(x), yr[idx]));}
 G2_R_QC(logic_equal){IDX; ASSIGN_R(equal_qc(VEC4(x), VEC2(y)));}
 G2_R_QQ(logic_equal){IDX; ASSIGN_R(equal_qq(VEC4(x), VEC4(y)));}
-DISC_R_O(logic_equal){disc_r_logic_divides_o(size, offset, disc, xr);}
+DISC_R_O(logic_equal){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}
 
 G2_R_R(logic_not_equal){IDX; ASSIGN_R(xr[idx]!=0);}
 G2_R_C(logic_not_equal){IDX; ASSIGN_R(istrue_c(VEC2(x)));}
@@ -1549,7 +1624,7 @@ G2_R_CQ(logic_not_equal){IDX; ASSIGN_R(!equal_cq(VEC2(x), VEC4(y)));}
 G2_R_QR(logic_not_equal){IDX; ASSIGN_R(!equal_qr(VEC4(x), yr[idx]));}
 G2_R_QC(logic_not_equal){IDX; ASSIGN_R(!equal_qc(VEC4(x), VEC2(y)));}
 G2_R_QQ(logic_not_equal){IDX; ASSIGN_R(!equal_qq(VEC4(x), VEC4(y)));}
-DISC_R_O(logic_not_equal){disc_r_logic_divides_o(size, offset, disc, xr);}
+DISC_R_O(logic_not_equal){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}
 
 G2_R_R(logic_less_l){IDX; ASSIGN_R(0<xr[idx]);}
 G2_R_C(logic_less_l){IDX; ASSIGN_R(0<xr[idx]);}
@@ -1566,7 +1641,7 @@ G2_R_CQ(logic_less){IDX; ASSIGN_R(xr[idx]<yr[idx]);}
 G2_R_QR(logic_less){IDX; ASSIGN_R(xr[idx]<yr[idx]);}
 G2_R_QC(logic_less){IDX; ASSIGN_R(xr[idx]<yr[idx]);}
 G2_R_QQ(logic_less){IDX; ASSIGN_R(xr[idx]<yr[idx]);}
-DISC_R_O(logic_less){disc_r_logic_divides_o(size, offset, disc, xr);}
+DISC_R_O(logic_less){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}
 )CLSRC";
 	static const char program09[]=R"CLSRC(
 G2_R_R(logic_less_equal_l){IDX; ASSIGN_R(0<=xr[idx]);}
@@ -1584,7 +1659,7 @@ G2_R_CQ(logic_less_equal){IDX; ASSIGN_R(xr[idx]<=yr[idx]);}
 G2_R_QR(logic_less_equal){IDX; ASSIGN_R(xr[idx]<=yr[idx]);}
 G2_R_QC(logic_less_equal){IDX; ASSIGN_R(xr[idx]<=yr[idx]);}
 G2_R_QQ(logic_less_equal){IDX; ASSIGN_R(xr[idx]<=yr[idx]);}
-DISC_R_O(logic_less_equal){disc_r_logic_divides_o(size, offset, disc, xr);}
+DISC_R_O(logic_less_equal){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}
 
 G2_R_R(logic_greater_l){IDX; ASSIGN_R(0>xr[idx]);}
 G2_R_C(logic_greater_l){IDX; ASSIGN_R(0>xr[idx]);}
@@ -1601,7 +1676,7 @@ G2_R_CQ(logic_gerater){IDX; ASSIGN_R(xr[idx]>yr[idx]);}
 G2_R_QR(logic_gerater){IDX; ASSIGN_R(xr[idx]>yr[idx]);}
 G2_R_QC(logic_gerater){IDX; ASSIGN_R(xr[idx]>yr[idx]);}
 G2_R_QQ(logic_gerater){IDX; ASSIGN_R(xr[idx]>yr[idx]);}
-DISC_R_O(logic_greater){disc_r_logic_divides_o(size, offset, disc, xr);}
+DISC_R_O(logic_greater){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}
 
 G2_R_R(logic_greater_equal_l){IDX; ASSIGN_R(0>=xr[idx]);}
 G2_R_C(logic_greater_equal_l){IDX; ASSIGN_R(0>=xr[idx]);}
@@ -1618,13 +1693,13 @@ G2_R_CQ(logic_gerater_equal){IDX; ASSIGN_R(xr[idx]>=yr[idx]);}
 G2_R_QR(logic_gerater_equal){IDX; ASSIGN_R(xr[idx]>=yr[idx]);}
 G2_R_QC(logic_gerater_equal){IDX; ASSIGN_R(xr[idx]>=yr[idx]);}
 G2_R_QQ(logic_gerater_equal){IDX; ASSIGN_R(xr[idx]>=yr[idx]);}
-DISC_R_O(logic_greater_equal){disc_r_logic_divides_o(size, offset, disc, xr);}
+DISC_R_O(logic_greater_equal){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}
 )CLSRC";
 	static const char program10[]=R"CLSRC(
 G2_R_R(logic_not){IDX; ASSIGN_R(xr[idx]==0);}
 G2_R_C(logic_not){IDX; ASSIGN_R(!istrue_c(VEC2(x)));}
 G2_R_Q(logic_not){IDX; ASSIGN_R(!istrue_q(VEC4(x)));}
-DISC_R_O(logic_not){disc_r_logic_divides_o(size, offset, disc, xr);}
+DISC_R_O(logic_not){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}
 
 G2_R_RR(logic_and){IDX; ASSIGN_R(xr[idx]&&yr[idx]);}
 G2_R_RC(logic_and){IDX; ASSIGN_R(xr[idx]&&istrue_c(VEC2(y)));}
@@ -1635,7 +1710,7 @@ G2_R_CQ(logic_and){IDX; ASSIGN_R(istrue_c(VEC2(x))&&istrue_q(VEC4(y)));}
 G2_R_QR(logic_and){IDX; ASSIGN_R(istrue_q(VEC4(x))&&yr[idx]);}
 G2_R_QC(logic_and){IDX; ASSIGN_R(istrue_q(VEC4(x))&&istrue_c(VEC2(y)));}
 G2_R_QQ(logic_and){IDX; ASSIGN_R(istrue_q(VEC4(x))&&istrue_q(VEC4(y)));}
-DISC_R_O(logic_and){disc_r_logic_divides_o(size, offset, disc, xr);}
+DISC_R_O(logic_and){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}
 
 G2_R_RR(logic_or){IDX; ASSIGN_R(xr[idx]||yr[idx]);}
 G2_R_RC(logic_or){IDX; ASSIGN_R(xr[idx]||istrue_c(VEC2(y)));}
@@ -1646,7 +1721,7 @@ G2_R_CQ(logic_or){IDX; ASSIGN_R(istrue_c(VEC2(x))||istrue_q(VEC4(y)));}
 G2_R_QR(logic_or){IDX; ASSIGN_R(istrue_q(VEC4(x))||yr[idx]);}
 G2_R_QC(logic_or){IDX; ASSIGN_R(istrue_q(VEC4(x))||istrue_c(VEC2(y)));}
 G2_R_QQ(logic_or){IDX; ASSIGN_R(istrue_q(VEC4(x))||istrue_q(VEC4(y)));}
-DISC_R_O(logic_or){disc_r_logic_divides_o(size, offset, disc, xr);}
+DISC_R_O(logic_or){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}
 
 G2_R_RR(logic_xor){IDX; ASSIGN_R((xr[idx]!=0)^(yr[idx]!=0));}
 G2_R_RC(logic_xor){IDX; ASSIGN_R((xr[idx]!=0)^istrue_c(VEC2(y)));}
@@ -1657,7 +1732,7 @@ G2_R_CQ(logic_xor){IDX; ASSIGN_R(istrue_c(VEC2(x))^istrue_q(VEC4(y)));}
 G2_R_QR(logic_xor){IDX; ASSIGN_R(istrue_q(VEC4(x))^(yr[idx]!=0));}
 G2_R_QC(logic_xor){IDX; ASSIGN_R(istrue_q(VEC4(x))^istrue_c(VEC2(y)));}
 G2_R_QQ(logic_xor){IDX; ASSIGN_R(istrue_q(VEC4(x))^istrue_q(VEC4(y)));}
-DISC_R_O(logic_xor){disc_r_logic_divides_o(size, offset, disc, xr);}
+DISC_R_O(logic_xor){IDX; disc[idx]=xr[idx]!=xr[idx+offset];}
 )CLSRC";
 	static const char program11[]=R"CLSRC(
 G2_R_RR(condition_zero){IDX; ASSIGN_R(xr[idx]!=0?xr[idx]:yr[idx]);}
@@ -1872,9 +1947,9 @@ G2_Q_Q(sgn)
 	else
 		ASSIGN_Q(0, 0, 0, 0);
 }
-DISC_R_I(sgn){disc_r_divide_i(size, offset, disc, xr);}
-DISC_C_I(sgn){disc_c_divide_i(size, offset, disc, xr, xi);}
-DISC_Q_I(sgn){disc_q_divide_i(size, offset, disc, xr, xi, xj, xk);}
+DISC_R_I(sgn){IDX; float x0r=xr[idx], x1r=xr[idx+offset]; disc[idx]=x0r<0?x1r>=0:x0r>0?x1r<=0:x1r!=0;}
+DISC_C_I(sgn){IDX; disc[idx]=false;}//TODO
+DISC_Q_I(sgn){IDX; disc[idx]=false;}//
 
 G2_R_R(sq){IDX; float a=xr[idx]; ASSIGN_R(a*a);}
 G2_C_C(sq){IDX; float2 a=VEC2(x); float2 ret=sq_c(a); RET_C;}
@@ -1935,6 +2010,64 @@ G2_R_R(erf){IDX; ASSIGN_R(erf(xr[idx]));}
 //zeta
 )CLSRC";
 	static const char program13[]=R"CLSRC(
+float2	tgamma_c(float2 a)//http://en.wikipedia.org/wiki/Lanczos_approximation
+{
+	const float g=7, p[]={0.99999999999980993f, 676.5203681218851f, -1259.1392167224028f, 771.32342877765313f, -176.61502916214059f, 12.507343278686905f, -0.13857109526572012f, 9.9843695780195716e-6f, 1.5056327351493116e-7f};
+	if(a.x<0.5f)
+	{
+		float2 t1=(float2)(p[0], 0);
+		for(int k=1;k<g+2;++k)
+			t1+=div_rc(p[k], (float2)(k-a.x, -a.y));
+		float2 t2=(float2)(g+0.5f-a.x, -a.y);
+
+		float2 spa_s2p=mul_cr(sin_c(mul_rc(_pi, a)), _sqrt_2pi);
+		float2 temp2=pow_cc(t2, (float2)(0.5f-a.x, -a.y));
+		float2 temp3=mul_cc(exp_c((float2)(-t2.x, -t2.y)), t1);
+		return div_rc(_pi, mul_cc(mul_cc(spa_s2p, temp2), temp3));
+	//	return _pi/(sin(_pi*a)*_sqrt_2pi*pow(t2, 0.5f-a)*exp(-t2)*t1);//C++
+	}
+	else
+	{
+		float2 t1=(float2)(p[0], 0);
+		for(int k=1;k<g+2;++k)
+			t1+=div_rc(p[k], (float2)(k-1+a.x, a.y));
+		float2 t2=(float2)(g+0.5f-1+a.x, a.y);
+
+		float2 temp=mul_rc(_sqrt_2pi, pow_cc(t2, (float2)(0.5f-1+a.x, a.y)));
+		float2 temp2=mul_cc(exp_c((float2)(-t2.x, -t2.y)), t1);
+		return mul_cc(temp, temp2);
+	//	return _sqrt_2pi*pow(t2, 0.5f-1.+x)*exp(-t2)*t1;//C++
+	}
+}
+float4	tgamma_q(float4 a)
+{
+	const float g=7, p[]={0.99999999999980993f, 676.5203681218851f, -1259.1392167224028f, 771.32342877765313f, -176.61502916214059f, 12.507343278686905f, -0.13857109526572012f, 9.9843695780195716e-6f, 1.5056327351493116e-7f};
+	if(a.x<0.5f)
+	{
+		float4 t1=(float4)(p[0], 0, 0, 0);
+		for(int k=1;k<g+2;++k)
+			t1+=div_rq(p[k], (float4)(k-a.x, -a.y, -a.z, -a.w));
+		float4 t2=(float4)(g+0.5f-a.x, -a.y, -a.z, -a.w);
+
+		float4 spa_s2p=mul_qr(sin_q(mul_rq(_pi, a)), _sqrt_2pi);
+		float4 temp2=pow_qq(t2, (float4)(0.5f-a.x, -a.y, -a.z, -a.w));
+		float4 temp3=mul_qq(exp_q((float4)(-t2.x, -t2.y, -t2.z, -t2.w)), t1);
+		return div_rq(_pi, mul_qq(mul_qq(spa_s2p, temp2), temp3));
+	//	return _pi/(sin(_pi*a)*_sqrt_2pi*pow(t2, 0.5f-a)*exp(-t2)*t1);//C++
+	}
+	else
+	{
+		float4 t1=(float4)(p[0], 0, 0, 0);
+		for(int k=1;k<g+2;++k)
+			t1+=div_rq(p[k], (float4)(k-1+a.x, a.y, a.z, a.w));
+		float4 t2=(float4)(g+0.5f-1+a.x, a.y, a.z, a.w);
+
+		float4 temp=mul_rq(_sqrt_2pi, pow_qq(t2, (float4)(0.5f-1+a.x, a.y, a.z, a.w)));
+		float4 temp2=mul_qq(exp_q((float4)(-t2.x, -t2.y, -t2.z, -t2.w)), t1);
+		return mul_qq(temp, temp2);
+	//	return _sqrt_2pi*pow(t2, 0.5f-1.f+x)*exp(-t2)*t1;//C++
+	}
+}
 G2_R_R(tgamma){IDX; ASSIGN_R(tgamma(xr[idx]));}
 G2_C_C(tgamma)
 {
@@ -2104,142 +2237,6 @@ DISC_CC_I(combination){IDX; disc[idx]=false;}
 DISC_QQ_I(combination){IDX; disc[idx]=false;}
 )CLSRC";
 	static const char program14[]=R"CLSRC(
-//complex trig & hyp functions
-float2 coshsinh(float x)
-{
-	float exp_x=exp(x);
-	float2 e=(float2)(exp_x, 1/exp_x)*0.5f;
-	return (float2)(e.x+e.y, e.x-e.y);
-}
-float2 cos_c(float2 a){return (float2)(cos(a.x)*cosh(a.y), -sin(a.x)*sinh(a.y));}
-float4 cos_q(float4 a)
-{
-	float cos_r, sin_r=sincos(a.x, &cos_r);
-	float abs_v=sqrt(a.y*a.y+a.z*a.z+a.w*a.w);
-	float2 chsh_absv=coshsinh(abs_v);
-	float v_mul=-sin_r*chsh_absv.y/abs_v;
-	return (float4)(cos_r*chsh_absv.x, v_mul*a.y, v_mul*a.z, v_mul*a.w);
-}
-float2 acos_c(float2 a)
-{
-	const float2 m_i=(float2)(0, -1);
-	float2 temp=sq_c(a);
-	temp.x-=1;
-	return mul_cc(log_c(a+sqrt_c(temp)), m_i);
-}
-float4 acos_q(float4 a)
-{
-	const float2 m_i=(float2)(0, -1);
-	float4 temp=sq_q(a);
-	temp.x-=1;
-	return mul_qc(log_q(a+sqrt_q(temp)), m_i);
-}
-float2 cosh_c(float2 a){return (float2)(cos(a.x)*cosh(a.y), -sin(a.x)*sinh(a.y));}
-float4 cosh_q(float4 a)
-{
-	float4 exp_a=exp_q(a), exp_ma=inv_q(exp_a);
-	return mul_qr(exp_a+exp_ma, 0.5f);
-}
-float2 acosh_c(float2 a)
-{
-	float2 temp=sq_c(a);
-	temp.x-=1;
-	return log_c(a+sqrt_c(temp));
-}
-float4 acosh_q(float4 a)
-{
-	float4 temp=sq_q(a);
-	temp.x-=1;
-	return log_q(a+sqrt_q(temp));
-}
-float2 sin_c(float2 a){return (float2)(sin(a.x)*cosh(a.y), cos(a.x)*sinh(a.y));}
-float4 sin_q(float4 a)
-{
-	float cos_r, sin_r=sincos(a.x, &cos_r);
-	float abs_v=sqrt(a.y*a.y+a.z*a.z+a.w*a.w);
-	float2 chsh_absv=coshsinh(abs_v);
-	float v_mul=-cos_r*chsh_absv.y/abs_v;
-	return (float4)(sin_r*chsh_absv.x, v_mul*a.y, v_mul*a.z, v_mul*a.w);
-}
-float2 asin_c(float2 a)
-{
-	const float2 i=(float2)(0, 1), m_i=(float2)(0, -1);
-	float2 temp=sq_c(a);
-	temp.x=1-temp.x, temp.y=-temp.y;
-	return mul_cc(log_c(mul_cc(a, i)+sqrt_c(temp)), m_i);
-}
-float4 asin_q(float4 a)
-{
-	const float2 i=(float2)(0, 1), m_i=(float2)(0, -1);
-	float4 temp=sq_q(a);
-	temp=(float4)(1, 0, 0, 0)-temp;
-	return mul_qc(log_q(mul_qc(a, i)+sqrt_q(temp)), m_i);
-}
-float2 sinh_c(float2 a){return (float2)(sinh(a.x)*cos(a.y), cosh(a.x)*sin(a.y));}
-float4 sinh_q(float4 a)
-{
-	float4 exp_a=exp_q(a), exp_ma=inv_q(exp_a);
-	return mul_qr(exp_a-exp_ma, 0.5f);
-}
-float2 asinh_c(float2 a)
-{
-	float2 temp=sq_c(a);
-	temp.x+=1;
-	return log_c(a+sqrt_c(temp));
-}
-float4 asinh_q(float4 a)
-{
-	float4 temp=sq_q(a);
-	temp.x+=1;
-	return log_q(a+sqrt_q(temp));
-}
-float2 tan_c(float2 a)
-{
-	const float2 _2i=(float2)(0, 2), one=(float2)(1, 0);
-	float2 exp2ia=exp_c(mul_cc(_2i, a));
-	return div_cc(exp2ia-one, exp2ia+one);
-}
-float4 tan_q(float4 a)
-{
-	const float2 _2i=(float2)(0, 2);
-	const float4 one=(float4)(1, 0, 0, 0);
-	float4 exp2ia=exp_q(mul_cq(_2i, a));
-	return div_qq(exp2ia-one, exp2ia+one);
-}
-float2 atan_c(float2 a)
-{
-	const float2 i=(float2)(0, 1), i_2=(float2)(0, 0.5f);
-	return mul_cc(i_2, log_c(div_cc(i+a, i-a)));
-}
-float4 atan_q(float4 a)
-{
-	const float4 i=(float4)(0, 1, 0, 0);
-	const float2 i_2=(float2)(0, 0.5f);
-	return mul_cq(i_2, log_q(div_qq(i+a, i-a)));
-}
-float2 tanh_c(float2 a)
-{
-	const float2 one=(float2)(1, 0);
-	float2 exp2a=exp_c(a+a);
-	return div_cc(exp2a-one, exp2a+one);
-}
-float4 tanh_q(float4 a)
-{
-	const float4 one=(float4)(1, 0, 0, 0);
-	float4 exp2a=exp_q(a+a);
-	return div_qq(exp2a-one, exp2a+one);
-}
-float2 atanh_c(float2 a)
-{
-	const float2 one=(float2)(1, 0);
-	return mul_rc(0.5f, log_c(div_cc(one+a, one-a)));
-}
-float4 atanh_q(float4 a)
-{
-	const float4 one=(float4)(1, 0, 0, 0);
-	return mul_rq(0.5f, log_q(div_qq(one+a, one-a)));
-}
-
 //back to G2 kernels
 G2_R_R(cos){IDX; ASSIGN_R(cos(xr[idx]));}
 G2_C_C(cos){IDX; float2 ret=cos_c(VEC2(x)); RET_C;}
@@ -2275,9 +2272,9 @@ G2_Q_Q(acosh){IDX; float4 ret=acosh_q(VEC4(x)); RET_Q;}
 G2_R_R(cosc){IDX; float a=xr[idx]; ASSIGN_R(cos(a)/a);}
 G2_C_C(cosc){IDX; float2 a=VEC2(x), ret=div_cc(cos_c(a), a); RET_C;}
 G2_Q_Q(cosc){IDX; float4 a=VEC4(x), ret=div_qq(cos_q(a), a); RET_Q;}
-DISC_R_I(cosc){disc_r_divide_i(size, offset, disc, xr);}
-DISC_C_I(cosc){disc_c_divide_i(size, offset, disc, xr, xi);}
-DISC_Q_I(cosc){disc_q_divide_i(size, offset, disc, xr, xi, xj, xk);}
+DISC_R_I(cosc){IDX; float x0r=xr[idx], x1r=xr[idx+offset]; disc[idx]=x0r<0?x1r>=0:x0r>0?x1r<=0:x1r!=0;}
+DISC_C_I(cosc){IDX; disc[idx]=false;}//TODO
+DISC_Q_I(cosc){IDX; disc[idx]=false;}//
 
 G2_R_R(sec){IDX; ASSIGN_R(1/cos(xr[idx]));}
 G2_C_C(sec){IDX; float2 ret=inv_c(cos_c(VEC2(x))); RET_C;}
@@ -2315,8 +2312,8 @@ DISC_Q_I(sec){IDX; disc[idx]=false;}//TODO
 
 G2_C_C(asec){IDX; float2 ret=acos_c(inv_c(VEC2(x))); RET_C;}
 G2_Q_Q(asec){IDX; float4 ret=acos_q(inv_q(VEC4(x))); RET_Q;}
-DISC_C_I(asec){disc_c_divide_i(size, offset, disc, xr, xi);}
-DISC_Q_I(asec){disc_q_divide_i(size, offset, disc, xr, xi, xj, xk);}
+DISC_C_I(asec){IDX; disc[idx]=false;}//TODO	disc c divise i
+DISC_Q_I(asec){IDX; disc[idx]=false;}//		disc q divide i
 
 G2_R_R(sech){IDX; ASSIGN_R(1/cosh(xr[idx]));}
 G2_C_C(sech){IDX; float2 ret=inv_c(cosh_c(VEC2(x))); RET_C;}
@@ -2363,142 +2360,6 @@ DISC_C_I(asech)
 DISC_Q_I(asech){IDX; disc[idx]=false;}
 )CLSRC";
 	static const char program15[]=R"CLSRC(
-//complex trig & hyp functions
-float2 coshsinh(float x)
-{
-	float exp_x=exp(x);
-	float2 e=(float2)(exp_x, 1/exp_x)*0.5f;
-	return (float2)(e.x+e.y, e.x-e.y);
-}
-float2 cos_c(float2 a){return (float2)(cos(a.x)*cosh(a.y), -sin(a.x)*sinh(a.y));}
-float4 cos_q(float4 a)
-{
-	float cos_r, sin_r=sincos(a.x, &cos_r);
-	float abs_v=sqrt(a.y*a.y+a.z*a.z+a.w*a.w);
-	float2 chsh_absv=coshsinh(abs_v);
-	float v_mul=-sin_r*chsh_absv.y/abs_v;
-	return (float4)(cos_r*chsh_absv.x, v_mul*a.y, v_mul*a.z, v_mul*a.w);
-}
-float2 acos_c(float2 a)
-{
-	const float2 m_i=(float2)(0, -1);
-	float2 temp=sq_c(a);
-	temp.x-=1;
-	return mul_cc(log_c(a+sqrt_c(temp)), m_i);
-}
-float4 acos_q(float4 a)
-{
-	const float2 m_i=(float2)(0, -1);
-	float4 temp=sq_q(a);
-	temp.x-=1;
-	return mul_qc(log_q(a+sqrt_q(temp)), m_i);
-}
-float2 cosh_c(float2 a){return (float2)(cos(a.x)*cosh(a.y), -sin(a.x)*sinh(a.y));}
-float4 cosh_q(float4 a)
-{
-	float4 exp_a=exp_q(a), exp_ma=inv_q(exp_a);
-	return mul_qr(exp_a+exp_ma, 0.5f);
-}
-float2 acosh_c(float2 a)
-{
-	float2 temp=sq_c(a);
-	temp.x-=1;
-	return log_c(a+sqrt_c(temp));
-}
-float4 acosh_q(float4 a)
-{
-	float4 temp=sq_q(a);
-	temp.x-=1;
-	return log_q(a+sqrt_q(temp));
-}
-float2 sin_c(float2 a){return (float2)(sin(a.x)*cosh(a.y), cos(a.x)*sinh(a.y));}
-float4 sin_q(float4 a)
-{
-	float cos_r, sin_r=sincos(a.x, &cos_r);
-	float abs_v=sqrt(a.y*a.y+a.z*a.z+a.w*a.w);
-	float2 chsh_absv=coshsinh(abs_v);
-	float v_mul=-cos_r*chsh_absv.y/abs_v;
-	return (float4)(sin_r*chsh_absv.x, v_mul*a.y, v_mul*a.z, v_mul*a.w);
-}
-float2 asin_c(float2 a)
-{
-	const float2 i=(float2)(0, 1), m_i=(float2)(0, -1);
-	float2 temp=sq_c(a);
-	temp.x=1-temp.x, temp.y=-temp.y;
-	return mul_cc(log_c(mul_cc(a, i)+sqrt_c(temp)), m_i);
-}
-float4 asin_q(float4 a)
-{
-	const float2 i=(float2)(0, 1), m_i=(float2)(0, -1);
-	float4 temp=sq_q(a);
-	temp=(float4)(1, 0, 0, 0)-temp;
-	return mul_qc(log_q(mul_qc(a, i)+sqrt_q(temp)), m_i);
-}
-float2 sinh_c(float2 a){return (float2)(sinh(a.x)*cos(a.y), cosh(a.x)*sin(a.y));}
-float4 sinh_q(float4 a)
-{
-	float4 exp_a=exp_q(a), exp_ma=inv_q(exp_a);
-	return mul_qr(exp_a-exp_ma, 0.5f);
-}
-float2 asinh_c(float2 a)
-{
-	float2 temp=sq_c(a);
-	temp.x+=1;
-	return log_c(a+sqrt_c(temp));
-}
-float4 asinh_q(float4 a)
-{
-	float4 temp=sq_q(a);
-	temp.x+=1;
-	return log_q(a+sqrt_q(temp));
-}
-float2 tan_c(float2 a)
-{
-	const float2 _2i=(float2)(0, 2), one=(float2)(1, 0);
-	float2 exp2ia=exp_c(mul_cc(_2i, a));
-	return div_cc(exp2ia-one, exp2ia+one);
-}
-float4 tan_q(float4 a)
-{
-	const float2 _2i=(float2)(0, 2);
-	const float4 one=(float4)(1, 0, 0, 0);
-	float4 exp2ia=exp_q(mul_cq(_2i, a));
-	return div_qq(exp2ia-one, exp2ia+one);
-}
-float2 atan_c(float2 a)
-{
-	const float2 i=(float2)(0, 1), i_2=(float2)(0, 0.5f);
-	return mul_cc(i_2, log_c(div_cc(i+a, i-a)));
-}
-float4 atan_q(float4 a)
-{
-	const float4 i=(float4)(0, 1, 0, 0);
-	const float2 i_2=(float2)(0, 0.5f);
-	return mul_cq(i_2, log_q(div_qq(i+a, i-a)));
-}
-float2 tanh_c(float2 a)
-{
-	const float2 one=(float2)(1, 0);
-	float2 exp2a=exp_c(a+a);
-	return div_cc(exp2a-one, exp2a+one);
-}
-float4 tanh_q(float4 a)
-{
-	const float4 one=(float4)(1, 0, 0, 0);
-	float4 exp2a=exp_q(a+a);
-	return div_qq(exp2a-one, exp2a+one);
-}
-float2 atanh_c(float2 a)
-{
-	const float2 one=(float2)(1, 0);
-	return mul_rc(0.5f, log_c(div_cc(one+a, one-a)));
-}
-float4 atanh_q(float4 a)
-{
-	const float4 one=(float4)(1, 0, 0, 0);
-	return mul_rq(0.5f, log_q(div_qq(one+a, one-a)));
-}
-
 //back to G2 kernels
 G2_R_R(sin){IDX; ASSIGN_R(sin(xr[idx]));}
 G2_C_C(sin){IDX; float2 ret=sin_c(VEC2(x)); RET_C;}
@@ -2506,8 +2367,23 @@ G2_Q_Q(sin){IDX; float4 ret=sin_q(VEC4(x)); RET_Q;}
 
 G2_C_C(asin){IDX; float2 ret=asin_c(VEC2(x)); RET_C;}
 G2_Q_Q(asin){IDX; float4 ret=asin_q(VEC4(x)); RET_Q;}
-DISC_C_I(asin){disc_c_acos_i(size, offset, disc, xr, xi);}
-DISC_Q_I(asin){disc_q_acos_i(size, offset, disc, xr, xi, xj, xk);}
+DISC_C_I(asin)
+{
+	IDX;
+	float2 x0=VEC2(x), x1=(float2)(xr[idx+offset], xi[idx+offset]);
+	if(x0.y==x0.y)
+		disc[idx]=false;
+	else if(x0.x==x0.x)
+		disc[idx]=(x0.y<=0?x1.y>0:x1.y<=0)&&(x0.x<-1||x0.x>1);
+	else if((x0.y<=0&&x1.y>0)||(x1.y<=0&&x0.y>0))
+	{
+		float t=_1d_zero_crossing(x0.x, x0.y, x1.x, x1.y);
+		disc[idx]=t<-1||t>1;
+	}
+	else
+		disc[idx]=false;
+}
+DISC_Q_I(asin){IDX; disc[idx]=false;}//TODO
 
 G2_R_R(sinh){IDX; ASSIGN_R(sinh(xr[idx]));}
 G2_C_C(sinh){IDX; float2 ret=sinh_c(VEC2(x)); RET_C;}
@@ -2516,7 +2392,22 @@ G2_Q_Q(sinh){IDX; float4 ret=sinh_q(VEC4(x)); RET_Q;}
 G2_R_R(asinh){IDX; ASSIGN_R(asinh(xr[idx]));}
 G2_C_C(asinh){IDX; float2 ret=asinh_c(VEC2(x)); RET_C;}
 G2_Q_Q(asinh){IDX; float4 ret=asinh_q(VEC4(x)); RET_Q;}
-DISC_C_I(asinh){disc_c_acos_i(size, offset, disc, xi, xr);}//sic
+DISC_C_I(asinh)
+{
+	IDX;
+	float2 x0=(float2)(xi[idx], xr[idx]), x1=(float2)(xi[idx+offset], xr[idx+offset]);//sic
+	if(x0.y==x0.y)
+		disc[idx]=false;
+	else if(x0.x==x0.x)
+		disc[idx]=(x0.y<=0?x1.y>0:x1.y<=0)&&(x0.x<-1||x0.x>1);
+	else if((x0.y<=0&&x1.y>0)||(x1.y<=0&&x0.y>0))
+	{
+		float t=_1d_zero_crossing(x0.x, x0.y, x1.x, x1.y);
+		disc[idx]=t<-1||t>1;
+	}
+	else
+		disc[idx]=false;
+}
 DISC_Q_I(asinh){IDX; disc[idx]=false;}//TODO
 
 G2_R_R(sinc){IDX; float a=xr[idx]; ASSIGN_R(a!=0?sin(a)/a:1);}
@@ -2582,161 +2473,52 @@ DISC_Q_I(acsc){IDX; disc[idx]=false;}//TODO
 G2_R_R(csch){IDX; ASSIGN_R(1/sinh(xr[idx]));}
 G2_C_C(csch){IDX; float2 ret=inv_c(sinh_c(VEC2(x))); RET_C;}
 G2_Q_Q(csch){IDX; float4 ret=inv_q(sinh_q(VEC4(x))); RET_Q;}
-DISC_R_I(csch){disc_r_divide_i(size, offset, disc, xr);}
+DISC_R_I(csch){IDX; float x0r=xr[idx], x1r=xr[idx+offset]; disc[idx]=x0r<0?x1r>=0:x0r>0?x1r<=0:x1r!=0;}
 DISC_C_I(csch){disc_c_csc_i(size, offset, disc, xi, xr);}//sic
 DISC_Q_I(csch){IDX; disc[idx]=false;}//TODO
 
 G2_R_R(acsch){IDX; ASSIGN_R(asinh(1/xr[idx]));}
 G2_C_C(acsch){IDX; float2 ret=asinh_c(inv_c(VEC2(x))); RET_C;}
 G2_Q_Q(acsch){IDX; float4 ret=asinh_q(inv_q(VEC4(x))); RET_Q;}
-DISC_R_I(acsch){disc_r_divide_i(size, offset, disc, xr);}
+DISC_R_I(acsch){IDX; float x0r=xr[idx], x1r=xr[idx+offset]; disc[idx]=x0r<0?x1r>=0:x0r>0?x1r<=0:x1r!=0;}
 DISC_C_I(acsch){disc_c_acsc_i(size, offset, disc, xi, xr);}//sic
 DISC_Q_I(acsch){IDX; disc[idx]=false;}//TODO
 )CLSRC";
 	static const char program16[]=R"CLSRC(
-//complex trig & hyp functions
-float2 coshsinh(float x)
-{
-	float exp_x=exp(x);
-	float2 e=(float2)(exp_x, 1/exp_x)*0.5f;
-	return (float2)(e.x+e.y, e.x-e.y);
-}
-float2 cos_c(float2 a){return (float2)(cos(a.x)*cosh(a.y), -sin(a.x)*sinh(a.y));}
-float4 cos_q(float4 a)
-{
-	float cos_r, sin_r=sincos(a.x, &cos_r);
-	float abs_v=sqrt(a.y*a.y+a.z*a.z+a.w*a.w);
-	float2 chsh_absv=coshsinh(abs_v);
-	float v_mul=-sin_r*chsh_absv.y/abs_v;
-	return (float4)(cos_r*chsh_absv.x, v_mul*a.y, v_mul*a.z, v_mul*a.w);
-}
-float2 acos_c(float2 a)
-{
-	const float2 m_i=(float2)(0, -1);
-	float2 temp=sq_c(a);
-	temp.x-=1;
-	return mul_cc(log_c(a+sqrt_c(temp)), m_i);
-}
-float4 acos_q(float4 a)
-{
-	const float2 m_i=(float2)(0, -1);
-	float4 temp=sq_q(a);
-	temp.x-=1;
-	return mul_qc(log_q(a+sqrt_q(temp)), m_i);
-}
-float2 cosh_c(float2 a){return (float2)(cos(a.x)*cosh(a.y), -sin(a.x)*sinh(a.y));}
-float4 cosh_q(float4 a)
-{
-	float4 exp_a=exp_q(a), exp_ma=inv_q(exp_a);
-	return mul_qr(exp_a+exp_ma, 0.5f);
-}
-float2 acosh_c(float2 a)
-{
-	float2 temp=sq_c(a);
-	temp.x-=1;
-	return log_c(a+sqrt_c(temp));
-}
-float4 acosh_q(float4 a)
-{
-	float4 temp=sq_q(a);
-	temp.x-=1;
-	return log_q(a+sqrt_q(temp));
-}
-float2 sin_c(float2 a){return (float2)(sin(a.x)*cosh(a.y), cos(a.x)*sinh(a.y));}
-float4 sin_q(float4 a)
-{
-	float cos_r, sin_r=sincos(a.x, &cos_r);
-	float abs_v=sqrt(a.y*a.y+a.z*a.z+a.w*a.w);
-	float2 chsh_absv=coshsinh(abs_v);
-	float v_mul=-cos_r*chsh_absv.y/abs_v;
-	return (float4)(sin_r*chsh_absv.x, v_mul*a.y, v_mul*a.z, v_mul*a.w);
-}
-float2 asin_c(float2 a)
-{
-	const float2 i=(float2)(0, 1), m_i=(float2)(0, -1);
-	float2 temp=sq_c(a);
-	temp.x=1-temp.x, temp.y=-temp.y;
-	return mul_cc(log_c(mul_cc(a, i)+sqrt_c(temp)), m_i);
-}
-float4 asin_q(float4 a)
-{
-	const float2 i=(float2)(0, 1), m_i=(float2)(0, -1);
-	float4 temp=sq_q(a);
-	temp=(float4)(1, 0, 0, 0)-temp;
-	return mul_qc(log_q(mul_qc(a, i)+sqrt_q(temp)), m_i);
-}
-float2 sinh_c(float2 a){return (float2)(sinh(a.x)*cos(a.y), cosh(a.x)*sin(a.y));}
-float4 sinh_q(float4 a)
-{
-	float4 exp_a=exp_q(a), exp_ma=inv_q(exp_a);
-	return mul_qr(exp_a-exp_ma, 0.5f);
-}
-float2 asinh_c(float2 a)
-{
-	float2 temp=sq_c(a);
-	temp.x+=1;
-	return log_c(a+sqrt_c(temp));
-}
-float4 asinh_q(float4 a)
-{
-	float4 temp=sq_q(a);
-	temp.x+=1;
-	return log_q(a+sqrt_q(temp));
-}
-float2 tan_c(float2 a)
-{
-	const float2 _2i=(float2)(0, 2), one=(float2)(1, 0);
-	float2 exp2ia=exp_c(mul_cc(_2i, a));
-	return div_cc(exp2ia-one, exp2ia+one);
-}
-float4 tan_q(float4 a)
-{
-	const float2 _2i=(float2)(0, 2);
-	const float4 one=(float4)(1, 0, 0, 0);
-	float4 exp2ia=exp_q(mul_cq(_2i, a));
-	return div_qq(exp2ia-one, exp2ia+one);
-}
-float2 atan_c(float2 a)
-{
-	const float2 i=(float2)(0, 1), i_2=(float2)(0, 0.5f);
-	return mul_cc(i_2, log_c(div_cc(i+a, i-a)));
-}
-float4 atan_q(float4 a)
-{
-	const float4 i=(float4)(0, 1, 0, 0);
-	const float2 i_2=(float2)(0, 0.5f);
-	return mul_cq(i_2, log_q(div_qq(i+a, i-a)));
-}
-float2 tanh_c(float2 a)
-{
-	const float2 one=(float2)(1, 0);
-	float2 exp2a=exp_c(a+a);
-	return div_cc(exp2a-one, exp2a+one);
-}
-float4 tanh_q(float4 a)
-{
-	const float4 one=(float4)(1, 0, 0, 0);
-	float4 exp2a=exp_q(a+a);
-	return div_qq(exp2a-one, exp2a+one);
-}
-float2 atanh_c(float2 a)
-{
-	const float2 one=(float2)(1, 0);
-	return mul_rc(0.5f, log_c(div_cc(one+a, one-a)));
-}
-float4 atanh_q(float4 a)
-{
-	const float4 one=(float4)(1, 0, 0, 0);
-	return mul_rq(0.5f, log_q(div_qq(one+a, one-a)));
-}
-
 //back to G2 kernels
 G2_R_R(tan){IDX; ASSIGN_R(tan(xr[idx]));}
 G2_C_C(tan){IDX; float2 ret=tan_c(VEC2(x)); RET_C;}
 G2_Q_Q(tan){IDX; float4 ret=tan_q(VEC4(x)); RET_Q;}
-DISC_R_I(tan){disc_r_sec_i(size, offset, disc, xr);}
-DISC_C_I(tan){disc_c_sec_i(size, offset, disc, xr, xi);}
-DISC_Q_I(tan){disc_q_sec_i(size, offset, disc, xr, xi, xj, xk);}
+DISC_R_I(tan)
+{
+	IDX;
+	float x0=xr[idx], x1=xr[idx+offset];
+	disc[idx]=fabs(x1-x0)>3.2||_1d_int_in_range(x0/_pi-0.5f, x1/_pi-0.5f);
+}
+DISC_C_I(tan)
+{
+	IDX;
+	float2 x0=VEC2(x), x1=(float2)(xr[idx+offset], xi[idx+offset]);
+	if(x0.x==x1.x)
+	{
+		if(x0.y==x1.y)
+			disc[idx]=false;
+		else
+		{
+			float t=x0.x/_pi-0.5f;
+			disc[idx]=t==floor(t);
+		}
+	}
+	else if(x0.y==x1.y)
+		disc[idx]=x0.y==0&&_1d_int_in_range(x0.x/_pi-0.5f, x1.x/_pi-0.5f);
+	if(sign(x0.y)!=sign(x1.y))
+	{
+		float t=_1d_zero_crossing(x0.x, x0.y, x1.x, x0.y)/_pi-0.5f;
+		disc[idx]=t==floor(t);
+	}
+	disc[idx]=false;
+}
+DISC_Q_I(tan){IDX; disc[idx]=false;}//TODO
 
 float atan_addition(float x, float y){return x<0?y<0?-_pi:_pi:0;}
 G2_R_R(atan){IDX; ASSIGN_R(atan(xr[idx]));}
@@ -2807,7 +2589,22 @@ G2_Q_QQ(atan)
 	float4 ret=atan_q(div_qq(a, b))+(float4)(atan_addition(a.x, b.x), 0, 0, 0);
 	RET_Q;
 }
-DISC_C_I(atan){disc_c_acos_i(size, offset, disc, xi, xr);}//sic
+DISC_C_I(atan)
+{
+	IDX;
+	float2 x0=(float2)(xi[idx], xr[idx]), x1=(float2)(xi[idx+offset], xr[idx+offset]);//sic
+	if(x0.y==x0.y)
+		disc[idx]=false;
+	else if(x0.x==x0.x)
+		disc[idx]=(x0.y<=0?x1.y>0:x1.y<=0)&&(x0.x<-1||x0.x>1);
+	else if((x0.y<=0&&x1.y>0)||(x1.y<=0&&x0.y>0))
+	{
+		float t=_1d_zero_crossing(x0.x, x0.y, x1.x, x1.y);
+		disc[idx]=t<-1||t>1;
+	}
+	else
+		disc[idx]=false;
+}
 DISC_Q_I(atan){IDX; disc[idx]=false;}//TODO
 DISC_RR_I(atan)
 {
@@ -2892,7 +2689,7 @@ DISC_C_I(atanh)
 	IDX;
 	float2 x0=(float2)(xi[idx], xr[idx]), x1=(float2)(xi[idx+offset], xr[idx+offset]);//sic
 	if(x0.y==x0.y)
-		disc[idx]=false;//disc_c_acos_i
+		disc[idx]=false;//disc c acos i
 	else if(x0.x==x0.x)
 		disc[idx]=(x0.y<=0?x1.y>0:x1.y<=0)&&(x0.x<-1||x0.x>1);
 	else if((x0.y<=0&&x1.y>0)||(x1.y<=0&&x0.y>0))
@@ -2908,29 +2705,111 @@ DISC_Q_I(atanh){IDX; disc[idx]=false;}
 G2_R_R(tanc){IDX; float a=xr[idx]; ASSIGN_R(a!=0?tan(a)/a:0);}
 G2_C_C(tanc){IDX; float2 a=VEC2(x), ret=istrue_c(a)?div_cc(tan_c(a), a):(float2)(0, 0); RET_C;}
 G2_Q_Q(tanc){IDX; float4 a=VEC4(x), ret=istrue_q(a)?div_qq(tan_q(a), a):(float4)(0, 0, 0, 0); RET_Q;}
-DISC_R_I(tanc){disc_r_sec_i(size, offset, disc, xr);}
-DISC_C_I(tanc){disc_c_sec_i(size, offset, disc, xr, xi);}
-DISC_Q_I(tanc){disc_q_sec_i(size, offset, disc, xr, xi, xj, xk);}
+DISC_R_I(tanc)
+{
+	IDX;
+	float x0=xr[idx], x1=xr[idx+offset];
+	disc[idx]=fabs(x1-x0)>3.2||_1d_int_in_range(x0/_pi-0.5f, x1/_pi-0.5f);
+}
+DISC_C_I(tanc)
+{
+	IDX;
+	float2 x0=VEC2(x), x1=(float2)(xr[idx+offset], xi[idx+offset]);
+	if(x0.x==x1.x)
+	{
+		if(x0.y==x1.y)
+			disc[idx]=false;
+		else
+		{
+			float t=x0.x/_pi-0.5f;
+			disc[idx]=t==floor(t);
+		}
+	}
+	else if(x0.y==x1.y)
+		disc[idx]=x0.y==0&&_1d_int_in_range(x0.x/_pi-0.5f, x1.x/_pi-0.5f);
+	if(sign(x0.y)!=sign(x1.y))
+	{
+		float t=_1d_zero_crossing(x0.x, x0.y, x1.x, x0.y)/_pi-0.5f;
+		disc[idx]=t==floor(t);
+	}
+	disc[idx]=false;
+}
+DISC_Q_I(tanc){IDX; disc[idx]=false;}//TODO
 
 G2_R_R(cot){IDX; ASSIGN_R(1/tan(xr[idx]));}
 G2_C_C(cot){IDX; float2 ret=inv_c(tan_c(VEC2(x))); RET_C;}
 G2_Q_Q(cot){IDX; float4 ret=inv_q(tan_q(VEC4(x))); RET_Q;}
-DISC_R_I(cot){disc_r_csc_i(size, offset, disc, xr);}
-DISC_C_I(cot){disc_c_csc_i(size, offset, disc, xr, xi);}
-DISC_Q_I(cot){disc_q_csc_i(size, offset, disc, xr, xi, xj, xk);}
+DISC_R_I(cot)
+{
+	IDX;
+	float x0=xr[idx], x1=xr[idx+offset];
+	if(fabs(x1-x0)>3.2)
+		disc[idx]=true;
+	else
+		disc[idx]=_1d_int_in_range(x0/_pi, x1/_pi);
+}
+DISC_C_I(cot)
+{
+	IDX;
+	float2 x0=VEC2(x), x1=(float2)(xr[idx+offset], xi[idx+offset]);
+	if(x0.x==x1.x)
+		disc[idx]=true;
+	else if(x0.y==x1.y)
+		disc[idx]=x0.y==0&&_1d_int_in_range(x0.x/_pi, x1.x/_pi);
+	else if(signbit(x0.y)!=signbit(x1.y))
+	{
+		float t=_1d_zero_crossing(x0.x, x0.y, x1.x, x0.y)/_pi;
+		disc[idx]=t==floor(t);
+	}
+	else
+		disc[idx]=false;
+}
+DISC_Q_I(cot){IDX; disc[idx]=false;}//TODO
 
 G2_R_R(acot){IDX; float a=xr[idx]; ASSIGN_R(a!=0?atan(1/a):_pi*0.5f);}
 G2_C_C(acot){IDX; float2 a=VEC2(x), ret=istrue_c(a)?atan_c(inv_c(a)):(float2)(_pi*0.5f, 0); RET_C;}
 G2_Q_Q(acot){IDX; float4 a=VEC4(x), ret=istrue_q(a)?atan_q(inv_q(a)):(float4)(_pi*0.5f, 0, 0, 0); RET_Q;}
 DISC_R_I(acot){IDX; float x0=xr[idx], x1=xr[idx+offset]; disc[idx]=x0<0?x1>=0:x1<0;}
-DISC_C_I(acot){disc_c_acsch_i(size, offset, disc, xr, xi);}
-DISC_Q_I(acot){disc_q_acsch_i(size, offset, disc, xr, xi, xj, xk);}
+DISC_C_I(acot)
+{
+	IDX;
+	float2 x0=(float2)(xi[idx], xr[idx]), x1=(float2)(xi[idx+offset], xr[idx+offset]);//sic
+	if(x0.y==x1.y)
+		disc[idx]=x0.y==0&&(x0.x<0?x1.x>=0:x0.x>0?x1.x<=0:x1.x!=0);//x1.x<0||x1.x>0);
+	else if(x0.x==x1.x)
+	{
+		if(x0.x<0)
+			disc[idx]=x0.x>-1&&(x0.y<=0?x1.y>0:x1.y<=0);
+		else if(x0.x==0)
+			disc[idx]=x0.y<0?x1.y>=0:x0.y==0?x1.y<0||x1.y>0:x1.y<=0;
+		else
+			disc[idx]=x0.x<1&&(x0.y<0?x1.y>=0:x1.y<0);
+	}
+	else
+		disc[idx]=false;
+}
+DISC_Q_I(acot){IDX; disc[idx]=false;}//TODO
 
 G2_R_R(coth){IDX; ASSIGN_R(1/tanh(xr[idx]));}
 G2_C_C(coth){IDX; float2 ret=inv_c(tanh_c(VEC2(x))); RET_C;}
 G2_Q_Q(coth){IDX; float4 ret=inv_q(tanh_q(VEC4(x))); RET_Q;}
-DISC_R_I(coth){disc_r_csch_i(size, offset, disc, xr);}
-DISC_C_I(coth){disc_c_csch_i(size, offset, disc, xr, xi);}
+DISC_R_I(coth){IDX; float x0r=xr[idx], x1r=xr[idx+offset]; disc[idx]=x0r<0?x1r>=0:x0r>0?x1r<=0:x1r!=0;}//disc r csch i
+DISC_C_I(coth)//disc c csch i
+{
+	IDX;
+	float2 x0=(float2)(xi[idx], xr[idx]), x1=(float2)(xi[idx+offset], xr[idx+offset]);//sic
+	if(x0.x==x1.x)
+		disc[idx]=true;
+	else if(x0.y==x1.y)
+		disc[idx]=x0.y==0&&_1d_int_in_range(x0.x/_pi, x1.x/_pi);
+	else if(signbit(x0.y)!=signbit(x1.y))
+	{
+		float t=_1d_zero_crossing(x0.x, x0.y, x1.x, x0.y)/_pi;
+		disc[idx]=t==floor(t);
+	}
+	else
+		disc[idx]=false;
+}
 DISC_Q_I(coth){IDX; disc[idx]=false;}
 
 G2_C_C(acoth){IDX; float2 ret=atanh_c(inv_c(VEC2(x))); RET_C;}
@@ -2940,7 +2819,7 @@ DISC_C_I(acoth)
 	IDX;
 	float2 x0=(float2)(xi[idx], xr[idx]), x1=(float2)(xi[idx+offset], xr[idx+offset]);//sic
 	if(x0.y==x1.y)
-		disc[idx]=x0.y==0&&(x0.x<0?x1.x>=0:x0.x>0?x1.x<=0:x1.x!=0);//x1.x<0||x1.x>0);//disc_c_acsc_i
+		disc[idx]=x0.y==0&&(x0.x<0?x1.x>=0:x0.x>0?x1.x<=0:x1.x!=0);//x1.x<0||x1.x>0);//disc c acsc i
 	else if(x0.x==x1.x)
 	{
 			 if(x0.x<0)		disc[idx]=x0.x>-1&&(x0.y<=0?x1.y>0:x1.y<=0);
@@ -2996,9 +2875,9 @@ float4 step_q(float4 a){return (float4)(0.5f, 0, 0, 0)+mul_rq(0.5f, sign_q(a));}
 G2_R_R(step){IDX; ASSIGN_R(step_r(xr[idx]));}
 G2_C_C(step){IDX; float2 ret=step_c(VEC2(x)); RET_C;}
 G2_Q_Q(step){IDX; float4 ret=step_q(VEC4(x)); RET_Q;}
-DISC_R_I(step){disc_r_divide_i(size, offset, disc, xr);}
-DISC_C_I(step){disc_c_divide_i(size, offset, disc, xr, xi);}
-DISC_Q_I(step){disc_q_divide_i(size, offset, disc, xr, xi, xj, xk);}
+DISC_R_I(step){IDX; float x0r=xr[idx], x1r=xr[idx+offset]; disc[idx]=x0r<0?x1r>=0:x0r>0?x1r<=0:x1r!=0;}
+DISC_C_I(step){IDX; disc[idx]=false;}//TODO
+DISC_Q_I(step){IDX; disc[idx]=false;}//
 
 G2_R_R(rect){IDX; float a=xr[idx]; ASSIGN_R(step_r(a+0.5f)-step_r(a-0.5f));}
 G2_C_C(rect){IDX; const float2 temp=(float2)(0.5f, 0); float2 a=VEC2(x), ret=step_c(a+temp)-step_c(a-temp); RET_C;}//'half' means half precision
@@ -3402,6 +3281,30 @@ __kernel void initialize_parameter(__global const int *size, __global float *buf
 	buffer[idx]=args[0]+args[1]*get_global_id(((int*)args)[2]);
 }
 )CLSRC";
+
+	const char *programs[]=
+	{
+		CLSource::program01,
+		CLSource::program02,
+		CLSource::program03,
+		CLSource::program04,
+		CLSource::program05,
+		CLSource::program06,
+		CLSource::program07,
+		CLSource::program08,
+		CLSource::program09,
+		CLSource::program10,
+		CLSource::program11,
+		CLSource::program12,
+		CLSource::program13,
+		CLSource::program14,
+		CLSource::program15,
+		CLSource::program16,
+		CLSource::program17,
+		CLSource::program18,
+		CLSource::program19,
+		CLSource::program20,
+	};
 
 	static const char program_h[]=R"CLSRC(
 //auxiliary constants
@@ -3882,7 +3785,7 @@ G2_R_R(arg)
 	if(xr[idx]<0)
 		rr[idx]=_pi;
 	else if(xr[idx]==0)
-		rr[idx]=nan(0u);
+		rr[idx]=NAN;
 	else
 		rr[idx]=0;
 }
@@ -3893,7 +3796,7 @@ G2_R_Q(arg)
 	float4 a=VEC4(x);
 	float abs_a=a.x*a.x+a.y*a.y+a.z*a.z+a.w*a.w;
 	if(!abs_a)
-		rr[idx]=nan(0u);
+		rr[idx]=NAN;
 	else
 	{
 		abs_a=sqrt(abs_a);
@@ -3921,7 +3824,7 @@ G2_C_R(polar)
 {
 	IDX;
 	float a=xr[idx];
-	float2 ret=(float2)(fabs(a), a<0?_pi:a==0?nan(0u):0);
+	float2 ret=(float2)(fabs(a), a<0?_pi:a==0?NAN:0);
 	RET_C;
 }
 G2_C_C(polar)
@@ -4461,7 +4364,7 @@ DISC_QQ_I(bitwise_shift_right){disc_qq_bitwise_shift_left_i(size, offset, disc, 
 
 	static const char program_src_pt2[]=R"CLSRC(
 //kernels pt2
-float bitwise_not(float x){return iscastable2int(x)?~f2i(x):nan(0u);}
+float bitwise_not(float x){return iscastable2int(x)?~f2i(x):NAN;}
 G2_R_R(bitwise_not){IDX; float a=xr[idx]; ASSIGN_R(bitwise_not(a));}
 G2_C_C(bitwise_not){IDX; float2 a=VEC2(x); ASSIGN_C(bitwise_not(a.x), bitwise_not(a.y));}
 G2_Q_Q(bitwise_not){IDX; float4 a=VEC4(x); ASSIGN_Q(bitwise_not(a.x), bitwise_not(a.y), bitwise_not(a.z), bitwise_not(a.w));}
@@ -4469,8 +4372,8 @@ DISC_R_I(bitwise_not){IDX; disc[idx]=sign(xr[idx])!=sign(xr[idx+offset]);}
 DISC_C_I(bitwise_not){IDX; disc[idx]=sign(xr[idx])!=sign(xr[idx+offset])||sign(xi[idx])!=sign(xi[idx+offset]);}
 DISC_Q_I(bitwise_not){IDX; disc[idx]=sign(xr[idx])!=sign(xr[idx+offset])||sign(xi[idx])!=sign(xi[idx+offset])||sign(xj[idx])!=sign(xj[idx+offset])||sign(xk[idx])!=sign(xk[idx+offset]);}
 
-float bitwise_and1(float x){return iscastable2int(x)?f2i(x)==-1:nan(0u);}
-float bitwise_and2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?f2i(a)&f2i(b):nan(0u);}
+float bitwise_and1(float x){return iscastable2int(x)?f2i(x)==-1:NAN;}
+float bitwise_and2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?f2i(a)&f2i(b):NAN;}
 G2_R_R(bitwise_and){IDX; ASSIGN_R(bitwise_and1(xr[idx]));}
 G2_C_C(bitwise_and){IDX; ASSIGN_C(bitwise_and1(xr[idx]), bitwise_and1(xi[idx]));}
 G2_Q_Q(bitwise_and){IDX; ASSIGN_Q(bitwise_and1(xr[idx]), bitwise_and1(xi[idx]), bitwise_and1(xj[idx]), bitwise_and1(xk[idx]));}
@@ -4487,8 +4390,8 @@ DISC_R_O(bitwise_and){disc_r_ceil_o(size, offset, disc, xr);}//repeat r,c,q for 
 DISC_C_O(bitwise_and){disc_c_ceil_o(size, offset, disc, xr, xi);}
 DISC_Q_O(bitwise_and){disc_q_ceil_o(size, offset, disc, xr, xi, xj, xk);}
 
-float bitwise_nand1(float x){return iscastable2int(x)?f2i(x)!=-1:nan(0u);}
-float bitwise_nand2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?~(f2i(a)&f2i(b)):nan(0u);}
+float bitwise_nand1(float x){return iscastable2int(x)?f2i(x)!=-1:NAN;}
+float bitwise_nand2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?~(f2i(a)&f2i(b)):NAN;}
 G2_R_R(bitwise_nand){IDX; ASSIGN_R(bitwise_nand1(xr[idx]));}
 G2_C_C(bitwise_nand){IDX; ASSIGN_C(bitwise_nand1(xr[idx]), bitwise_nand1(xi[idx]));}
 G2_Q_Q(bitwise_nand){IDX; ASSIGN_Q(bitwise_nand1(xr[idx]), bitwise_nand1(xi[idx]), bitwise_nand1(xj[idx]), bitwise_nand1(xk[idx]));}
@@ -4505,8 +4408,8 @@ DISC_R_O(bitwise_nand){disc_r_ceil_o(size, offset, disc, xr);}//repeat r,c,q for
 DISC_C_O(bitwise_nand){disc_c_ceil_o(size, offset, disc, xr, xi);}
 DISC_Q_O(bitwise_nand){disc_q_ceil_o(size, offset, disc, xr, xi, xj, xk);}
 
-float bitwise_or1(float x){return iscastable2int(x)?f2i(x)!=0:nan(0u);}
-float bitwise_or2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?f2i(a)|f2i(b):nan(0u);}
+float bitwise_or1(float x){return iscastable2int(x)?f2i(x)!=0:NAN;}
+float bitwise_or2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?f2i(a)|f2i(b):NAN;}
 G2_R_R(bitwise_or){IDX; ASSIGN_R(bitwise_or1(xr[idx]));}
 G2_C_C(bitwise_or){IDX; ASSIGN_C(bitwise_or1(xr[idx]), bitwise_or1(xi[idx]));}
 G2_Q_Q(bitwise_or){IDX; ASSIGN_Q(bitwise_or1(xr[idx]), bitwise_or1(xi[idx]), bitwise_or1(xj[idx]), bitwise_or1(xk[idx]));}
@@ -4523,8 +4426,8 @@ DISC_R_O(bitwise_or){disc_r_ceil_o(size, offset, disc, xr);}//repeat r,c,q for R
 DISC_C_O(bitwise_or){disc_c_ceil_o(size, offset, disc, xr, xi);}
 DISC_Q_O(bitwise_or){disc_q_ceil_o(size, offset, disc, xr, xi, xj, xk);}
 
-float bitwise_nor1(float x){return iscastable2int(x)?!f2i(x):nan(0u);}
-float bitwise_nor2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?~(f2i(a)|f2i(b)):nan(0u);}
+float bitwise_nor1(float x){return iscastable2int(x)?!f2i(x):NAN;}
+float bitwise_nor2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?~(f2i(a)|f2i(b)):NAN;}
 G2_R_R(bitwise_nor){IDX; ASSIGN_R(bitwise_nor1(xr[idx]));}
 G2_C_C(bitwise_nor){IDX; ASSIGN_C(bitwise_nor1(xr[idx]), bitwise_nor1(xi[idx]));}
 G2_Q_Q(bitwise_nor){IDX; ASSIGN_Q(bitwise_nor1(xr[idx]), bitwise_nor1(xi[idx]), bitwise_nor1(xj[idx]), bitwise_nor1(xk[idx]));}
@@ -4550,9 +4453,9 @@ float bitwise_xor1(float x)
 		a&=15;
 		return (0x6996>>a)&1;
 	}
-	return nan(0u);
+	return NAN;
 }
-float bitwise_xor2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?f2i(a)^f2i(b):nan(0u);}
+float bitwise_xor2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?f2i(a)^f2i(b):NAN;}
 G2_R_R(bitwise_xor){IDX; ASSIGN_R(bitwise_xor1(xr[idx]));}
 G2_C_C(bitwise_xor){IDX; ASSIGN_C(bitwise_xor1(xr[idx]), bitwise_xor1(xi[idx]));}
 G2_Q_Q(bitwise_xor){IDX; ASSIGN_Q(bitwise_xor1(xr[idx]), bitwise_xor1(xi[idx]), bitwise_xor1(xj[idx]), bitwise_xor1(xk[idx]));}
@@ -4578,9 +4481,9 @@ float bitwise_xnor1(float x)
 		a&=15;
 		return !((0x6996>>a)&1);
 	}
-	return nan(0u);
+	return NAN;
 }
-float bitwise_xnor2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?~(f2i(a)^f2i(b)):nan(0u);}
+float bitwise_xnor2(float a, float b){return iscastable2int(a)&&iscastable2int(b)?~(f2i(a)^f2i(b)):NAN;}
 G2_R_R(bitwise_xnor){IDX; ASSIGN_R(bitwise_xnor1(xr[idx]));}
 G2_C_C(bitwise_xnor){IDX; ASSIGN_C(bitwise_xnor1(xr[idx]), bitwise_xnor1(xi[idx]));}
 G2_Q_Q(bitwise_xnor){IDX; ASSIGN_Q(bitwise_xnor1(xr[idx]), bitwise_xnor1(xi[idx]), bitwise_xnor1(xj[idx]), bitwise_xnor1(xk[idx]));}
@@ -6194,8 +6097,10 @@ __kernel void initialize_parameter(__global const int *size, __global float *buf
 //}
 )CLSRC";
 }//end CLSource
+const int nprograms=sizeof(CLSource::programs)/sizeof(const char*);
 namespace 		G2_CL
 {
+	cl_program programs[nprograms]={nullptr};
 	CLKernel kernels[]=
 	{
 		//special kernels
@@ -6983,78 +6888,45 @@ void 			cl_initiate()
 	cl_context context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);
 	cl_command_queue cq=p_clCreateCommandQueue(context, device, 0, &error);					CL_CHECK(error);
 
-		std::string
-			src_common=CLSource::program_common,
-			src01=src_common+CLSource::program01,
-			src02=src_common+CLSource::program02,
-			src03=src_common+CLSource::program03,
-			src04=src_common+CLSource::program04,
-			src05=src_common+CLSource::program05,
-			src06=src_common+CLSource::program06,
-			src07=src_common+CLSource::program07,
-			src08=src_common+CLSource::program08,
-			src09=src_common+CLSource::program09,
-			src10=src_common+CLSource::program10,
-			src11=src_common+CLSource::program11,
-			src12=src_common+CLSource::program12,
-			src13=src_common+CLSource::program13,
-			src14=src_common+CLSource::program14,
-			src15=src_common+CLSource::program15,
-			src16=src_common+CLSource::program16,
-			src17=src_common+CLSource::program17,
-			src18=src_common+CLSource::program18,
-			src19=src_common+CLSource::program19,
-			src20=src_common+CLSource::program20;
-	//std::string header=CLSource::program_h;
-	//std::string
-	//	src_p1=header+	CLSource::program_test,//
-	//	src_p2=			CLSource::program_src_pt2,
-	//	src_p3=			CLSource::program_src_pt3,
-	//	src_p4=			CLSource::program_src_pt4;
-	//std::string
-	//	src_p1=header+CLSource::program_src_pt1,
-	//	src_p2=header+CLSource::program_src_pt2,
-	//	src_p3=header+CLSource::program_src_pt3,
-	//	src_p4=header+CLSource::program_src_pt4;
-	const char *sources[]=
 	{
-		src01.c_str(),
-		//src_p1.c_str(),
-		//src_p2.c_str(),
-		//src_p3.c_str(),
-		//src_p4.c_str(),
-	};
-	size_t srclen[]=
-	{
-		src01.size(),
-		//src_p1.size(),
-		//src_p2.size(),
-		//src_p3.size(),
-		//src_p4.size(),
-	};
-	const int nsources=sizeof(sources)/sizeof(const char*);
-	cl_program program=p_clCreateProgramWithSource(context, nsources, sources, srclen, &error);CL_CHECK(error);
-//	cl_program program=p_clCreateProgramWithSource(context, 1, sources, srclen, &error);CL_CHECK(error);
-//	cl_program program=p_clCreateProgramWithSource(context, 4, sources, srclen, &error);CL_CHECK(error);//CL_OUT_OF_HOST_MEMORY
-	error=p_clBuildProgram(program, 0, nullptr, "", nullptr, nullptr);					CL_CHECK(error);
-	if(error)
-	{
-		size_t length=0;
-		error=p_clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, g_buf_size, g_buf, &length);	CL_CHECK2(error);
-		LOGE_long(g_buf, length);
-	//	LOGE("%*s", length, g_buf);
-	//	LOGE("%s", g_buf);
-	}
-	for(int k=0;k<nkernels;++k)//idx check
-	{
-		auto &kernel=kernels[k];
-		kernel.g2	=p_clCreateKernel(program, kernel.name, &error);		CL_CHECK(error);
-		if(error)
-			LOGE("Error line %d:\n\n\tFailed to retrieve kernel %d:\t%s\n\n", __LINE__, k, kernel.name);
-		//kernel.disc	=p_clCreateKernel(program, kernel.disc_name, &error);	CL_CHECK(error);
-		//if(error)
-		//	LOGE("Error line %d:\n\n\tFailed to retrieve kernel %d:\t%s\n\n", __LINE__, k, kernel.disc_name);
-		kernel.disc=nullptr;
+		std::string src_common=CLSource::program_common, src[nprograms];
+		std::string err_msg;
+		for(int kp=0;kp<nprograms;++kp)
+		{
+			src[kp]=src_common+CLSource::programs[kp];
+			const char *sources[]=
+			{
+				src[kp].c_str(),
+			};
+			size_t srclen[]=
+			{
+				src[kp].size(),
+			};
+			G2_CL::programs[kp]=p_clCreateProgramWithSource(context, 1, sources, srclen, &error);	CL_CHECK(error);
+			error=p_clBuildProgram(programs[kp], 0, nullptr, "", nullptr, nullptr);					CL_CHECK(error);
+			if(error)
+			{
+				size_t length=0;
+				error=p_clGetProgramBuildInfo(programs[kp], device, CL_PROGRAM_BUILD_LOG, g_buf_size, g_buf, &length);	CL_CHECK2(error);
+				err_msg+="\n\n\tPROGRAM "+std::to_string(kp)+"\n\n"+g_buf;
+			//	LOGE_long(g_buf, length);
+			//	LOGE("%*s", length, g_buf);
+			//	LOGE("%s", g_buf);
+			}
+			//for(int k=0;k<nkernels;++k)
+			//{
+			//	auto &kernel=kernels[k];
+			//	kernel.g2	=p_clCreateKernel(program[kp], kernel.name, &error);		CL_CHECK(error);
+			//	if(error)
+			//		LOGE("Error line %d:\n\n\tFailed to retrieve kernel %d:\t%s\n\n", __LINE__, k, kernel.name);
+			//	//kernel.disc	=p_clCreateKernel(program, kernel.disc_name, &error);	CL_CHECK(error);
+			//	//if(error)
+			//	//	LOGE("Error line %d:\n\n\tFailed to retrieve kernel %d:\t%s\n\n", __LINE__, k, kernel.disc_name);
+			//	kernel.disc=nullptr;
+			//}
+		}
+		if(err_msg.size())
+			LOGE_long(err_msg.c_str(), err_msg.size());
 	}
 	int LOL_1=0;//
 #if 0
