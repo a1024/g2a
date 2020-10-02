@@ -993,6 +993,87 @@ int				gl_vprint(int tab_origin, int x, int y, const char *format, va_list args)
 	int msg_length=vsnprintf(g_buf, g_buf_size, format, args);
 	return print_array(x, y, g_buf, msg_length, tab_origin);
 }
+void 			generate_gl_texture(unsigned &tx_idx)
+{
+	if(!tx_idx)
+		{glGenTextures(1, &tx_id);										CHECK();}//generate texture id once
+	glBindTexture(GL_TEXTURE_2D, tx_id);									CHECK();
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);		CHECK();
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);		CHECK();
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w2, h2, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgb2);	CHECK();//send bitmap to GPU
+}
+void 			display_gl_texture()
+{
+	static unsigned tx_id=0;
+	float _2_w=2.f/w, _2_h=2.f/h;
+	float rect[]=
+	{
+		x1*_2_w-1, 1-y1*_2_h,
+		x2*_2_w-1, 1-y2*_2_h//y2<y1
+	};
+	float vrtx[]=
+	{
+		rect[0], rect[1],		0, 0,//top left
+		rect[0], rect[3],		0, 1,//bottom left
+		rect[2], rect[3],		1, 1,//bottom right
+
+		rect[2], rect[3],		1, 1,//bottom right
+		rect[2], rect[1],		1, 0,//top right
+		rect[0], rect[1],		0, 0,//top left
+	};
+	if(rgb)
+	{
+	#define	NPOT_ATIX2300_FIX
+		int *rgb2, w2, h2;
+#ifdef NPOT_ATIX2300_FIX
+		int logw=floor_log2(txw), logh=floor_log2(txh);
+		bool expand=glMajorVer<3&&(txw>1<<logw||txh>1<<logh);
+		if(expand)
+		{
+			w2=txw>1<<logw?1<<(logw+1):txw;
+			h2=txh>1<<logh?1<<(logh+1):txh;
+			int size=w2*h2;
+			rgb2=(int*)malloc(size<<2);
+			memset(rgb2, 0, size<<2);
+			for(int ky=0;ky<txh;++ky)
+				memcpy(rgb2+w2*ky, rgb+txw*ky, txw<<2);
+		//	memcpy(rgb2, rgb, size<<2);
+			float nw=(float)txw/w2, nh=(float)txh/h2;
+			vrtx[ 2]=0,		vrtx[ 3]=0;
+			vrtx[ 6]=0,		vrtx[ 7]=nh;
+			vrtx[10]=nw,	vrtx[11]=nh;
+
+			vrtx[14]=nw,	vrtx[15]=nh;
+			vrtx[18]=nw,	vrtx[19]=0;
+			vrtx[22]=0,		vrtx[23]=0;
+		}
+		else
+#endif
+			rgb2=rgb, w2=txw, h2=txh;
+		gl_setProgram(GL2_Text::program);						CHECK();//select Text program
+		glUniform2f(GL2_Text::u_isTexture, 1, 0);		CHECK();//send isTexture
+	//	glUniform1i(GL2_Text::u_isTexture, true);				CHECK();
+		send_color(GL2_Text::u_bkColor, alpha<<24);		CHECK();//send apha
+		if(!tx_id)
+			{glGenTextures(1, &tx_id);										CHECK();}//generate texture id once
+		glBindTexture(GL_TEXTURE_2D, tx_id);									CHECK();
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);		CHECK();
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);		CHECK();
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w2, h2, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgb2);	CHECK();//send bitmap to GPU
+
+		select_texture(tx_id, GL2_Text::u_mytexture);
+		glBindBuffer(GL_ARRAY_BUFFER, GL2_Text::buffer);										CHECK();
+		glBufferData(GL_ARRAY_BUFFER, 24<<2, vrtx, GL_STATIC_DRAW);						CHECK();//send vertices & texcoords
+		glVertexAttribPointer(GL2_Text::a_coord2d, 4, GL_FLOAT, GL_FALSE, 4<<2, nullptr);	CHECK();//select vertices & texcoord
+
+		glEnableVertexAttribArray(GL2_Text::a_coord2d);		CHECK();
+		glDrawArrays(GL_TRIANGLES, 0, 6);		CHECK();//draw the quad
+		glDisableVertexAttribArray(GL2_Text::a_coord2d);	CHECK();
+#ifdef NPOT_ATIX2300_FIX
+		if(expand)
+			free(rgb2);
+#endif
+}
 void			display_texture(int x1, int x2, int y1, int y2, int *rgb, int txw, int txh, unsigned char alpha)
 {
 	static unsigned tx_id=0;

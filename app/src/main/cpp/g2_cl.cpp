@@ -18,17 +18,15 @@
 // Created by MSI on 9/24/2020.
 //
 
-#include "g2_cl.h"
-#include "GLESAPI.h"
-#define CL_TARGET_OPENCL_VERSION 120
-#include<CL/opencl.h>
-#include<EGL/egl.h>
-#include<dlfcn.h>
-#include<string>
-//#include<vector>
-#include"g2_common.h"
-//const int		cl_e_size=2048;
-//char			cl_error_msg[cl_e_size]={0};//TODO: one error API	TODO: print multiple errors
+#define			CL_TARGET_OPENCL_VERSION 120
+#include		<CL/opencl.h>
+#include		<EGL/egl.h>
+#include		<dlfcn.h>
+#include		<string>
+#include		<vector>
+#include		"g2_common.h"
+#include		"g2_cl.h"
+#include		"GLESAPI.h"
 const int		g_buf_size=1048576;
 static char		g_buf[g_buf_size]={0};//
 bool			OCL_API_not_loaded=true;
@@ -166,6 +164,7 @@ DECL_CL_FUNC(clGetProgramBuildInfo);
 DECL_CL_FUNC(clCreateBuffer);
 DECL_CL_FUNC(clCreateKernel);
 DECL_CL_FUNC(clSetKernelArg);
+DECL_CL_FUNC(clEnqueueFillBuffer);
 DECL_CL_FUNC(clEnqueueWriteBuffer);
 DECL_CL_FUNC(clEnqueueNDRangeKernel);
 DECL_CL_FUNC(clEnqueueReadBuffer);
@@ -218,10 +217,12 @@ void 			load_OpenCL_API()
 			GET_CL_FUNC(hOpenCL, clCreateBuffer);
 			GET_CL_FUNC(hOpenCL, clCreateKernel);
 			GET_CL_FUNC(hOpenCL, clSetKernelArg);
+			GET_CL_FUNC(hOpenCL, clEnqueueFillBuffer);
 			GET_CL_FUNC(hOpenCL, clEnqueueWriteBuffer);
 			GET_CL_FUNC(hOpenCL, clEnqueueNDRangeKernel);
 			GET_CL_FUNC(hOpenCL, clEnqueueReadBuffer);
 			GET_CL_FUNC(hOpenCL, clFinish);
+			GET_CL_FUNC(hOpenCL, clCreateFromGLBuffer);
 			GET_CL_FUNC(hOpenCL, clCreateFromGLTexture);
 #undef		GET_CL_FUNC
 		}
@@ -236,138 +237,19 @@ void 			unload_OpenCL_API()
 	}
 }
 
-enum 			CLKernelIdx
-{
-//	V_INITIALIZE_CONSTANTS,
-	V_INITIALIZE_PARAMETER,
-	V_C2D_RGB,
-
-	R_R_SETZERO, C_C_SETZERO, Q_Q_SETZERO,
-	R_R_CEIL, C_C_CEIL, Q_Q_CEIL,
-	R_R_FLOOR, C_C_FLOOR, Q_Q_FLOOR,
-	R_R_ROUND, C_C_ROUND, Q_Q_ROUND,
-	R_R_INT, C_C_INT, Q_Q_INT,
-	R_R_FRAC, C_C_FRAC, Q_Q_FRAC,
-	R_R_ABS, R_C_ABS, R_Q_ABS,
-	R_R_ARG, R_C_ARG, R_Q_ARG,
-	R_C_REAL,
-	R_C_IMAG,
-	C_C_CONJUGATE, Q_Q_CONJUGATE,
-	C_R_POLAR, C_C_POLAR, C_Q_POLAR,
-	C_C_CARTESIAN, Q_Q_CARTESIAN,
-	R_RR_PLUS, C_RC_PLUS, Q_RQ_PLUS, C_CR_PLUS, C_CC_PLUS, Q_CQ_PLUS, Q_QR_PLUS, Q_QC_PLUS, Q_QQ_PLUS,
-	R_R_MINUS, C_C_MINUS, Q_Q_MINUS, R_RR_MINUS, C_RC_MINUS, Q_RQ_MINUS, C_CR_MINUS, C_CC_MINUS, Q_CQ_MINUS, Q_QR_MINUS, Q_QC_MINUS, Q_QQ_MINUS,
-	R_RR_MULTIPLY, C_RC_MULTIPLY, Q_RQ_MULTIPLY, C_CR_MULTIPLY, C_CC_MULTIPLY, Q_CQ_MULTIPLY, Q_QR_MULTIPLY, Q_QC_MULTIPLY, Q_QQ_MULTIPLY,
-	R_R_DIVIDE, C_C_DIVIDE, Q_Q_DIVIDE, R_RR_DIVIDE, C_RC_DIVIDE, Q_RQ_DIVIDE, C_CR_DIVIDE, C_CC_DIVIDE, Q_CQ_DIVIDE, Q_QR_DIVIDE, Q_QC_DIVIDE, Q_QQ_DIVIDE,
-	R_RR_LOGIC_DIVIDES, R_RC_LOGIC_DIVIDES, R_RQ_LOGIC_DIVIDES, R_CR_LOGIC_DIVIDES, R_CC_LOGIC_DIVIDES, R_CQ_LOGIC_DIVIDES, R_QR_LOGIC_DIVIDES, R_QC_LOGIC_DIVIDES, R_QQ_LOGIC_DIVIDES,
-	R_RR_POWER_REAL, C_CR_POWER_REAL, Q_QR_POWER_REAL,
-	C_CR_POW, C_CC_POW, Q_CQ_POW, Q_QR_POW, Q_QC_POW, Q_QQ_POW,
-	C_C_LN, Q_Q_LN,
-	C_C_LOG,  Q_Q_LOG, C_CR_LOG, C_CC_LOG, Q_CQ_LOG, Q_QC_LOG, Q_QQ_LOG,
-	C_RR_TETRATE, C_RC_TETRATE, C_CR_TETRATE, C_CC_TETRATE, Q_QR_TETRATE,
-	C_RR_PENTATE, C_CR_PENTATE,
-	R_R_BITWISE_SHIFT_LEFT_L, C_C_BITWISE_SHIFT_LEFT_L, Q_Q_BITWISE_SHIFT_LEFT_L, R_R_BITWISE_SHIFT_LEFT_R, C_C_BITWISE_SHIFT_LEFT_R, Q_Q_BITWISE_SHIFT_LEFT_R, R_RR_BITWISE_SHIFT_LEFT, C_RC_BITWISE_SHIFT_LEFT, Q_RQ_BITWISE_SHIFT_LEFT, C_CR_BITWISE_SHIFT_LEFT, C_CC_BITWISE_SHIFT_LEFT, Q_CQ_BITWISE_SHIFT_LEFT, Q_QR_BITWISE_SHIFT_LEFT, Q_QC_BITWISE_SHIFT_LEFT, Q_QQ_BITWISE_SHIFT_LEFT,
-	R_R_BITWISE_SHIFT_RIGHT_L, C_C_BITWISE_SHIFT_RIGHT_L, Q_Q_BITWISE_SHIFT_RIGHT_L, R_R_BITWISE_SHIFT_RIGHT_R, C_C_BITWISE_SHIFT_RIGHT_R, Q_Q_BITWISE_SHIFT_RIGHT_R, R_RR_BITWISE_SHIFT_RIGHT, C_RC_BITWISE_SHIFT_RIGHT, Q_RQ_BITWISE_SHIFT_RIGHT, C_CR_BITWISE_SHIFT_RIGHT, C_CC_BITWISE_SHIFT_RIGHT, Q_CQ_BITWISE_SHIFT_RIGHT, Q_QR_BITWISE_SHIFT_RIGHT, Q_QC_BITWISE_SHIFT_RIGHT, Q_QQ_BITWISE_SHIFT_RIGHT,
-	R_R_BITWISE_NOT, C_C_BITWISE_NOT, Q_Q_BITWISE_NOT,
-	R_R_BITWISE_AND, C_C_BITWISE_AND, Q_Q_BITWISE_AND, R_RR_BITWISE_AND, C_RC_BITWISE_AND, Q_RQ_BITWISE_AND, C_CR_BITWISE_AND, C_CC_BITWISE_AND, Q_CQ_BITWISE_AND, Q_QR_BITWISE_AND, Q_QC_BITWISE_AND, Q_QQ_BITWISE_AND,
-	R_R_BITWISE_NAND, C_C_BITWISE_NAND, Q_Q_BITWISE_NAND, R_RR_BITWISE_NAND, C_RC_BITWISE_NAND, Q_RQ_BITWISE_NAND, C_CR_BITWISE_NAND, C_CC_BITWISE_NAND, Q_CQ_BITWISE_NAND, Q_QR_BITWISE_NAND, Q_QC_BITWISE_NAND, Q_QQ_BITWISE_NAND,
-	R_R_BITWISE_OR, C_C_BITWISE_OR, Q_Q_BITWISE_OR, R_RR_BITWISE_OR, C_RC_BITWISE_OR, Q_RQ_BITWISE_OR, C_CR_BITWISE_OR, C_CC_BITWISE_OR, Q_CQ_BITWISE_OR, Q_QR_BITWISE_OR, Q_QC_BITWISE_OR, Q_QQ_BITWISE_OR,
-	R_R_BITWISE_NOR, C_C_BITWISE_NOR, Q_Q_BITWISE_NOR, R_RR_BITWISE_NOR, C_RC_BITWISE_NOR, Q_RQ_BITWISE_NOR, C_CR_BITWISE_NOR, C_CC_BITWISE_NOR, Q_CQ_BITWISE_NOR, Q_QR_BITWISE_NOR, Q_QC_BITWISE_NOR, Q_QQ_BITWISE_NOR,
-	R_R_BITWISE_XOR, C_C_BITWISE_XOR, Q_Q_BITWISE_XOR, R_RR_BITWISE_XOR, C_RC_BITWISE_XOR, Q_RQ_BITWISE_XOR, C_CR_BITWISE_XOR, C_CC_BITWISE_XOR, Q_CQ_BITWISE_XOR, Q_QR_BITWISE_XOR, Q_QC_BITWISE_XOR, Q_QQ_BITWISE_XOR,
-	R_R_BITWISE_XNOR, C_C_BITWISE_XNOR, Q_Q_BITWISE_XNOR, R_RR_BITWISE_XNOR, C_RC_BITWISE_XNOR, Q_RQ_BITWISE_XNOR, C_CR_BITWISE_XNOR, C_CC_BITWISE_XNOR, Q_CQ_BITWISE_XNOR, Q_QR_BITWISE_XNOR, Q_QC_BITWISE_XNOR, Q_QQ_BITWISE_XNOR,
-	R_R_LOGIC_EQUAL, R_C_LOGIC_EQUAL, R_Q_LOGIC_EQUAL, R_RR_LOGIC_EQUAL, R_RC_LOGIC_EQUAL, R_RQ_LOGIC_EQUAL, R_CR_LOGIC_EQUAL, R_CC_LOGIC_EQUAL, R_CQ_LOGIC_EQUAL, R_QR_LOGIC_EQUAL, R_QC_LOGIC_EQUAL, R_QQ_LOGIC_EQUAL,
-	R_R_LOGIC_NOT_EQUAL, R_C_LOGIC_NOT_EQUAL, R_Q_LOGIC_NOT_EQUAL, R_RR_LOGIC_NOT_EQUAL, R_RC_LOGIC_NOT_EQUAL, R_RQ_LOGIC_NOT_EQUAL, R_CR_LOGIC_NOT_EQUAL, R_CC_LOGIC_NOT_EQUAL, R_CQ_LOGIC_NOT_EQUAL, R_QR_LOGIC_NOT_EQUAL, R_QC_LOGIC_NOT_EQUAL, R_QQ_LOGIC_NOT_EQUAL,
-	R_R_LOGIC_LESS_L, R_C_LOGIC_LESS_L, R_Q_LOGIC_LESS_L, R_R_LOGIC_LESS_R, R_C_LOGIC_LESS_R, R_Q_LOGIC_LESS_R, R_RR_LOGIC_LESS, R_RC_LOGIC_LESS, R_RQ_LOGIC_LESS, R_CR_LOGIC_LESS, R_CC_LOGIC_LESS, R_CQ_LOGIC_LESS, R_QR_LOGIC_LESS, R_QC_LOGIC_LESS, R_QQ_LOGIC_LESS,
-	R_R_LOGIC_LESS_EQUAL_L, R_C_LOGIC_LESS_EQUAL_L, R_Q_LOGIC_LESS_EQUAL_L, R_R_LOGIC_LESS_EQUAL_R, R_C_LOGIC_LESS_EQUAL_R, R_Q_LOGIC_LESS_EQUAL_R, R_RR_LOGIC_LESS_EQUAL, R_RC_LOGIC_LESS_EQUAL, R_RQ_LOGIC_LESS_EQUAL, R_CR_LOGIC_LESS_EQUAL, R_CC_LOGIC_LESS_EQUAL, R_CQ_LOGIC_LESS_EQUAL, R_QR_LOGIC_LESS_EQUAL, R_QC_LOGIC_LESS_EQUAL, R_QQ_LOGIC_LESS_EQUAL,
-	R_R_LOGIC_GREATER_L, R_C_LOGIC_GREATER_L, R_Q_LOGIC_GREATER_L, R_R_LOGIC_GREATER_R, R_C_LOGIC_GREATER_R, R_Q_LOGIC_GREATER_R, R_RR_LOGIC_GREATER, R_RC_LOGIC_GREATER, R_RQ_LOGIC_GREATER, R_CR_LOGIC_GREATER, R_CC_LOGIC_GREATER, R_CQ_LOGIC_GREATER, R_QR_LOGIC_GREATER, R_QC_LOGIC_GREATER, R_QQ_LOGIC_GREATER,
-	R_R_LOGIC_GREATER_EQUAL_L, R_C_LOGIC_GREATER_EQUAL_L, R_Q_LOGIC_GREATER_EQUAL_L, R_R_LOGIC_GREATER_EQUAL_R, R_C_LOGIC_GREATER_EQUAL_R, R_Q_LOGIC_GREATER_EQUAL_R, R_RR_LOGIC_GREATER_EQUAL, R_RC_LOGIC_GREATER_EQUAL, R_RQ_LOGIC_GREATER_EQUAL, R_CR_LOGIC_GREATER_EQUAL, R_CC_LOGIC_GREATER_EQUAL, R_CQ_LOGIC_GREATER_EQUAL, R_QR_LOGIC_GREATER_EQUAL, R_QC_LOGIC_GREATER_EQUAL, R_QQ_LOGIC_GREATER_EQUAL,
-	R_R_LOGIC_NOT, R_C_LOGIC_NOT, R_Q_LOGIC_NOT,
-	R_RR_LOGIC_AND, R_RC_LOGIC_AND, R_RQ_LOGIC_AND, R_CR_LOGIC_AND, R_CC_LOGIC_AND, R_CQ_LOGIC_AND, R_QR_LOGIC_AND, R_QC_LOGIC_AND, R_QQ_LOGIC_AND,
-	R_RR_LOGIC_OR, R_RC_LOGIC_OR, R_RQ_LOGIC_OR, R_CR_LOGIC_OR, R_CC_LOGIC_OR, R_CQ_LOGIC_OR, R_QR_LOGIC_OR, R_QC_LOGIC_OR, R_QQ_LOGIC_OR,
-	R_RR_LOGIC_XOR, R_RC_LOGIC_XOR, R_RQ_LOGIC_XOR, R_CR_LOGIC_XOR, R_CC_LOGIC_XOR, R_CQ_LOGIC_XOR, R_QR_LOGIC_XOR, R_QC_LOGIC_XOR, R_QQ_LOGIC_XOR,
-	R_RR_CONDITION_ZERO, C_RC_CONDITION_ZERO, Q_RQ_CONDITION_ZERO, C_CR_CONDITION_ZERO, C_CC_CONDITION_ZERO, Q_CQ_CONDITION_ZERO, Q_QR_CONDITION_ZERO, Q_QC_CONDITION_ZERO, Q_QQ_CONDITION_ZERO,
-	R_R_PERCENT, C_C_PERCENT, Q_Q_PERCENT,
-	R_RR_MODULO, C_RC_MODULO, Q_RQ_MODULO, C_CR_MODULO, C_CC_MODULO, Q_CQ_MODULO, Q_QR_MODULO, Q_QC_MODULO, Q_QQ_MODULO,
-	R_R_SGN, C_C_SGN, Q_Q_SGN,
-	R_R_SQ, C_C_SQ, Q_Q_SQ,
-	C_C_SQRT, Q_Q_SQRT,
-	R_R_INVSQRT,
-	R_R_CBRT, C_C_CBRT, Q_Q_CBRT,
-	R_R_GAUSS, C_C_GAUSS, Q_Q_GAUSS,
-	R_R_ERF,
-	R_R_ZETA,
-	R_R_TGAMMA, C_C_TGAMMA, Q_Q_TGAMMA, R_RR_TGAMMA,
-	R_R_LOGGAMMA,
-	R_R_FACTORIAL, C_C_FACTORIAL, Q_Q_FACTORIAL,
-	R_R_PERMUTATION, C_C_PERMUTATION, Q_Q_PERMUTATION, R_RR_PERMUTATION, C_CR_PERMUTATION, C_CC_PERMUTATION, Q_QQ_PERMUTATION,
-	R_R_COMBINATION, C_C_COMBINATION, Q_Q_COMBINATION, R_RR_COMBINATION, C_CR_COMBINATION, C_CC_COMBINATION, Q_QQ_COMBINATION,
-	R_R_COS, C_C_COS, Q_Q_COS,
-	C_C_ACOS, Q_Q_ACOS,
-	R_R_COSH, C_C_COSH, Q_Q_COSH,
-	C_C_ACOSH, Q_Q_ACOSH,
-	R_R_COSC, C_C_COSC, Q_Q_COSC,
-	R_R_SEC, C_C_SEC, Q_Q_SEC,
-	C_C_ASEC, Q_Q_ASEC,
-	R_R_SECH, C_C_SECH, Q_Q_SECH,
-	C_C_ASECH, Q_Q_ASECH,
-	R_R_SIN, C_C_SIN, Q_Q_SIN,
-	C_C_ASIN, Q_Q_ASIN,
-	R_R_SINH, C_C_SINH, Q_Q_SINH,
-	R_R_ASINH, C_C_ASINH, Q_Q_ASINH,
-	R_R_SINC, C_C_SINC, Q_Q_SINC,
-	R_R_SINHC, C_C_SINHC, Q_Q_SINHC,
-	R_R_CSC, C_C_CSC, Q_Q_CSC,
-	C_C_ACSC, Q_Q_ACSC,
-	R_R_CSCH, C_C_CSCH, Q_Q_CSCH,
-	R_R_ACSCH, C_C_ACSCH, Q_Q_ACSCH,
-	R_R_TAN, C_C_TAN, Q_Q_TAN,
-	R_R_ATAN, C_C_ATAN, Q_Q_ATAN, R_RR_ATAN, C_RC_ATAN, Q_RQ_ATAN, C_CR_ATAN, C_CC_ATAN, Q_CQ_ATAN, Q_QR_ATAN, Q_QC_ATAN, Q_QQ_ATAN,
-	R_R_TANH, C_C_TANH, Q_Q_TANH,
-	C_C_ATANH, Q_Q_ATANH,
-	R_R_TANC, C_C_TANC, Q_Q_TANC,
-	R_R_COT, C_C_COT, Q_Q_COT,
-	R_R_ACOT, C_C_ACOT, Q_Q_ACOT,
-	R_R_COTH, C_C_COTH, Q_Q_COTH,
-	C_C_ACOTH, Q_Q_ACOTH,
-	R_R_EXP, C_C_EXP, Q_Q_EXP,
-	R_R_FIB, C_C_FIB, Q_Q_FIB,
-	R_R_RANDOM, C_C_RANDOM, Q_Q_RANDOM, R_RR_RANDOM, C_CR_RANDOM, C_CC_RANDOM, Q_QQ_RANDOM,//nargs determine nD, arg mathtype determines return type
-	R_R_BETA, R_RR_BETA,//software
-	R_R_BESSEL_J, R_RR_BESSEL_J,//software
-	R_R_BESSEL_Y, R_RR_BESSEL_Y,//software neumann
-	C_R_HANKEL1, C_C_HANKEL1, C_RR_HANKEL1,//software
-	R_R_STEP, C_C_STEP, Q_Q_STEP,
-	R_R_RECT, C_C_RECT, Q_Q_RECT,
-	R_R_TRGL, R_C_TRGL, R_Q_TRGL,
-	R_R_SQWV, R_C_SQWV, R_Q_SQWV, R_RR_SQWV, R_RC_SQWV, R_RQ_SQWV, R_CR_SQWV, R_CC_SQWV, R_CQ_SQWV, R_QR_SQWV, R_QC_SQWV, R_QQ_SQWV,
-	R_R_TRWV, R_C_TRWV, R_Q_TRWV, R_RR_TRWV, R_RC_TRWV, R_RQ_TRWV, R_CR_TRWV, R_CC_TRWV, R_CQ_TRWV, R_QR_TRWV, R_QC_TRWV, R_QQ_TRWV,//TODO: update trwv
-	R_R_SAW, R_C_SAW, R_Q_SAW, R_RR_SAW, R_RC_SAW, R_RQ_SAW, R_CR_SAW, R_CC_SAW, R_CQ_SAW, R_QR_SAW, R_QC_SAW, R_QQ_SAW,//TODO: update sawtooth
-	R_RR_HYPOT,
-	R_R_MANDELBROT, R_C_MANDELBROT, R_RR_MANDELBROT, R_CR_MANDELBROT,
-	R_RR_MIN, C_CR_MIN, C_CC_MIN, Q_QQ_MIN,
-	R_RR_MAX, C_CR_MAX, C_CC_MAX, Q_QQ_MAX,
-	R_RR_CONDITIONAL_110, C_RC_CONDITIONAL_110, Q_RQ_CONDITIONAL_110, R_CR_CONDITIONAL_110, C_CC_CONDITIONAL_110, Q_CQ_CONDITIONAL_110, R_QR_CONDITIONAL_110, C_QC_CONDITIONAL_110, Q_QQ_CONDITIONAL_110,
-	R_RR_CONDITIONAL_101, C_RC_CONDITIONAL_101, Q_RQ_CONDITIONAL_101, R_CR_CONDITIONAL_101, C_CC_CONDITIONAL_101, Q_CQ_CONDITIONAL_101, R_QR_CONDITIONAL_101, C_QC_CONDITIONAL_101, Q_QQ_CONDITIONAL_101,
-	CONDITIONAL_111,
-	R_R_INCREMENT, C_C_INCREMENT, Q_Q_INCREMENT,
-	R_R_DECREMENT, C_C_DECREMENT, Q_Q_DECREMENT,
-	R_R_ASSIGN, C_C_ASSIGN, Q_Q_ASSIGN,
-
-	N_KERNELS,
-};
-enum			CLKernelSignature
-{
-	CL_R_R, CL_C_C, CL_Q_Q,
-	CL_R_RR, CL_C_RC, CL_Q_RQ,
-	CL_C_CR, CL_C_CC, CL_Q_CQ,
-	CL_Q_QR, CL_Q_QC, CL_Q_QQ,
-	CL_C_R, CL_C_Q,
-	CL_R_C, CL_R_Q,
-	CL_C_RR, CL_R_RC, CL_R_RQ,
-	CL_R_CR, CL_R_CC, CL_R_CQ,
-	CL_R_QR, CL_R_QC, CL_R_QQ,
-	CL_C_QC,
-};
+//enum			CLKernelSignature
+//{
+//	CL_R_R, CL_C_C, CL_Q_Q,
+//	CL_R_RR, CL_C_RC, CL_Q_RQ,
+//	CL_C_CR, CL_C_CC, CL_Q_CQ,
+//	CL_Q_QR, CL_Q_QC, CL_Q_QQ,
+//	CL_C_R, CL_C_Q,
+//	CL_R_C, CL_R_Q,
+//	CL_C_RR, CL_R_RC, CL_R_RQ,
+//	CL_R_CR, CL_R_CC, CL_R_CQ,
+//	CL_R_QR, CL_R_QC, CL_R_QQ,
+//	CL_C_QC,
+//};
 enum 			CLDiscType
 {
 	DISC_C,//continuous
@@ -3340,18 +3222,20 @@ __kernel void c2d_rgb(__global const int *size, __global const float *xr, __glob
 		CLSource::program19,
 	};
 }//end CLSource
-const int nprograms=sizeof(CLSource::programs)/sizeof(const char*);
-cl_kernel kernels[N_KERNELS]={nullptr};//all kernels
+const int		nprograms=sizeof(CLSource::programs)/sizeof(const char*);
+cl_context		context=nullptr;
+cl_command_queue commandqueue=nullptr;
+cl_kernel		kernels[N_KERNELS]={nullptr};//all kernels
 namespace 		G2_CL
 {
 	cl_program programs[nprograms]={nullptr};
 
 //declare continuous kernel
-#define	DECL_C(SIG, ret, arg, NAME, name)	{SIG##_##NAME, CL_##SIG, DISC_C, #ret "_" #arg "_" #name, nullptr}
+#define	DECL_C(SIG, ret, arg, NAME, name)	{SIG##_##NAME, SIG_##SIG, DISC_C, #ret "_" #arg "_" #name, nullptr}
 //declare kernel with discontinuities depending on input
-#define	DECL_I(SIG, ret, arg, NAME, name)	{SIG##_##NAME, CL_##SIG, DISC_I, #ret "_" #arg "_" #name, "disc_" #arg "_" #name"_i"}
+#define	DECL_I(SIG, ret, arg, NAME, name)	{SIG##_##NAME, SIG_##SIG, DISC_I, #ret "_" #arg "_" #name, "disc_" #arg "_" #name"_i"}
 //declare kernel with discontinuities depending on output
-#define	DECL_O(SIG, ret, arg, NAME, name)	{SIG##_##NAME, CL_##SIG, DISC_O, #ret "_" #arg "_" #name, "disc_" #ret "_" #name"_o"}
+#define	DECL_O(SIG, ret, arg, NAME, name)	{SIG##_##NAME, SIG_##SIG, DISC_O, #ret "_" #arg "_" #name, "disc_" #ret "_" #name"_o"}
 
 //kernel signatures, DISCTYPE: C continuous, I depends on input, or O depends on output
 #define	DECL_R_R(NAME, name, DISCTYPE)		DECL_##DISCTYPE(R_R, r, r, NAME, name)
@@ -3387,7 +3271,7 @@ namespace 		G2_CL
 #define	DECL_C_QC(NAME, name, DISCTYPE)		DECL_##DISCTYPE(C_QC, c, qc, NAME, name)
 
 //declare function implemented in software
-#define	DECL_SW(SIG, NAME, DISCTYPE)		{SIG##_##NAME, CL_##SIG, DISC_##DISCTYPE, nullptr, nullptr}
+#define	DECL_SW(SIG, NAME, DISCTYPE)		{SIG##_##NAME, SIG_##SIG, DISC_##DISCTYPE, nullptr, nullptr}
 
 //declare kernel - outdated
 //#define	DECL_K(signature, name, disctype, namestr, discstr)		{signature##_##name, CL_##signature, DISC_##disctype, namestr, discstr}
@@ -4169,92 +4053,96 @@ void 			cl_initiate()
 	using namespace G2_CL;
 	static_assert(sizeof(kernel_db)/sizeof(KernelDB)==nprograms, "kernel_db size is wrong");
 
-	cl_int error;
-	cl_platform_id platform;
-	cl_device_id device;
-	unsigned platforms, devices;
-	// Fetch the Platform and Device IDs; we only want one.
-	error=p_clGetPlatformIDs(1, &platform, &platforms);							CL_CHECK(error);
-	error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &devices);	CL_CHECK(error);
-	cl_context_properties properties[]=//https://stackoverflow.com/questions/26802905/getting-opengl-buffers-using-opencl
+	if(OCL_API_not_loaded)
+		LOGERROR("Can't create context without OpenCL API");
+	else
 	{
-		CL_GL_CONTEXT_KHR,   (cl_context_properties)eglGetCurrentContext(),
-		CL_EGL_DISPLAY_KHR,  (cl_context_properties)eglGetCurrentDisplay(),
-		CL_CONTEXT_PLATFORM, (cl_context_properties)platform, // OpenCL platform object
-		0, 0,
-	};
-	//cl_context_properties properties[]=
-	//{
-	//	CL_CONTEXT_PLATFORM, (cl_context_properties)platform,
-	//	0
-	//};
-	cl_context context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);
-	cl_command_queue cq=p_clCreateCommandQueue(context, device, 0, &error);					CL_CHECK(error);
-
-	{
-		std::string src_common=CLSource::program_common, src[nprograms];
-		std::string err_msg;
-		for(int kp=0;kp<nprograms;++kp)
+		cl_int error;
+		cl_platform_id platform;
+		cl_device_id device;
+		unsigned platforms, devices;
+		// Fetch the Platform and Device IDs; we only want one.
+		error=p_clGetPlatformIDs(1, &platform, &platforms);							CL_CHECK(error);
+		error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &devices);	CL_CHECK(error);
+		cl_context_properties properties[]=//https://stackoverflow.com/questions/26802905/getting-opengl-buffers-using-opencl
 		{
-			src[kp]=src_common+CLSource::programs[kp];
-			const char *sources[]=
+			CL_GL_CONTEXT_KHR,   (cl_context_properties)eglGetCurrentContext(),
+			CL_EGL_DISPLAY_KHR,  (cl_context_properties)eglGetCurrentDisplay(),
+			CL_CONTEXT_PLATFORM, (cl_context_properties)platform, // OpenCL platform object
+			0, 0,
+		};
+		//cl_context_properties properties[]=
+		//{
+		//	CL_CONTEXT_PLATFORM, (cl_context_properties)platform,
+		//	0
+		//};
+		context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);
+		commandqueue=p_clCreateCommandQueue(context, device, 0, &error);					CL_CHECK(error);
+
+		{
+			std::string src_common=CLSource::program_common, src[nprograms];
+			std::string err_msg;
+			for(int kp=0;kp<nprograms;++kp)
 			{
-				src[kp].c_str(),
-			};
-			size_t srclen[]=
-			{
-				src[kp].size(),
-			};
-			G2_CL::programs[kp]=p_clCreateProgramWithSource(context, 1, sources, srclen, &error);	CL_CHECK(error);
-			error=p_clBuildProgram(programs[kp], 0, nullptr, "", nullptr, nullptr);					CL_CHECK(error);
-			if(error)
-			{
-				size_t length=0;
-				error=p_clGetProgramBuildInfo(programs[kp], device, CL_PROGRAM_BUILD_LOG, g_buf_size, g_buf, &length);	CL_CHECK(error);
-				err_msg+="\n\n\tPROGRAM "+std::to_string(kp)+"\n\n"+g_buf;
-			//	LOGE_long(g_buf, length);
-			//	LOGE("%*s", length, g_buf);
-			//	LOGE("%s", g_buf);
-			}
-			else//build successful: extract kernel handles
-			{
-				auto &kernel_batch=kernel_db[kp];
-				for(int kk=0;kk<kernel_batch.nkernels;++kk)
+				src[kp]=src_common+CLSource::programs[kp];
+				const char *sources[]=
 				{
-					auto &kernel=kernel_batch.kernels[kk];
-					if(!kernels[kernel.idx]&&kernel.name)
+					src[kp].c_str(),
+				};
+				size_t srclen[]=
+				{
+					src[kp].size(),
+				};
+				G2_CL::programs[kp]=p_clCreateProgramWithSource(context, 1, sources, srclen, &error);	CL_CHECK(error);
+				error=p_clBuildProgram(programs[kp], 0, nullptr, "", nullptr, nullptr);					CL_CHECK(error);
+				if(error)
+				{
+					size_t length=0;
+					error=p_clGetProgramBuildInfo(programs[kp], device, CL_PROGRAM_BUILD_LOG, g_buf_size, g_buf, &length);	CL_CHECK(error);
+					err_msg+="\n\n\tPROGRAM "+std::to_string(kp)+"\n\n"+g_buf;
+				//	LOGE_long(g_buf, length);
+				//	LOGE("%*s", length, g_buf);
+				//	LOGE("%s", g_buf);
+				}
+				else//build successful: extract kernel handles
+				{
+					auto &kernel_batch=kernel_db[kp];
+					for(int kk=0;kk<kernel_batch.nkernels;++kk)
 					{
-						kernels[kernel.idx]=p_clCreateKernel(programs[kp], kernel.name, &error);		CL_CHECK(error);
-						if(error)
-							LOGE("Error line %d:\n\n\tFailed to retrieve kernel %d from program %d:\t%s\n\n", __LINE__, kk, kp, kernel.name);
+						auto &kernel=kernel_batch.kernels[kk];
+						if(!kernels[kernel.idx]&&kernel.name)
+						{
+							kernels[kernel.idx]=p_clCreateKernel(programs[kp], kernel.name, &error);		CL_CHECK(error);
+							if(error)
+								LOGE("Error line %d:\n\n\tFailed to retrieve kernel %d from program %d:\t%s\n\n", __LINE__, kk, kp, kernel.name);
+						}
+						//TODO: disc_idx
 					}
-					//TODO: disc_idx
 				}
 			}
+			if(!err_msg.empty())
+				LOGE_long(err_msg.c_str(), err_msg.size());
 		}
-		if(!err_msg.empty())
-			LOGE_long(err_msg.c_str(), err_msg.size());
-	}
 #if 0
-	//hellocl.c		//https://donkey.vernier.se/~yann/hellocl.c
-	cl_int error;
-	cl_platform_id platform;
-	cl_device_id device;
-	unsigned platforms, devices;
-	// Fetch the Platform and Device IDs; we only want one.
-	error=p_clGetPlatformIDs(1, &platform, &platforms);							CL_CHECK(error);//get available OpenCL platforms & devices
-	error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &devices);	CL_CHECK(error);
-	cl_context_properties properties[]=
-	{
-		CL_CONTEXT_PLATFORM,
-		(cl_context_properties)platform,
-		0
-	};
-	cl_context context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);//create OpenCL context
-	cl_command_queue cq=p_clCreateCommandQueue(context, device, 0, &error);				CL_CHECK(error);
+		//hellocl.c		//https://donkey.vernier.se/~yann/hellocl.c
+		cl_int error;
+		cl_platform_id platform;
+		cl_device_id device;
+		unsigned platforms, devices;
+		// Fetch the Platform and Device IDs; we only want one.
+		error=p_clGetPlatformIDs(1, &platform, &platforms);							CL_CHECK(error);//get available OpenCL platforms & devices
+		error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &devices);	CL_CHECK(error);
+		cl_context_properties properties[]=
+		{
+			CL_CONTEXT_PLATFORM,
+			(cl_context_properties)platform,
+			0
+		};
+		cl_context context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);//create OpenCL context
+		cl_command_queue cq=p_clCreateCommandQueue(context, device, 0, &error);				CL_CHECK(error);
 
-	//compile program & extract kernels
-	const char src[]=R"CLSRC(
+		//compile program & extract kernels
+		const char src[]=R"CLSRC(
 __kernel void myfunc(__global const float *in1, __global const float *in2, __global float *out)
 {
 	const unsigned idx=get_global_id(0);
@@ -4262,57 +4150,227 @@ __kernel void myfunc(__global const float *in1, __global const float *in2, __glo
 //	out[idx]=get_global_id(0);
 }
 )CLSRC";
-	const char *sources[]=
-	{
-		src,
-	};
-	size_t srclen[]=
-	{
-		strlen(src),
-	};
-	cl_program program=p_clCreateProgramWithSource(context, 1, sources, srclen, &error);CL_CHECK(error);
-	error=p_clBuildProgram(program, 0, nullptr, "", nullptr, nullptr);					CL_CHECK(error);
-	if(error)
-	{
-		size_t length=0;
-		error=p_clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, g_buf_size, g_buf, &length);	CL_CHECK(error);
-	}
-	cl_kernel k_add=p_clCreateKernel(program, "myfunc", &error);						CL_CHECK(error);
+		const char *sources[]=
+		{
+			src,
+		};
+		size_t srclen[]=
+		{
+			strlen(src),
+		};
+		cl_program program=p_clCreateProgramWithSource(context, 1, sources, srclen, &error);CL_CHECK(error);
+		error=p_clBuildProgram(program, 0, nullptr, "", nullptr, nullptr);					CL_CHECK(error);
+		if(error)
+		{
+			size_t length=0;
+			error=p_clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, g_buf_size, g_buf, &length);	CL_CHECK(error);
+		}
+		cl_kernel k_add=p_clCreateKernel(program, "myfunc", &error);						CL_CHECK(error);
 
-	//use kernel
-//	glFlush();
-	for(int k=0;k<worksize;++k)//initialize	TODO: ititialize in kernel
-	{
-		in1[k]=k;
-		in2[k]=worksize-1-k;
-		out[k]=rand();//
-	}
-	cl_mem mem_in1=p_clCreateBuffer(context, CL_MEM_READ_ONLY, worksize*sizeof(float), nullptr, &error);	CL_CHECK(error);//create OpenCL buffers (or use OpenGL buffers)
-	cl_mem mem_in2=p_clCreateBuffer(context, CL_MEM_READ_ONLY, worksize*sizeof(float), nullptr, &error);	CL_CHECK(error);
-	cl_mem mem_out=p_clCreateBuffer(context, CL_MEM_WRITE_ONLY, worksize*sizeof(float), nullptr, &error);	CL_CHECK(error);
-	error=p_clSetKernelArg(k_add, 0, sizeof(cl_mem), &mem_in1); CL_CHECK(error);//set arguments
-	error=p_clSetKernelArg(k_add, 1, sizeof(cl_mem), &mem_in2); CL_CHECK(error);
-	error=p_clSetKernelArg(k_add, 2, sizeof(cl_mem), &mem_out); CL_CHECK(error);
-	error=p_clEnqueueWriteBuffer(cq, mem_in1, CL_FALSE, 0, worksize*sizeof(float), in1, 0, nullptr, nullptr);	CL_CHECK(error);//send arguments
-	error=p_clEnqueueWriteBuffer(cq, mem_in2, CL_FALSE, 0, worksize*sizeof(float), in2, 0, nullptr, nullptr);	CL_CHECK(error);
-	error=p_clEnqueueNDRangeKernel(cq, k_add, 1, nullptr, &worksize, &worksize, 0, nullptr, nullptr);			CL_CHECK(error);//execute
-	error=p_clEnqueueReadBuffer(cq, mem_out, CL_FALSE, 0, worksize*sizeof(float), out, 0, nullptr, nullptr);	CL_CHECK(error);
-	error=p_clFinish(cq);	CL_CHECK(error);
-	unload_OpenCL_API();//
+		//use kernel
+	//	glFlush();
+		for(int k=0;k<worksize;++k)//initialize	TODO: ititialize in kernel
+		{
+			in1[k]=k;
+			in2[k]=worksize-1-k;
+			out[k]=rand();//
+		}
+		cl_mem mem_in1=p_clCreateBuffer(context, CL_MEM_READ_ONLY, worksize*sizeof(float), nullptr, &error);	CL_CHECK(error);//create OpenCL buffers (or use OpenGL buffers)
+		cl_mem mem_in2=p_clCreateBuffer(context, CL_MEM_READ_ONLY, worksize*sizeof(float), nullptr, &error);	CL_CHECK(error);
+		cl_mem mem_out=p_clCreateBuffer(context, CL_MEM_WRITE_ONLY, worksize*sizeof(float), nullptr, &error);	CL_CHECK(error);
+		error=p_clSetKernelArg(k_add, 0, sizeof(cl_mem), &mem_in1); CL_CHECK(error);//set arguments
+		error=p_clSetKernelArg(k_add, 1, sizeof(cl_mem), &mem_in2); CL_CHECK(error);
+		error=p_clSetKernelArg(k_add, 2, sizeof(cl_mem), &mem_out); CL_CHECK(error);
+		error=p_clEnqueueWriteBuffer(commandqueue, mem_in1, CL_FALSE, 0, worksize*sizeof(float), in1, 0, nullptr, nullptr);	CL_CHECK(error);//send arguments
+		error=p_clEnqueueWriteBuffer(commandqueue, mem_in2, CL_FALSE, 0, worksize*sizeof(float), in2, 0, nullptr, nullptr);	CL_CHECK(error);
+		error=p_clEnqueueNDRangeKernel(commandqueue, k_add, 1, nullptr, &worksize, &worksize, 0, nullptr, nullptr);			CL_CHECK(error);//execute
+		error=p_clEnqueueReadBuffer(commandqueue, mem_out, CL_FALSE, 0, worksize*sizeof(float), out, 0, nullptr, nullptr);	CL_CHECK(error);
+		error=p_clFinish(commandqueue);	CL_CHECK(error);
+		unload_OpenCL_API();//
 #endif
+	}
 }
 struct			CLTerm
 {
-	int mathSet;
+	char mathSet;
 	cl_mem r, i, j, k;
+	CLTerm():mathSet(0), r(nullptr), i(nullptr), j(nullptr), k(nullptr){}
 };
-void 			solve_c2d(Expression const &ex, double VX, double DX, double VY, double DY, int Xplaces, int Yplaces)
+void 			create_resize_buffer(cl_mem &buffer, int nfloats)
+{
+	int error;
+	buffer=p_clCreateBuffer(context, CL_MEM_READ_WRITE, nfloats*sizeof(float), nullptr, &error);
+	CL_CHECK(error);
+}
+void			initialize_const_comp(cl_mem &buffer, int nfloats, float value)
+{
+	int error;
+	if(!buffer)
+		create_resize_buffer(buffer, nfloats);
+	error=p_clEnqueueFillBuffer(commandqueue, buffer, &value, sizeof(float), 0, nfloats*sizeof(float), 0, nullptr, nullptr);
+	CL_CHECK(error);
+}
+static size_t	host_sizes[3]={0};
+static float 	Xstart=0, Xsample=0,
+				Yend=0, mYsample=0;//negative Ysample for C2D
+void 			initialize_component(cl_mem &buffer, int nfloats, char varType, float value, float time, cl_mem size_buf, cl_mem args_buf)
+{
+	int dimension=-1;//-1: constant
+	float data=0;
+	switch(varType)
+	{
+	case 'x':dimension=0;break;
+	case 'y':dimension=1;break;
+	case 'z':dimension=2;break;
+	case 'c':data=value;break;
+	case 't':data=time;break;
+	default:dimension=3;break;
+	}
+	if(dimension==-1)
+		initialize_const_comp(buffer, nfloats, data);
+	else if(dimension<2)
+	{
+		if(!buffer)
+			create_resize_buffer(buffer, nfloats);
+		int error;
+		float host_args[3];
+		if(dimension==0)
+			host_args[0]=Xstart, host_args[1]=Xsample;
+		else
+			host_args[0]=Yend, host_args[1]=mYsample;
+		host_args[2]=(float&)dimension;
+		error=p_clEnqueueWriteBuffer(commandqueue, args_buf, CL_FALSE, 0, 3*sizeof(float), host_args, 0, nullptr, nullptr);	CL_CHECK(error);
+		cl_kernel k_fill=kernels[V_INITIALIZE_PARAMETER];
+		error=p_clSetKernelArg(k_fill, 0, sizeof(cl_mem), &size_buf);	CL_CHECK(error);
+		error=p_clSetKernelArg(k_fill, 1, sizeof(cl_mem), &buffer);		CL_CHECK(error);
+		error=p_clSetKernelArg(k_fill, 2, sizeof(cl_mem), &args_buf);	CL_CHECK(error);
+		error=p_clEnqueueNDRangeKernel(commandqueue, k_fill, 3, nullptr, host_sizes, host_sizes, 0, nullptr, nullptr);	CL_CHECK(error);
+	}
+}
+void 			solve_c2d(Expression const &ex, double VX, double DX, double VY, double DY, int Xplaces, int Yplaces, double time)
 {//expresstion -> OpenGL texture
 	if(OCL_API_not_loaded)
 		LOGERROR("Can't solve without OpenCL API");
 	else
 	{
-		std::vector<CLTerm> terms;
+		{//size_t
+			auto sp=sizeof(void*);				//
+			auto schar=sizeof(char);			//
+			auto sshort=sizeof(short);			//
+			auto swchar_t=sizeof(wchar_t);		//
+			auto sint=sizeof(int);				//
+			auto slong=sizeof(long);			//
+			auto sllong=sizeof(long long);		//
+			auto sfloat=sizeof(float);			//
+			auto sdouble=sizeof(double);		//
+			auto sldouble=sizeof(long double);	//
+			int LOL_1=0;
+		}//
+		int ndrSize=Xplaces*Yplaces;
+		Xstart	=float(VX-DX*05), Xsample	=float(DX/Xplaces);
+		Yend	=float(VY+DY*05), mYsample	=float(-DY/Yplaces);
+		auto ftime=(float)time;
+		int error;
+		cl_mem size_buf=p_clCreateBuffer(context, CL_MEM_READ_ONLY, 2*sizeof(int), nullptr, &error);	CL_CHECK(error);
+		cl_mem args_buf=p_clCreateBuffer(context, CL_MEM_READ_ONLY, 3*sizeof(float), nullptr, &error);	CL_CHECK(error);
+		host_sizes[0]=Xplaces, host_sizes[1]=Yplaces, host_sizes[2]=1;
+		error=p_clEnqueueWriteBuffer(commandqueue, size_buf, CL_FALSE, 0, 2*sizeof(float), host_sizes, 0, nullptr, nullptr);	CL_CHECK(error);
+		int nterms=ex.n.size();
+		std::vector<CLTerm> terms(nterms);
+		for(int kn=0;kn<nterms;++kn)//initialize terms
+		{
+			auto &term=terms[kn];
+			auto &n=ex.n[kn];
+			auto &val=ex.data[kn];
+			if(n.constant)
+			{
+				term.mathSet=n.mathSet;
+				initialize_const_comp(term.r, ndrSize, (float)val.r);
+				if(n.mathSet>='c')
+				{
+					initialize_const_comp(term.i, ndrSize, (float)val.i);
+					if(n.mathSet>='h')
+					{
+						initialize_const_comp(term.j, ndrSize, (float)val.j);
+						initialize_const_comp(term.k, ndrSize, (float)val.k);
+					}
+				}
+			}
+			else//variable term
+			{
+				auto &var=ex.variables[n.varNo];
+				term.mathSet=var.mathSet;
+				initialize_component(term.r, ndrSize, var.varTypeR, (float)val.r, ftime, size_buf, args_buf);
+				if(n.mathSet>='c')
+				{
+					initialize_component(term.i, ndrSize, var.varTypeI, (float)val.i, ftime, size_buf, args_buf);
+					if(n.mathSet>='h')
+					{
+						initialize_component(term.j, ndrSize, var.varTypeJ, (float)val.j, ftime, size_buf, args_buf);
+						initialize_component(term.k, ndrSize, var.varTypeK, (float)val.k, ftime, size_buf, args_buf);
+					}
+				}
+			}
+		}
+		for(int i=0, nInstr=ex.i.size();i<nInstr;++i)//solve (C2D doesn't have interpolation or disc)
+		{
+			auto &in=ex.i[i];
+			auto kernel=kernels[in.cl_idx];
+			if(kernel&&in.type<SIG_INLINE_IF)//TODO: user function -> OpenCL kernel		TODO: inline if
+			{
+				int arg_number=0;
+				error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &size_buf);	CL_CHECK(error);	++arg_number;
+				auto &res=terms[in.result], &op1=terms[in.op1];
+				error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &res.r);	CL_CHECK(error);	++arg_number;
+				if(in.r_ms>='c')
+				{
+					error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &res.i);	CL_CHECK(error);	++arg_number;
+					if(in.r_ms>='h')
+					{
+						error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &res.j);	CL_CHECK(error);	++arg_number;
+						error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &res.j);	CL_CHECK(error);	++arg_number;
+					}
+				}
+				error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op1.r);	CL_CHECK(error);	++arg_number;
+				if(in.op1_ms>='c')
+				{
+					error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op1.i);	CL_CHECK(error);	++arg_number;
+					if(in.op1_ms>='h')
+					{
+						error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op1.j);	CL_CHECK(error);	++arg_number;
+						error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op1.j);	CL_CHECK(error);	++arg_number;
+					}
+				}
+				if(in.op2_ms>='R')
+				{
+					auto &op2=terms[in.op2];
+					error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op2.r);	CL_CHECK(error);	++arg_number;
+					if(in.op2_ms>='c')
+					{
+						error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op2.i);	CL_CHECK(error);	++arg_number;
+						if(in.op2_ms>='h')
+						{
+							error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op2.j);	CL_CHECK(error);	++arg_number;
+							error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op2.j);	CL_CHECK(error);//	++arg_number;
+						}
+					}
+				}
+				error=p_clEnqueueNDRangeKernel(commandqueue, kernel, 3, nullptr, host_sizes, host_sizes, 0, nullptr, nullptr);	CL_CHECK(error);
+			}
+		}
+		auto &result=terms[ex.resultTerm];					//result -> rgb
+		if(result.mathSet=='c')//always true for C2D
+		{
+			auto kernel=kernels[V_C2D_RGB];
+			static cl_mem image=nullptr;
+			if(!image)
+				image=p_clCreateFromGLTexture(context, CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, /*texture*/, &error);	CL_CHECK(error);
+			error=p_clSetKernelArg(kernel, 0, sizeof(cl_mem), &size_buf);	CL_CHECK(error);
+			error=p_clSetKernelArg(kernel, 1, sizeof(cl_mem), &result.r);	CL_CHECK(error);
+			error=p_clSetKernelArg(kernel, 2, sizeof(cl_mem), &result.i);	CL_CHECK(error);
+			error=p_clSetKernelArg(kernel, 3, sizeof(cl_mem), &image);		CL_CHECK(error);
+			error=p_clEnqueueNDRangeKernel(commandqueue, kernel, 2, nullptr, host_sizes, host_sizes, 0, nullptr, nullptr);	CL_CHECK(error);
+		}
 	}
 }
 void 			show_c2d()
@@ -4323,6 +4381,3 @@ void 			show_c2d()
 	//{
 	//}
 }
-//void 			cl_step()
-//{
-//}

@@ -1678,7 +1678,7 @@ namespace	G2
 		auto r=x/y;
 		return (r.r==floor(r.r))&(r.i==floor(r.i))&(r.j==floor(r.j))&(r.k==floor(r.k));
 	}
-	//disc
+	bool disc_r_logic_divides_o		(Value const &x0, Value const &x1){return x0.r!=x1.r;}//for all logic functions
 
 	inline double power_real(double const &x, int y)
 	{
@@ -2192,21 +2192,12 @@ namespace	G2
 		long long mask=-is_real(x);
 		return ~convert_d2ll(x)&mask;
 	}
-	double r_r_bitwise_not(double const& x)
-	{
-		return bitwise_not(x);
-	}
-	Comp1d c_c_bitwise_not(Comp1d const& x)
-	{
-		return Comp1d(bitwise_not(x.r), bitwise_not(x.i));
-	}
-	Quat1d q_q_bitwise_not(Quat1d const& x)
-	{
-		return Quat1d(bitwise_not(x.r), bitwise_not(x.i), bitwise_not(x.j), bitwise_not(x.k));
-	}
-	auto disc_r_bitwise_not_i=disc_r_divide_i;
-	auto disc_c_bitwise_not_i=disc_c_divide_i;
-	bool disc_q_bitwise_not_i(Value const& x0, Value const& x1){return false;}
+	double r_r_bitwise_not(double const& x){return bitwise_not(x);}
+	Comp1d c_c_bitwise_not(Comp1d const& x){return Comp1d(bitwise_not(x.r), bitwise_not(x.i));}
+	Quat1d q_q_bitwise_not(Quat1d const& x){return Quat1d(bitwise_not(x.r), bitwise_not(x.i), bitwise_not(x.j), bitwise_not(x.k));}
+	auto disc_r_bitwise_not_i=disc_r_arg_i;
+	bool disc_c_bitwise_not_i(Value const &x0, Value const &x1){return std::signbit(x0.r)!=std::signbit(x1.r)||std::signbit(x0.i)!=std::signbit(x1.i);}
+	bool disc_q_bitwise_not_i(Value const &x0, Value const &x1){return std::signbit(x0.r)!=std::signbit(x1.r)||std::signbit(x0.i)!=std::signbit(x1.i)||std::signbit(x0.j)!=std::signbit(x1.j)||std::signbit(x0.k)!=std::signbit(x1.k);}
 
 	inline double bitwise_and(double const& x)
 	{
@@ -2262,15 +2253,15 @@ namespace	G2
 	auto disc_r_bitwise_and_o=disc_r_ceil_o;
 	auto disc_c_bitwise_and_o=disc_c_ceil_o;
 	auto disc_q_bitwise_and_o=disc_q_ceil_o;
-	auto disc_rr_bitwise_and_o=disc_r_ceil_o;
-	auto disc_rc_bitwise_and_o=disc_c_ceil_o;
-	auto disc_rq_bitwise_and_o=disc_q_ceil_o;
-	auto disc_cr_bitwise_and_o=disc_c_ceil_o;
-	auto disc_cc_bitwise_and_o=disc_c_ceil_o;
-	auto disc_cq_bitwise_and_o=disc_q_ceil_o;
-	auto disc_qr_bitwise_and_o=disc_q_ceil_o;
-	auto disc_qc_bitwise_and_o=disc_q_ceil_o;
-	auto disc_qq_bitwise_and_o=disc_q_ceil_o;
+	//auto disc_rr_bitwise_and_o=disc_r_ceil_o;
+	//auto disc_rc_bitwise_and_o=disc_c_ceil_o;
+	//auto disc_rq_bitwise_and_o=disc_q_ceil_o;
+	//auto disc_cr_bitwise_and_o=disc_c_ceil_o;
+	//auto disc_cc_bitwise_and_o=disc_c_ceil_o;
+	//auto disc_cq_bitwise_and_o=disc_q_ceil_o;
+	//auto disc_qr_bitwise_and_o=disc_q_ceil_o;
+	//auto disc_qc_bitwise_and_o=disc_q_ceil_o;
+	//auto disc_qq_bitwise_and_o=disc_q_ceil_o;
 
 	inline double bitwise_nand(double const& x)
 	{
@@ -2325,15 +2316,15 @@ namespace	G2
 	auto disc_r_bitwise_nand_o=disc_r_bitwise_and_o;
 	auto disc_c_bitwise_nand_o=disc_c_bitwise_and_o;
 	auto disc_q_bitwise_nand_o=disc_q_bitwise_and_o;
-	auto disc_rr_bitwise_nand_o=disc_rr_bitwise_and_o;
-	auto disc_rc_bitwise_nand_o=disc_rc_bitwise_and_o;
-	auto disc_rq_bitwise_nand_o=disc_rq_bitwise_and_o;
-	auto disc_cr_bitwise_nand_o=disc_cr_bitwise_and_o;
-	auto disc_cc_bitwise_nand_o=disc_cc_bitwise_and_o;
-	auto disc_cq_bitwise_nand_o=disc_cq_bitwise_and_o;
-	auto disc_qr_bitwise_nand_o=disc_qr_bitwise_and_o;
-	auto disc_qc_bitwise_nand_o=disc_qc_bitwise_and_o;
-	auto disc_qq_bitwise_nand_o=disc_qq_bitwise_and_o;
+	//auto disc_rr_bitwise_nand_o=disc_rr_bitwise_and_o;
+	//auto disc_rc_bitwise_nand_o=disc_rc_bitwise_and_o;
+	//auto disc_rq_bitwise_nand_o=disc_rq_bitwise_and_o;
+	//auto disc_cr_bitwise_nand_o=disc_cr_bitwise_and_o;
+	//auto disc_cc_bitwise_nand_o=disc_cc_bitwise_and_o;
+	//auto disc_cq_bitwise_nand_o=disc_cq_bitwise_and_o;
+	//auto disc_qr_bitwise_nand_o=disc_qr_bitwise_and_o;
+	//auto disc_qc_bitwise_nand_o=disc_qc_bitwise_and_o;
+	//auto disc_qq_bitwise_nand_o=disc_qq_bitwise_and_o;
 
 	inline double bitwise_or(double const& x)
 	{
@@ -2389,15 +2380,15 @@ namespace	G2
 	auto disc_r_bitwise_or_o=disc_r_bitwise_and_o;
 	auto disc_c_bitwise_or_o=disc_c_bitwise_and_o;
 	auto disc_q_bitwise_or_o=disc_q_bitwise_and_o;
-	auto disc_rr_bitwise_or_o=disc_rr_bitwise_and_o;
-	auto disc_rc_bitwise_or_o=disc_rc_bitwise_and_o;
-	auto disc_rq_bitwise_or_o=disc_rq_bitwise_and_o;
-	auto disc_cr_bitwise_or_o=disc_cr_bitwise_and_o;
-	auto disc_cc_bitwise_or_o=disc_cc_bitwise_and_o;
-	auto disc_cq_bitwise_or_o=disc_cq_bitwise_and_o;
-	auto disc_qr_bitwise_or_o=disc_qr_bitwise_and_o;
-	auto disc_qc_bitwise_or_o=disc_qc_bitwise_and_o;
-	auto disc_qq_bitwise_or_o=disc_qq_bitwise_and_o;
+	//auto disc_rr_bitwise_or_o=disc_rr_bitwise_and_o;
+	//auto disc_rc_bitwise_or_o=disc_rc_bitwise_and_o;
+	//auto disc_rq_bitwise_or_o=disc_rq_bitwise_and_o;
+	//auto disc_cr_bitwise_or_o=disc_cr_bitwise_and_o;
+	//auto disc_cc_bitwise_or_o=disc_cc_bitwise_and_o;
+	//auto disc_cq_bitwise_or_o=disc_cq_bitwise_and_o;
+	//auto disc_qr_bitwise_or_o=disc_qr_bitwise_and_o;
+	//auto disc_qc_bitwise_or_o=disc_qc_bitwise_and_o;
+	//auto disc_qq_bitwise_or_o=disc_qq_bitwise_and_o;
 
 	inline double bitwise_nor(double const& x)
 	{
@@ -2452,15 +2443,15 @@ namespace	G2
 	auto disc_r_bitwise_nor_o=disc_r_bitwise_and_o;
 	auto disc_c_bitwise_nor_o=disc_c_bitwise_and_o;
 	auto disc_q_bitwise_nor_o=disc_q_bitwise_and_o;
-	auto disc_rr_bitwise_nor_o=disc_rr_bitwise_and_o;
-	auto disc_rc_bitwise_nor_o=disc_rc_bitwise_and_o;
-	auto disc_rq_bitwise_nor_o=disc_rq_bitwise_and_o;
-	auto disc_cr_bitwise_nor_o=disc_cr_bitwise_and_o;
-	auto disc_cc_bitwise_nor_o=disc_cc_bitwise_and_o;
-	auto disc_cq_bitwise_nor_o=disc_cq_bitwise_and_o;
-	auto disc_qr_bitwise_nor_o=disc_qr_bitwise_and_o;
-	auto disc_qc_bitwise_nor_o=disc_qc_bitwise_and_o;
-	auto disc_qq_bitwise_nor_o=disc_qq_bitwise_and_o;
+	//auto disc_rr_bitwise_nor_o=disc_rr_bitwise_and_o;
+	//auto disc_rc_bitwise_nor_o=disc_rc_bitwise_and_o;
+	//auto disc_rq_bitwise_nor_o=disc_rq_bitwise_and_o;
+	//auto disc_cr_bitwise_nor_o=disc_cr_bitwise_and_o;
+	//auto disc_cc_bitwise_nor_o=disc_cc_bitwise_and_o;
+	//auto disc_cq_bitwise_nor_o=disc_cq_bitwise_and_o;
+	//auto disc_qr_bitwise_nor_o=disc_qr_bitwise_and_o;
+	//auto disc_qc_bitwise_nor_o=disc_qc_bitwise_and_o;
+	//auto disc_qq_bitwise_nor_o=disc_qq_bitwise_and_o;
 
 	inline double bitwise_xor(double const& x)
 	{
@@ -2526,15 +2517,15 @@ namespace	G2
 	auto disc_r_bitwise_xor_o=disc_r_bitwise_and_o;
 	auto disc_c_bitwise_xor_o=disc_c_bitwise_and_o;
 	auto disc_q_bitwise_xor_o=disc_q_bitwise_and_o;
-	auto disc_rr_bitwise_xor_o=disc_rr_bitwise_and_o;
-	auto disc_rc_bitwise_xor_o=disc_rc_bitwise_and_o;
-	auto disc_rq_bitwise_xor_o=disc_rq_bitwise_and_o;
-	auto disc_cr_bitwise_xor_o=disc_cr_bitwise_and_o;
-	auto disc_cc_bitwise_xor_o=disc_cc_bitwise_and_o;
-	auto disc_cq_bitwise_xor_o=disc_cq_bitwise_and_o;
-	auto disc_qr_bitwise_xor_o=disc_qr_bitwise_and_o;
-	auto disc_qc_bitwise_xor_o=disc_qc_bitwise_and_o;
-	auto disc_qq_bitwise_xor_o=disc_qq_bitwise_and_o;
+	//auto disc_rr_bitwise_xor_o=disc_rr_bitwise_and_o;
+	//auto disc_rc_bitwise_xor_o=disc_rc_bitwise_and_o;
+	//auto disc_rq_bitwise_xor_o=disc_rq_bitwise_and_o;
+	//auto disc_cr_bitwise_xor_o=disc_cr_bitwise_and_o;
+	//auto disc_cc_bitwise_xor_o=disc_cc_bitwise_and_o;
+	//auto disc_cq_bitwise_xor_o=disc_cq_bitwise_and_o;
+	//auto disc_qr_bitwise_xor_o=disc_qr_bitwise_and_o;
+	//auto disc_qc_bitwise_xor_o=disc_qc_bitwise_and_o;
+	//auto disc_qq_bitwise_xor_o=disc_qq_bitwise_and_o;
 
 	inline double bitwise_xnor(double const& x)
 	{
@@ -2561,15 +2552,15 @@ namespace	G2
 	auto disc_r_bitwise_xnor_o=disc_r_bitwise_and_o;
 	auto disc_c_bitwise_xnor_o=disc_c_bitwise_and_o;
 	auto disc_q_bitwise_xnor_o=disc_q_bitwise_and_o;
-	auto disc_rr_bitwise_xnor_o=disc_rr_bitwise_and_o;
-	auto disc_rc_bitwise_xnor_o=disc_rc_bitwise_and_o;
-	auto disc_rq_bitwise_xnor_o=disc_rq_bitwise_and_o;
-	auto disc_cr_bitwise_xnor_o=disc_cr_bitwise_and_o;
-	auto disc_cc_bitwise_xnor_o=disc_cc_bitwise_and_o;
-	auto disc_cq_bitwise_xnor_o=disc_cq_bitwise_and_o;
-	auto disc_qr_bitwise_xnor_o=disc_qr_bitwise_and_o;
-	auto disc_qc_bitwise_xnor_o=disc_qc_bitwise_and_o;
-	auto disc_qq_bitwise_xnor_o=disc_qq_bitwise_and_o;
+	//auto disc_rr_bitwise_xnor_o=disc_rr_bitwise_and_o;
+	//auto disc_rc_bitwise_xnor_o=disc_rc_bitwise_and_o;
+	//auto disc_rq_bitwise_xnor_o=disc_rq_bitwise_and_o;
+	//auto disc_cr_bitwise_xnor_o=disc_cr_bitwise_and_o;
+	//auto disc_cc_bitwise_xnor_o=disc_cc_bitwise_and_o;
+	//auto disc_cq_bitwise_xnor_o=disc_cq_bitwise_and_o;
+	//auto disc_qr_bitwise_xnor_o=disc_qr_bitwise_and_o;
+	//auto disc_qc_bitwise_xnor_o=disc_qc_bitwise_and_o;
+	//auto disc_qq_bitwise_xnor_o=disc_qq_bitwise_and_o;
 
 	double r_r_logic_equal(double const& x){return x==0;}
 	double r_c_logic_equal(Comp1d const& x){return !x.c_is_true();}
@@ -2583,51 +2574,52 @@ namespace	G2
 	double r_qr_logic_equal(Quat1d const& x, double const& y){return x==y;}
 	double r_qc_logic_equal(Quat1d const& x, Comp1d const& y){return x==y;}
 	double r_qq_logic_equal(Quat1d const& x, Quat1d const& y){return x==y;}
-	bool disc_x_logic_equal(double x0, double x1)
-	{
-		if(x0<0)
-			return x1>=0;
-		if(x0==0)
-			return x1<0||x1>0;
-		return x1<=0;
-	}
-	bool disc_r_logic_equal_i(Value const& x0, Value const& x1){return disc_x_logic_equal(x0.r, x1.r);}
-	bool disc_c_logic_equal_i(Value const& x0, Value const& x1){return disc_x_logic_equal(x0.r, x1.r)&&disc_x_logic_equal(x0.i, x1.i);}
-	bool disc_q_logic_equal_i(Value const& x0, Value const& x1){return disc_x_logic_equal(x0.r, x1.r)&&disc_x_logic_equal(x0.i, x1.i)&&disc_x_logic_equal(x0.j, x1.j)&&disc_x_logic_equal(x0.k, x1.k);}
-	bool disc_rr_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r);}
-	bool disc_rc_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(-y0.i, -y1.i);}
-	bool disc_rq_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(-y0.i, -y1.i)&&disc_x_logic_equal(-y0.j, -y1.j)&&disc_x_logic_equal(-y0.k, -y1.k);
-	}
-	bool disc_cr_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(x0.i, x1.i);
-	}
-	bool disc_cc_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(x0.i-y0.i, x1.i-y1.i);
-	}
-	bool disc_cq_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(x0.i-y0.i, x1.i-y1.i)&&
-				disc_x_logic_equal(-y0.j, -y1.j)&&disc_x_logic_equal(-y0.k, -y1.k);
-	}
-	bool disc_qr_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(x0.i, x1.i)&&
-				disc_x_logic_equal(x0.j, x1.j)&&disc_x_logic_equal(x0.k, x1.k);
-	}
-	bool disc_qc_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(x0.i-y0.i, x1.i-y1.i)&&
-				disc_x_logic_equal(x0.j, x1.j)&&disc_x_logic_equal(x0.k, x1.k);
-	}
-	bool disc_qq_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(x0.i-y0.i, x1.i-y1.i)&&
-				disc_x_logic_equal(x0.j-y0.j, x1.j-y1.j)&&disc_x_logic_equal(x0.k-y0.k, x1.k-y1.k);
-	}
+	auto disc_r_logic_equal_o		=disc_r_logic_divides_o;
+	//bool disc_x_logic_equal(double x0, double x1)
+	//{
+	//	if(x0<0)
+	//		return x1>=0;
+	//	if(x0==0)
+	//		return x1<0||x1>0;
+	//	return x1<=0;
+	//}
+	//bool disc_r_logic_equal_i(Value const& x0, Value const& x1){return disc_x_logic_equal(x0.r, x1.r);}
+	//bool disc_c_logic_equal_i(Value const& x0, Value const& x1){return disc_x_logic_equal(x0.r, x1.r)&&disc_x_logic_equal(x0.i, x1.i);}
+	//bool disc_q_logic_equal_i(Value const& x0, Value const& x1){return disc_x_logic_equal(x0.r, x1.r)&&disc_x_logic_equal(x0.i, x1.i)&&disc_x_logic_equal(x0.j, x1.j)&&disc_x_logic_equal(x0.k, x1.k);}
+	//bool disc_rr_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r);}
+	//bool disc_rc_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(-y0.i, -y1.i);}
+	//bool disc_rq_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(-y0.i, -y1.i)&&disc_x_logic_equal(-y0.j, -y1.j)&&disc_x_logic_equal(-y0.k, -y1.k);
+	//}
+	//bool disc_cr_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(x0.i, x1.i);
+	//}
+	//bool disc_cc_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(x0.i-y0.i, x1.i-y1.i);
+	//}
+	//bool disc_cq_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(x0.i-y0.i, x1.i-y1.i)&&
+	//			disc_x_logic_equal(-y0.j, -y1.j)&&disc_x_logic_equal(-y0.k, -y1.k);
+	//}
+	//bool disc_qr_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(x0.i, x1.i)&&
+	//			disc_x_logic_equal(x0.j, x1.j)&&disc_x_logic_equal(x0.k, x1.k);
+	//}
+	//bool disc_qc_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(x0.i-y0.i, x1.i-y1.i)&&
+	//			disc_x_logic_equal(x0.j, x1.j)&&disc_x_logic_equal(x0.k, x1.k);
+	//}
+	//bool disc_qq_logic_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_equal(x0.r-y0.r, x1.r-y1.r)&&disc_x_logic_equal(x0.i-y0.i, x1.i-y1.i)&&
+	//			disc_x_logic_equal(x0.j-y0.j, x1.j-y1.j)&&disc_x_logic_equal(x0.k-y0.k, x1.k-y1.k);
+	//}
 
 	double r_r_logic_not_equal(double const& x){return x!=0;}
 	double r_c_logic_not_equal(Comp1d const& x){return x.c_is_true();}
@@ -2641,18 +2633,19 @@ namespace	G2
 	double r_qr_logic_not_equal(Quat1d const& x, double const& y){return x!=y;}
 	double r_qc_logic_not_equal(Quat1d const& x, Comp1d const& y){return x!=y;}
 	double r_qq_logic_not_equal(Quat1d const& x, Quat1d const& y){return x!=y;}
-	auto disc_r_logic_not_equal_i=disc_r_logic_equal_i;
-	auto disc_c_logic_not_equal_i=disc_c_logic_equal_i;
-	auto disc_q_logic_not_equal_i=disc_q_logic_equal_i;
-	auto disc_rr_logic_not_equal_i=disc_rr_logic_equal_i;
-	auto disc_rc_logic_not_equal_i=disc_rc_logic_equal_i;
-	auto disc_rq_logic_not_equal_i=disc_rq_logic_equal_i;
-	auto disc_cr_logic_not_equal_i=disc_cr_logic_equal_i;
-	auto disc_cc_logic_not_equal_i=disc_cc_logic_equal_i;
-	auto disc_cq_logic_not_equal_i=disc_cq_logic_equal_i;
-	auto disc_qr_logic_not_equal_i=disc_qr_logic_equal_i;
-	auto disc_qc_logic_not_equal_i=disc_qc_logic_equal_i;
-	auto disc_qq_logic_not_equal_i=disc_qq_logic_equal_i;
+	auto disc_r_logic_not_equal_o		=disc_r_logic_divides_o;
+	//auto disc_r_logic_not_equal_i=disc_r_logic_equal_i;
+	//auto disc_c_logic_not_equal_i=disc_c_logic_equal_i;
+	//auto disc_q_logic_not_equal_i=disc_q_logic_equal_i;
+	//auto disc_rr_logic_not_equal_i=disc_rr_logic_equal_i;
+	//auto disc_rc_logic_not_equal_i=disc_rc_logic_equal_i;
+	//auto disc_rq_logic_not_equal_i=disc_rq_logic_equal_i;
+	//auto disc_cr_logic_not_equal_i=disc_cr_logic_equal_i;
+	//auto disc_cc_logic_not_equal_i=disc_cc_logic_equal_i;
+	//auto disc_cq_logic_not_equal_i=disc_cq_logic_equal_i;
+	//auto disc_qr_logic_not_equal_i=disc_qr_logic_equal_i;
+	//auto disc_qc_logic_not_equal_i=disc_qc_logic_equal_i;
+	//auto disc_qq_logic_not_equal_i=disc_qq_logic_equal_i;
 
 	double r_r_logic_less_l(double const& x){return 0<x;}
 	double r_c_logic_less_l(Comp1d const& x){return 0<x.r;}
@@ -2669,22 +2662,23 @@ namespace	G2
 	double r_qr_logic_less(Quat1d const& x, double const& y){return x.r<y;}
 	double r_qc_logic_less(Quat1d const& x, Comp1d const& y){return x.r<y.r;}
 	double r_qq_logic_less(Quat1d const& x, Quat1d const& y){return x.r<y.r;}
-	bool disc_x_logic_less(double x0, double x1){return x0<0?x1>=0:x1<0;}//	__|0__
-	bool disc_r_logic_less_l_i(Value const& x0, Value const& x1){return disc_x_logic_less(-x0.r, -x1.r);}
-	auto disc_c_logic_less_l_i=disc_r_logic_less_l_i;
-	auto disc_q_logic_less_l_i=disc_r_logic_less_l_i;
-	bool disc_r_logic_less_r_i(Value const& x0, Value const& x1){return disc_x_logic_less(x0.r, x1.r);}
-	auto disc_c_logic_less_r_i=disc_r_logic_less_r_i;
-	auto disc_q_logic_less_r_i=disc_r_logic_less_r_i;
-	bool disc_rr_logic_less_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return disc_x_logic_less(x0.r-y0.r, x1.r-y1.r);}
-	auto disc_rc_logic_less_i=disc_rr_logic_less_i;
-	auto disc_rq_logic_less_i=disc_rr_logic_less_i;
-	auto disc_cr_logic_less_i=disc_rr_logic_less_i;
-	auto disc_cc_logic_less_i=disc_rr_logic_less_i;
-	auto disc_cq_logic_less_i=disc_rr_logic_less_i;
-	auto disc_qr_logic_less_i=disc_rr_logic_less_i;
-	auto disc_qc_logic_less_i=disc_rr_logic_less_i;
-	auto disc_qq_logic_less_i=disc_rr_logic_less_i;
+	auto disc_r_logic_less_o		=disc_r_logic_divides_o;
+	//bool disc_x_logic_less(double x0, double x1){return x0<0?x1>=0:x1<0;}//	__|0__
+	//bool disc_r_logic_less_l_i(Value const& x0, Value const& x1){return disc_x_logic_less(-x0.r, -x1.r);}
+	//auto disc_c_logic_less_l_i=disc_r_logic_less_l_i;
+	//auto disc_q_logic_less_l_i=disc_r_logic_less_l_i;
+	//bool disc_r_logic_less_r_i(Value const& x0, Value const& x1){return disc_x_logic_less(x0.r, x1.r);}
+	//auto disc_c_logic_less_r_i=disc_r_logic_less_r_i;
+	//auto disc_q_logic_less_r_i=disc_r_logic_less_r_i;
+	//bool disc_rr_logic_less_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return disc_x_logic_less(x0.r-y0.r, x1.r-y1.r);}
+	//auto disc_rc_logic_less_i=disc_rr_logic_less_i;
+	//auto disc_rq_logic_less_i=disc_rr_logic_less_i;
+	//auto disc_cr_logic_less_i=disc_rr_logic_less_i;
+	//auto disc_cc_logic_less_i=disc_rr_logic_less_i;
+	//auto disc_cq_logic_less_i=disc_rr_logic_less_i;
+	//auto disc_qr_logic_less_i=disc_rr_logic_less_i;
+	//auto disc_qc_logic_less_i=disc_rr_logic_less_i;
+	//auto disc_qq_logic_less_i=disc_rr_logic_less_i;
 
 	double r_r_logic_less_equal_l(double const& x){return 0<=x;}
 	double r_c_logic_less_equal_l(Comp1d const& x){return 0<=x.r;}
@@ -2701,22 +2695,23 @@ namespace	G2
 	double r_qr_logic_less_equal(Quat1d const& x, double const& y){return x.r<=y;}
 	double r_qc_logic_less_equal(Quat1d const& x, Comp1d const& y){return x.r<=y.r;}
 	double r_qq_logic_less_equal(Quat1d const& x, Quat1d const& y){return x.r<=y.r;}
-	bool disc_x_logic_less_equal(double x0, double x1){return x0<=0?x1>0:x1<=0;}//	__0|__
-	bool disc_r_logic_less_equal_l_i(Value const& x0, Value const& x1){return disc_x_logic_less_equal(-x0.r, -x1.r);}
-	auto disc_c_logic_less_equal_l_i=disc_r_logic_less_equal_l_i;
-	auto disc_q_logic_less_equal_l_i=disc_r_logic_less_equal_l_i;
-	bool disc_r_logic_less_equal_r_i(Value const& x0, Value const& x1){return disc_x_logic_less_equal(x0.r, x1.r);}
-	auto disc_c_logic_less_equal_r_i=disc_r_logic_less_equal_r_i;
-	auto disc_q_logic_less_equal_r_i=disc_r_logic_less_equal_r_i;
-	bool disc_rr_logic_less_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return disc_r_logic_less_equal_r_i(x0.r-y0.r, x1.r-y1.r);}
-	auto disc_rc_logic_less_equal_i=disc_rr_logic_less_equal_i;
-	auto disc_rq_logic_less_equal_i=disc_rr_logic_less_equal_i;
-	auto disc_cr_logic_less_equal_i=disc_rr_logic_less_equal_i;
-	auto disc_cc_logic_less_equal_i=disc_rr_logic_less_equal_i;
-	auto disc_cq_logic_less_equal_i=disc_rr_logic_less_equal_i;
-	auto disc_qr_logic_less_equal_i=disc_rr_logic_less_equal_i;
-	auto disc_qc_logic_less_equal_i=disc_rr_logic_less_equal_i;
-	auto disc_qq_logic_less_equal_i=disc_rr_logic_less_equal_i;
+	auto disc_r_logic_less_equal_o		=disc_r_logic_divides_o;
+	//bool disc_x_logic_less_equal(double x0, double x1){return x0<=0?x1>0:x1<=0;}//	__0|__
+	//bool disc_r_logic_less_equal_l_i(Value const& x0, Value const& x1){return disc_x_logic_less_equal(-x0.r, -x1.r);}
+	//auto disc_c_logic_less_equal_l_i=disc_r_logic_less_equal_l_i;
+	//auto disc_q_logic_less_equal_l_i=disc_r_logic_less_equal_l_i;
+	//bool disc_r_logic_less_equal_r_i(Value const& x0, Value const& x1){return disc_x_logic_less_equal(x0.r, x1.r);}
+	//auto disc_c_logic_less_equal_r_i=disc_r_logic_less_equal_r_i;
+	//auto disc_q_logic_less_equal_r_i=disc_r_logic_less_equal_r_i;
+	//bool disc_rr_logic_less_equal_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return disc_r_logic_less_equal_r_i(x0.r-y0.r, x1.r-y1.r);}
+	//auto disc_rc_logic_less_equal_i=disc_rr_logic_less_equal_i;
+	//auto disc_rq_logic_less_equal_i=disc_rr_logic_less_equal_i;
+	//auto disc_cr_logic_less_equal_i=disc_rr_logic_less_equal_i;
+	//auto disc_cc_logic_less_equal_i=disc_rr_logic_less_equal_i;
+	//auto disc_cq_logic_less_equal_i=disc_rr_logic_less_equal_i;
+	//auto disc_qr_logic_less_equal_i=disc_rr_logic_less_equal_i;
+	//auto disc_qc_logic_less_equal_i=disc_rr_logic_less_equal_i;
+	//auto disc_qq_logic_less_equal_i=disc_rr_logic_less_equal_i;
 	
 	double r_r_logic_greater_l(double const& x){return 0>x;}
 	double r_c_logic_greater_l(Comp1d const& x){return 0>x.r;}
@@ -2733,21 +2728,22 @@ namespace	G2
 	double r_qr_logic_greater(Quat1d const& x, double const& y){return x.r>y;}
 	double r_qc_logic_greater(Quat1d const& x, Comp1d const& y){return x.r>y.r;}
 	double r_qq_logic_greater(Quat1d const& x, Quat1d const& y){return x.r>y.r;}
-	auto disc_r_logic_greater_l_i=disc_r_logic_less_equal_l_i;
-	auto disc_c_logic_greater_l_i=disc_c_logic_less_equal_l_i;
-	auto disc_q_logic_greater_l_i=disc_q_logic_less_equal_l_i;
-	auto disc_r_logic_greater_r_i=disc_r_logic_less_equal_r_i;
-	auto disc_c_logic_greater_r_i=disc_c_logic_less_equal_r_i;
-	auto disc_q_logic_greater_r_i=disc_q_logic_less_equal_r_i;
-	auto disc_rr_logic_greater_i=disc_rr_logic_less_equal_i;
-	auto disc_rc_logic_greater_i=disc_rc_logic_less_equal_i;
-	auto disc_rq_logic_greater_i=disc_rq_logic_less_equal_i;
-	auto disc_cr_logic_greater_i=disc_cr_logic_less_equal_i;
-	auto disc_cc_logic_greater_i=disc_cc_logic_less_equal_i;
-	auto disc_cq_logic_greater_i=disc_cq_logic_less_equal_i;
-	auto disc_qr_logic_greater_i=disc_qr_logic_less_equal_i;
-	auto disc_qc_logic_greater_i=disc_qc_logic_less_equal_i;
-	auto disc_qq_logic_greater_i=disc_qq_logic_less_equal_i;
+	auto disc_r_logic_greater_o		=disc_r_logic_divides_o;
+	//auto disc_r_logic_greater_l_i=disc_r_logic_less_equal_l_i;
+	//auto disc_c_logic_greater_l_i=disc_c_logic_less_equal_l_i;
+	//auto disc_q_logic_greater_l_i=disc_q_logic_less_equal_l_i;
+	//auto disc_r_logic_greater_r_i=disc_r_logic_less_equal_r_i;
+	//auto disc_c_logic_greater_r_i=disc_c_logic_less_equal_r_i;
+	//auto disc_q_logic_greater_r_i=disc_q_logic_less_equal_r_i;
+	//auto disc_rr_logic_greater_i=disc_rr_logic_less_equal_i;
+	//auto disc_rc_logic_greater_i=disc_rc_logic_less_equal_i;
+	//auto disc_rq_logic_greater_i=disc_rq_logic_less_equal_i;
+	//auto disc_cr_logic_greater_i=disc_cr_logic_less_equal_i;
+	//auto disc_cc_logic_greater_i=disc_cc_logic_less_equal_i;
+	//auto disc_cq_logic_greater_i=disc_cq_logic_less_equal_i;
+	//auto disc_qr_logic_greater_i=disc_qr_logic_less_equal_i;
+	//auto disc_qc_logic_greater_i=disc_qc_logic_less_equal_i;
+	//auto disc_qq_logic_greater_i=disc_qq_logic_less_equal_i;
 
 	double r_r_logic_greater_equal_l(double const& x){return 0>=x;}
 	double r_c_logic_greater_equal_l(Comp1d const& x){return 0>=x.r;}
@@ -2764,28 +2760,30 @@ namespace	G2
 	double r_qr_logic_greater_equal(Quat1d const& x, double const& y){return x.r>=y;}
 	double r_qc_logic_greater_equal(Quat1d const& x, Comp1d const& y){return x.r>=y.r;}
 	double r_qq_logic_greater_equal(Quat1d const& x, Quat1d const& y){return x.r>=y.r;}
-	auto disc_r_logic_greater_equal_l_i=disc_r_logic_less_l_i;
-	auto disc_c_logic_greater_equal_l_i=disc_c_logic_less_l_i;
-	auto disc_q_logic_greater_equal_l_i=disc_q_logic_less_l_i;
-	auto disc_r_logic_greater_equal_r_i=disc_r_logic_less_r_i;
-	auto disc_c_logic_greater_equal_r_i=disc_c_logic_less_r_i;
-	auto disc_q_logic_greater_equal_r_i=disc_q_logic_less_r_i;
-	auto disc_rr_logic_greater_equal_i=disc_rr_logic_less_i;
-	auto disc_rc_logic_greater_equal_i=disc_rc_logic_less_i;
-	auto disc_rq_logic_greater_equal_i=disc_rq_logic_less_i;
-	auto disc_cr_logic_greater_equal_i=disc_cr_logic_less_i;
-	auto disc_cc_logic_greater_equal_i=disc_cc_logic_less_i;
-	auto disc_cq_logic_greater_equal_i=disc_cq_logic_less_i;
-	auto disc_qr_logic_greater_equal_i=disc_qr_logic_less_i;
-	auto disc_qc_logic_greater_equal_i=disc_qc_logic_less_i;
-	auto disc_qq_logic_greater_equal_i=disc_qq_logic_less_i;
+	auto disc_r_logic_greater_equal_o		=disc_r_logic_divides_o;
+	//auto disc_r_logic_greater_equal_l_i=disc_r_logic_less_l_i;
+	//auto disc_c_logic_greater_equal_l_i=disc_c_logic_less_l_i;
+	//auto disc_q_logic_greater_equal_l_i=disc_q_logic_less_l_i;
+	//auto disc_r_logic_greater_equal_r_i=disc_r_logic_less_r_i;
+	//auto disc_c_logic_greater_equal_r_i=disc_c_logic_less_r_i;
+	//auto disc_q_logic_greater_equal_r_i=disc_q_logic_less_r_i;
+	//auto disc_rr_logic_greater_equal_i=disc_rr_logic_less_i;
+	//auto disc_rc_logic_greater_equal_i=disc_rc_logic_less_i;
+	//auto disc_rq_logic_greater_equal_i=disc_rq_logic_less_i;
+	//auto disc_cr_logic_greater_equal_i=disc_cr_logic_less_i;
+	//auto disc_cc_logic_greater_equal_i=disc_cc_logic_less_i;
+	//auto disc_cq_logic_greater_equal_i=disc_cq_logic_less_i;
+	//auto disc_qr_logic_greater_equal_i=disc_qr_logic_less_i;
+	//auto disc_qc_logic_greater_equal_i=disc_qc_logic_less_i;
+	//auto disc_qq_logic_greater_equal_i=disc_qq_logic_less_i;
 
 	double r_r_logic_not(double const& x){return x==0;}
 	double r_c_logic_not(Comp1d const& x){return (x.r==0)&(x.i==0);}
 	double r_q_logic_not(Quat1d const& x){return (x.r==0)&(x.i==0)&(x.j==0)&(x.k==0);}
-	auto disc_r_logic_not_i=disc_r_divide_i;
-	auto disc_c_logic_not_i=disc_c_divide_i;
-	auto disc_q_logic_not_i=disc_q_divide_i;
+	auto disc_r_logic_not_o		=disc_r_logic_divides_o;
+	//auto disc_r_logic_not_i=disc_r_divide_i;
+	//auto disc_c_logic_not_i=disc_c_divide_i;
+	//auto disc_q_logic_not_i=disc_q_divide_i;
 
 	double r_rr_logic_and(double const& x, double const& y){return x!=0&y!=0;}
 	double r_rc_logic_and(double const& x, Comp1d const& y){return (x!=0)&y.c_is_true();}
@@ -2796,57 +2794,58 @@ namespace	G2
 	double r_qr_logic_and(Quat1d const& x, double const& y){return x.q_is_true()&(y!=0);}
 	double r_qc_logic_and(Quat1d const& x, Comp1d const& y){return x.q_is_true()&y.c_is_true();}
 	double r_qq_logic_and(Quat1d const& x, Quat1d const& y){return x.q_is_true()&y.q_is_true();}
-	bool disc_x_logic_and(double x0, double x1)
-	{
-		if(x0<0)
-			return x1>=0;
-		if(x0==0)
-			return x1<0||x1>0;
-		return x1<=0;
-	}
-	bool disc_rr_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_and(x0.r, x1.r)||disc_x_logic_and(y0.r, y1.r);
-	}
-	bool disc_rc_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_and(x0.r, x1.r)||(disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i));
-	}
-	bool disc_rq_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_and(x0.r, x1.r)||
-			(disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i)&&disc_x_logic_and(y0.j, y1.j)&&disc_x_logic_and(y0.k, y1.k));
-	}
-	bool disc_cr_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return (disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i))||
-				disc_x_logic_and(y0.r, y1.r);
-	}
-	bool disc_cc_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return (disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i))||
-				(disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i));
-	}
-	bool disc_cq_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return (disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i))||
-				(disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i)&&disc_x_logic_and(y0.j, y1.j)&&disc_x_logic_and(y0.k, y1.k));
-	}
-	bool disc_qr_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return (disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&disc_x_logic_and(x0.j, x1.j)&&disc_x_logic_and(x0.k, x1.k))||
-				disc_x_logic_and(y0.r, y1.r);
-	}
-	bool disc_qc_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return (disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&disc_x_logic_and(x0.j, x1.j)&&disc_x_logic_and(x0.k, x1.k))||
-				(disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i));
-	}
-	bool disc_qq_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return (disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&disc_x_logic_and(x0.j, x1.j)&&disc_x_logic_and(x0.k, x1.k))||
-				(disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i)&&disc_x_logic_and(y0.j, y1.j)&&disc_x_logic_and(y0.k, y1.k));
-	}
+	auto disc_r_logic_and_o		=disc_r_logic_divides_o;
+	//bool disc_x_logic_and(double x0, double x1)
+	//{
+	//	if(x0<0)
+	//		return x1>=0;
+	//	if(x0==0)
+	//		return x1<0||x1>0;
+	//	return x1<=0;
+	//}
+	//bool disc_rr_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_and(x0.r, x1.r)||disc_x_logic_and(y0.r, y1.r);
+	//}
+	//bool disc_rc_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_and(x0.r, x1.r)||(disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i));
+	//}
+	//bool disc_rq_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_and(x0.r, x1.r)||
+	//		(disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i)&&disc_x_logic_and(y0.j, y1.j)&&disc_x_logic_and(y0.k, y1.k));
+	//}
+	//bool disc_cr_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return (disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i))||
+	//			disc_x_logic_and(y0.r, y1.r);
+	//}
+	//bool disc_cc_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return (disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i))||
+	//			(disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i));
+	//}
+	//bool disc_cq_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return (disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i))||
+	//			(disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i)&&disc_x_logic_and(y0.j, y1.j)&&disc_x_logic_and(y0.k, y1.k));
+	//}
+	//bool disc_qr_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return (disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&disc_x_logic_and(x0.j, x1.j)&&disc_x_logic_and(x0.k, x1.k))||
+	//			disc_x_logic_and(y0.r, y1.r);
+	//}
+	//bool disc_qc_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return (disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&disc_x_logic_and(x0.j, x1.j)&&disc_x_logic_and(x0.k, x1.k))||
+	//			(disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i));
+	//}
+	//bool disc_qq_logic_and_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return (disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&disc_x_logic_and(x0.j, x1.j)&&disc_x_logic_and(x0.k, x1.k))||
+	//			(disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i)&&disc_x_logic_and(y0.j, y1.j)&&disc_x_logic_and(y0.k, y1.k));
+	//}
 
 	double r_rr_logic_or(double const& x, double const& y){return x!=0|y!=0;}
 	double r_rc_logic_or(double const& x, Comp1d const& y){return (x!=0)|y.c_is_true();}
@@ -2857,56 +2856,57 @@ namespace	G2
 	double r_qr_logic_or(Quat1d const& x, double const& y){return x.q_is_true()|(y!=0);}
 	double r_qc_logic_or(Quat1d const& x, Comp1d const& y){return x.q_is_true()|y.c_is_true();}
 	double r_qq_logic_or(Quat1d const& x, Quat1d const& y){return x.q_is_true()|y.q_is_true();}
-	bool disc_rr_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(y0.r, y1.r);
-	}
-	bool disc_rc_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(y0.r, y1.r)&&
-				disc_x_logic_and(y0.i, y1.i);
-	}
-	bool disc_rq_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(y0.r, y1.r)&&
-				disc_x_logic_and(y0.i, y1.i)&&disc_x_logic_and(y0.j, y1.j)&&
-				disc_x_logic_and(y0.k, y1.k);
-	}
-	bool disc_cr_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&
-				disc_x_logic_and(y0.r, y1.r);
-	}
-	bool disc_cc_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&
-				disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i);
-	}
-	bool disc_cq_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&
-				disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i)&&
-				disc_x_logic_and(y0.j, y1.j)&&disc_x_logic_and(y0.k, y1.k);
-	}
-	bool disc_qr_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&
-				disc_x_logic_and(x0.j, x1.j)&&disc_x_logic_and(x0.k, x1.k)&&
-				disc_x_logic_and(y0.r, y1.r);
-	}
-	bool disc_qc_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&
-				disc_x_logic_and(x0.j, x1.j)&&disc_x_logic_and(x0.k, x1.k)&&
-				disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i);
-	}
-	bool disc_qq_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&
-				disc_x_logic_and(x0.j, x1.j)&&disc_x_logic_and(x0.k, x1.k)&&
-				disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i)&&
-				disc_x_logic_and(y0.j, y1.j)&&disc_x_logic_and(y0.k, y1.k);
-	}
+	auto disc_r_logic_or_o		=disc_r_logic_divides_o;
+	//bool disc_rr_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(y0.r, y1.r);
+	//}
+	//bool disc_rc_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(y0.r, y1.r)&&
+	//			disc_x_logic_and(y0.i, y1.i);
+	//}
+	//bool disc_rq_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(y0.r, y1.r)&&
+	//			disc_x_logic_and(y0.i, y1.i)&&disc_x_logic_and(y0.j, y1.j)&&
+	//			disc_x_logic_and(y0.k, y1.k);
+	//}
+	//bool disc_cr_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&
+	//			disc_x_logic_and(y0.r, y1.r);
+	//}
+	//bool disc_cc_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&
+	//			disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i);
+	//}
+	//bool disc_cq_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&
+	//			disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i)&&
+	//			disc_x_logic_and(y0.j, y1.j)&&disc_x_logic_and(y0.k, y1.k);
+	//}
+	//bool disc_qr_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&
+	//			disc_x_logic_and(x0.j, x1.j)&&disc_x_logic_and(x0.k, x1.k)&&
+	//			disc_x_logic_and(y0.r, y1.r);
+	//}
+	//bool disc_qc_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&
+	//			disc_x_logic_and(x0.j, x1.j)&&disc_x_logic_and(x0.k, x1.k)&&
+	//			disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i);
+	//}
+	//bool disc_qq_logic_or_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
+	//{
+	//	return disc_x_logic_and(x0.r, x1.r)&&disc_x_logic_and(x0.i, x1.i)&&
+	//			disc_x_logic_and(x0.j, x1.j)&&disc_x_logic_and(x0.k, x1.k)&&
+	//			disc_x_logic_and(y0.r, y1.r)&&disc_x_logic_and(y0.i, y1.i)&&
+	//			disc_x_logic_and(y0.j, y1.j)&&disc_x_logic_and(y0.k, y1.k);
+	//}
 
 	double r_rr_logic_xor(double const& x, double const& y){return x!=0^y!=0;}
 	double r_rc_logic_xor(double const& x, Comp1d const& y){return (x!=0)^y.c_is_true();}
@@ -2917,41 +2917,35 @@ namespace	G2
 	double r_qr_logic_xor(Quat1d const& x, double const& y){return x.q_is_true()^(y!=0);}
 	double r_qc_logic_xor(Quat1d const& x, Comp1d const& y){return x.q_is_true()^y.c_is_true();}
 	double r_qq_logic_xor(Quat1d const& x, Quat1d const& y){return x.q_is_true()^y.q_is_true();}
-	auto disc_rr_logic_xor_i=disc_rr_logic_and_i;
-	auto disc_rc_logic_xor_i=disc_rc_logic_and_i;
-	auto disc_rq_logic_xor_i=disc_rq_logic_and_i;
-	auto disc_cr_logic_xor_i=disc_cr_logic_and_i;
-	auto disc_cc_logic_xor_i=disc_cc_logic_and_i;
-	auto disc_cq_logic_xor_i=disc_cq_logic_and_i;
-	auto disc_qr_logic_xor_i=disc_qr_logic_and_i;
-	auto disc_qc_logic_xor_i=disc_qc_logic_and_i;
-	auto disc_qq_logic_xor_i=disc_qq_logic_and_i;
+	auto disc_r_logic_xor_o		=disc_r_logic_divides_o;
+	//auto disc_rr_logic_xor_i=disc_rr_logic_and_i;
+	//auto disc_rc_logic_xor_i=disc_rc_logic_and_i;
+	//auto disc_rq_logic_xor_i=disc_rq_logic_and_i;
+	//auto disc_cr_logic_xor_i=disc_cr_logic_and_i;
+	//auto disc_cc_logic_xor_i=disc_cc_logic_and_i;
+	//auto disc_cq_logic_xor_i=disc_cq_logic_and_i;
+	//auto disc_qr_logic_xor_i=disc_qr_logic_and_i;
+	//auto disc_qc_logic_xor_i=disc_qc_logic_and_i;
+	//auto disc_qq_logic_xor_i=disc_qq_logic_and_i;
 
-	double r_rr_logic_condition_zero(double const& x, double const& y){return x?x:y;}
-	Comp1d c_rc_logic_condition_zero(double const& x, Comp1d const& y){return x?x:y;}
-	Quat1d q_rq_logic_condition_zero(double const& x, Quat1d const& y){return x?Quat1d(x):y;}
-	Comp1d c_cr_logic_condition_zero(Comp1d const& x, double const& y){return x.c_is_true()?x:Comp1d(y);}
-	Comp1d c_cc_logic_condition_zero(Comp1d const& x, Comp1d const& y){return x.c_is_true()?x:y;}
-	Quat1d q_cq_logic_condition_zero(Comp1d const& x, Quat1d const& y){return x.c_is_true()?Quat1d(x):y;}
-	Quat1d q_qr_logic_condition_zero(Quat1d const& x, double const& y){return x.q_is_true()?x:Quat1d(y);}
-	Quat1d q_qc_logic_condition_zero(Quat1d const& x, Comp1d const& y){return x.q_is_true()?x:Quat1d(y);}
-	Quat1d q_qq_logic_condition_zero(Quat1d const& x, Quat1d const& y){return x.q_is_true()?x:y;}
-	bool disc_rr_logic_condition_zero_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1)
-	{
-		return _1d_zero_in_range(x0.r, x1.r)||_1d_zero_in_range(x0.i, x1.i)||
-				_1d_zero_in_range(x0.j, x1.j)||_1d_zero_in_range(x0.k, x1.k);
-		//	if(x0<0)	return x0>=0;
-		//	if(x0==0)	return x0<0||x0>0;
-		//				return x0<=0;
-	}
-	bool disc_rc_logic_condition_zero_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return false;}//
-	bool disc_rq_logic_condition_zero_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return false;}//
-	bool disc_cr_logic_condition_zero_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return false;}//
-	bool disc_cc_logic_condition_zero_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return false;}//
-	bool disc_cq_logic_condition_zero_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return false;}//
-	bool disc_qr_logic_condition_zero_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return false;}//
-	bool disc_qc_logic_condition_zero_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return false;}//
-	bool disc_qq_logic_condition_zero_i(Value const& x0, Value const& y0, Value const& x1, Value const& y1){return false;}//
+	double r_rr_condition_zero(double const& x, double const& y){return x?x:y;}
+	Comp1d c_rc_condition_zero(double const& x, Comp1d const& y){return x?x:y;}
+	Quat1d q_rq_condition_zero(double const& x, Quat1d const& y){return x?Quat1d(x):y;}
+	Comp1d c_cr_condition_zero(Comp1d const& x, double const& y){return x.c_is_true()?x:Comp1d(y);}
+	Comp1d c_cc_condition_zero(Comp1d const& x, Comp1d const& y){return x.c_is_true()?x:y;}
+	Quat1d q_cq_condition_zero(Comp1d const& x, Quat1d const& y){return x.c_is_true()?Quat1d(x):y;}
+	Quat1d q_qr_condition_zero(Quat1d const& x, double const& y){return x.q_is_true()?x:Quat1d(y);}
+	Quat1d q_qc_condition_zero(Quat1d const& x, Comp1d const& y){return x.q_is_true()?x:Quat1d(y);}
+	Quat1d q_qq_condition_zero(Quat1d const& x, Quat1d const& y){return x.q_is_true()?x:y;}
+	bool disc_rr_condition_zero_i	(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return _1d_zero_in_range(x0.r, x1.r);}
+	bool disc_rc_condition_zero_i	(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return _1d_zero_in_range(x0.r, x1.r);}
+	bool disc_rq_condition_zero_i	(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return _1d_zero_in_range(x0.r, x1.r);}
+	bool disc_cr_condition_zero_i	(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return _1d_zero_in_range(x0.r, x1.r)&&_1d_zero_in_range(x0.i, x1.i);}
+	bool disc_cc_condition_zero_i	(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return _1d_zero_in_range(x0.r, x1.r)&&_1d_zero_in_range(x0.i, x1.i);}
+	bool disc_cq_condition_zero_i	(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return _1d_zero_in_range(x0.r, x1.r)&&_1d_zero_in_range(x0.i, x1.i);}
+	bool disc_qr_condition_zero_i	(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return _1d_zero_in_range(x0.r, x1.r)&&_1d_zero_in_range(x0.i, x1.i)&&_1d_zero_in_range(x0.j, x1.j)&&_1d_zero_in_range(x0.k, x1.k);}
+	bool disc_qc_condition_zero_i	(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return _1d_zero_in_range(x0.r, x1.r)&&_1d_zero_in_range(x0.i, x1.i)&&_1d_zero_in_range(x0.j, x1.j)&&_1d_zero_in_range(x0.k, x1.k);}
+	bool disc_qq_condition_zero_i	(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return _1d_zero_in_range(x0.r, x1.r)&&_1d_zero_in_range(x0.i, x1.i)&&_1d_zero_in_range(x0.j, x1.j)&&_1d_zero_in_range(x0.k, x1.k);}
 
 	double r_r_percent(double const& x){return x*0.01;}
 	Comp1d c_c_percent(Comp1d const& x){return x*0.01;}
@@ -3807,33 +3801,24 @@ namespace	G2
 	Comp1d c_cr_random					(Comp1d const &x, double const &y)	{return Comp1d(my_rand(), my_rand());}
 	Comp1d c_cc_random					(Comp1d const &x, Comp1d const &y)	{return Comp1d(my_rand(), my_rand());}
 	Quat1d q_qq_random					(Quat1d const &x, Quat1d const &y)	{return Quat1d(my_rand(), my_rand(), my_rand(), my_rand());}
-	bool disc_r_random				(Value const &o0, Value const &o1){return true;}
-	auto disc_c_random				=disc_r_random;
-	auto disc_q_random				=disc_r_random;
-	auto disc_rr_random				=disc_r_random;
-	auto disc_rc_random				=disc_r_random;
-	auto disc_rq_random				=disc_r_random;
-	auto disc_cr_random				=disc_r_random;
-	auto disc_cc_random				=disc_r_random;
-	auto disc_cq_random				=disc_r_random;
-	auto disc_qr_random				=disc_r_random;
-	auto disc_qc_random				=disc_r_random;
-	auto disc_qq_random				=disc_r_random;
+	bool disc_r_random_o			(Value const &o0, Value const &o1){return true;}
+	bool disc_c_random_o			(Value const &o0, Value const &o1){return true;}
+	bool disc_q_random_o			(Value const &o0, Value const &o1){return true;}
 
 	double  r_r_beta					(double const &x)					{return 2*exp(lgamma(x)-lgamma(2*x));}
 	double r_rr_beta					(double const &x, double const &y)	{return exp(lgamma(x)+lgamma(y)-lgamma(x+y));}
 	bool disc_r_beta_i				(Value const &x0, Value const &x1){return false;}//
 	bool disc_rr_beta_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
 
-	double  r_r_cyl_bessel_j			(double const &x)					{return j0(x);}
-	double r_rr_cyl_bessel_j			(double const &x, double const &y)	{return jn((int)x, y);}
-	bool disc_r_cyl_bessel_j_i		(Value const &x0, Value const &x1){return false;}
-	bool disc_rr_cyl_bessel_j_i		(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	double  r_r_bessel_j				(double const &x)					{return j0(x);}
+	double r_rr_bessel_j				(double const &x, double const &y)	{return jn((int)x, y);}
+	bool disc_r_bessel_j_i			(Value const &x0, Value const &x1){return false;}
+	bool disc_rr_bessel_j_i			(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
 
-	double  r_r_cyl_neumann				(double const &x)					{return y0(x);}
-	double r_rr_cyl_neumann				(double const &x, double const &y)	{return yn((int)x, y);}
-	bool disc_r_cyl_neumann_i		(Value const &x0, Value const &x1){return false;}//
-	bool disc_rr_cyl_neumann_i		(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	double  r_r_bessel_y				(double const &x)					{return y0(x);}
+	double r_rr_bessel_y				(double const &x, double const &y)	{return yn((int)x, y);}
+	bool disc_r_bessel_y_i			(Value const &x0, Value const &x1){return false;}//
+	bool disc_rr_bessel_y_i			(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
 
 	Comp1d  c_r_hankel1					(double const &x)					{return r_hankel1(x, x);}
 	Comp1d  c_c_hankel1					(Comp1d const &x)					{return r_hankel1(x.r, x.i);}
@@ -3886,185 +3871,164 @@ namespace	G2
 	double r_qr_sqwv					(Quat1d const &x, double const &y)	{return x.r-floor(x.r)<y;}
 	double r_qc_sqwv					(Quat1d const &x, Comp1d const &y)	{return x.r-floor(x.r)<y.r;}
 	double r_qq_sqwv					(Quat1d const &x, Quat1d const &y)	{return x.r-floor(x.r)<y.r;}
-	bool disc_r_sqwv_i				(Value const &x0, Value const &x1)
-	{
-		if(x0.r==x1.r)	return false;
-		double t0=2*x0.r, t1=2*x1.r;
-		if(t0==std::floor(t0)||t1==std::floor(t1))
-			return true;
-		return std::floor(t0)!=std::floor(t1);
-	}
-	bool disc_c_sqwv_i				(Value const &x0, Value const &x1)
-	{
-		if(std::floor(x0.r)!=std::floor(x1.r)||std::floor(x0.i)!=std::floor(x1.i))
-			return true;
-		if(x0.r==x1.r&&x0.i==x1.i)
-			return true;
-		{
-			double r0=2*x0.r;
-			if(r0==std::floor(r0)&&x0.i==std::floor(x0.i))
-				return true;
-		}
-		{
-			double r1=2*x1.r;
-			if(r1==std::floor(r1)&&x1.i==std::floor(x1.i))
-				return true;
-		}
-		return false;
-	}
-	bool disc_q_sqwv_i				(Value const &x0, Value const &x1){return false;}//
-	bool disc_rr_sqwv_o				(Value const &o0, Value const &o1){return o0.r!=o1.r;}
-	bool disc_rc_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_rq_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_cr_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_cc_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_cq_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_qr_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_qc_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_qq_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	bool disc_r_sqwv_o				(Value const &o0, Value const &o1)			{return o0.r!=o0.r;}
+	//bool disc_r_sqwv_i				(Value const &x0, Value const &x1)
+	//{
+	//	if(x0.r==x1.r)	return false;
+	//	double t0=2*x0.r, t1=2*x1.r;
+	//	if(t0==std::floor(t0)||t1==std::floor(t1))
+	//		return true;
+	//	return std::floor(t0)!=std::floor(t1);
+	//}
+	//bool disc_c_sqwv_i				(Value const &x0, Value const &x1)
+	//{
+	//	if(std::floor(x0.r)!=std::floor(x1.r)||std::floor(x0.i)!=std::floor(x1.i))
+	//		return true;
+	//	if(x0.r==x1.r&&x0.i==x1.i)
+	//		return true;
+	//	{
+	//		double r0=2*x0.r;
+	//		if(r0==std::floor(r0)&&x0.i==std::floor(x0.i))
+	//			return true;
+	//	}
+	//	{
+	//		double r1=2*x1.r;
+	//		if(r1==std::floor(r1)&&x1.i==std::floor(x1.i))
+	//			return true;
+	//	}
+	//	return false;
+	//}
+	//bool disc_q_sqwv_i				(Value const &x0, Value const &x1){return false;}//
+	//bool disc_rr_sqwv_o				(Value const &o0, Value const &o1){return o0.r!=o1.r;}
+	//bool disc_rc_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	//bool disc_rq_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	//bool disc_cr_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	//bool disc_cc_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	//bool disc_cq_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	//bool disc_qr_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	//bool disc_qc_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	//bool disc_qq_sqwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
 
-	double  r_r_trwv					(double const &x)					{return abs(2*(x-floor(x)-0.5));}
-	double  r_c_trwv					(Comp1d const &x)					{return 2*(x-x.floor()-0.5).abs();}
-	double  r_q_trwv					(Quat1d const &x)					{return 2*(x-x.floor()-0.5).abs();}
-	double r_rr_trwv					(double const &x, double const &y)
+	inline double clamp01(double x)
 	{
-		double t=x-floor(x), t2=1-x;
-		t2-=floor(t2);
-		double d=clamp(0, y, 1), d2=1-d;//duty cycle: [0, 1]
-		double t_d=t/d, t2_d2=t2/d2;
-		return (t_d<1)*t_d+(t2_d2<1)*t2_d2;
+		double temp=x+abs(x);//max(0, x)
+		return (temp+2-abs(temp-2))*0.25;//min(x, 1)
 	}
-	Comp1d c_cr_trwv					(Comp1d const &x, double const &y)
+	inline double trwv_dc(double x, double y)
 	{
-		auto t=x-x.floor(), t2=1-x;
-		t2=t2-t2.floor();
-		auto d=clamp(0, y, 1), d2=1-d;
-		auto t_d=t/d, t2_d2=t2/d2;
-		return (t_d.r<1)*t_d+(t2_d2.r<1)*t2_d2;
+		double t=x-::floor(x), t2=1-x;
+		t2-=::floor(t2);
+		double dc=clamp01(y);
+		double dc2=1-dc, t_d=t/dc, t2_d2=t2/dc2;
+		return (t_d<1?t_d:0)+(t2_d2<1?t2_d2:0);
 	}
-	Comp1d c_cc_trwv					(Comp1d const &x, Comp1d const &y)
-	{
-		Comp1d t=x-x.floor(), t2=1-x;
-		t2=t2-t2.floor();
-		Comp1d d=AND(y, -(y.r>0));
-		long long mask=d.r>1;
-		d=OR(AND(d, ~-mask), mask);
-		Comp1d d2=1-d;
-		Comp1d t_d=t/d, t2_d2=t2/d2;
-		return AND(-(t_d.r<1), t_d)+AND(-(t2_d2.r<1), t2_d2);
-	}
-	Quat1d q_qq_trwv					(Quat1d const &x, Quat1d const &y)
-	{
-		Quat1d t=x-x.floor(), t2=1-x;
-		t2=t2-t2.floor();
-		Quat1d d=AND(y, -(y.r>0));
-		long long mask=d.r>1;
-		d=OR(AND(d, ~-mask), mask);
-		Quat1d d2=1-d;
-		Quat1d t_d=t/d, t2_d2=t2/d2;
-		return AND(-(t_d.r<1), t_d)+AND(-(t2_d2.r<1), t2_d2);
-	}
-	bool disc_c_trwv_i				(Value const &x0, Value const &x1){return std::floor(x0.r)!=std::floor(x1.r)||std::floor(x0.i)!=std::floor(x1.i);}
-	bool disc_q_trwv_i				(Value const &x0, Value const &x1){return false;}//
-	bool disc_rr_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return std::floor(x0.r)!=std::floor(x1.r);}
-	bool disc_rc_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return std::floor(x0.r)!=std::floor(x1.r);}
-	bool disc_rq_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return std::floor(x0.r)!=std::floor(x1.r);}
-	bool disc_cr_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1)
-	{
-		if(std::floor(x0.r)!=std::floor(x1.r)||std::floor(x0.i)!=std::floor(x1.i))
-			return true;
-		return y0.r<1?y1.r>=1:y0.r==1?y1.r<1||y1.r>1:y1.r<=1;
-	}
-	bool disc_cc_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_cq_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_qr_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_qc_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_qq_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	double  r_r_trwv					(double const &x)					{double t=abs(x-::floor(x)-0.5); return t+t;}
+	double  r_c_trwv					(Comp1d const &x)					{Comp1d cx=x; double t=(cx-cx.floor()-0.5).abs(); return t+t;}
+	double  r_q_trwv					(Quat1d const &x)					{Quat1d qx=x; double t=(qx-qx.floor()-0.5).abs(); return t+t;}
+	double r_rr_trwv					(double const &x, double const &y)	{return trwv_dc(x  , y  );}
+	double r_rc_trwv					(double const &x, Comp1d const &y)	{return trwv_dc(x  , y.r);}
+	double r_rq_trwv					(double const &x, Quat1d const &y)	{return trwv_dc(x  , y.r);}
+	double r_cr_trwv					(Comp1d const &x, double const &y)	{return trwv_dc(x.r, y  );}
+	double r_cc_trwv					(Comp1d const &x, Comp1d const &y)	{return trwv_dc(x.r, y.r);}
+	double r_cq_trwv					(Comp1d const &x, Quat1d const &y)	{return trwv_dc(x.r, y.r);}
+	double r_qr_trwv					(Quat1d const &x, double const &y)	{return trwv_dc(x.r, y  );}
+	double r_qc_trwv					(Quat1d const &x, Comp1d const &y)	{return trwv_dc(x.r, y.r);}
+	double r_qq_trwv					(Quat1d const &x, Quat1d const &y)	{return trwv_dc(x.r, y.r);}
+	//double  r_r_trwv					(double const &x)					{return abs(2*(x-floor(x)-0.5));}
+	//double  r_c_trwv					(Comp1d const &x)					{return 2*(x-x.floor()-0.5).abs();}
+	//double  r_q_trwv					(Quat1d const &x)					{return 2*(x-x.floor()-0.5).abs();}
+	//double r_rr_trwv					(double const &x, double const &y)
+	//{
+	//	double t=x-floor(x), t2=1-x;
+	//	t2-=floor(t2);
+	//	double d=clamp(0, y, 1), d2=1-d;//duty cycle: [0, 1]
+	//	double t_d=t/d, t2_d2=t2/d2;
+	//	return (t_d<1)*t_d+(t2_d2<1)*t2_d2;
+	//}
+	//Comp1d c_cr_trwv					(Comp1d const &x, double const &y)
+	//{
+	//	auto t=x-x.floor(), t2=1-x;
+	//	t2=t2-t2.floor();
+	//	auto d=clamp(0, y, 1), d2=1-d;
+	//	auto t_d=t/d, t2_d2=t2/d2;
+	//	return (t_d.r<1)*t_d+(t2_d2.r<1)*t2_d2;
+	//}
+	//Comp1d c_cc_trwv					(Comp1d const &x, Comp1d const &y)
+	//{
+	//	Comp1d t=x-x.floor(), t2=1-x;
+	//	t2=t2-t2.floor();
+	//	Comp1d d=AND(y, -(y.r>0));
+	//	long long mask=d.r>1;
+	//	d=OR(AND(d, ~-mask), mask);
+	//	Comp1d d2=1-d;
+	//	Comp1d t_d=t/d, t2_d2=t2/d2;
+	//	return AND(-(t_d.r<1), t_d)+AND(-(t2_d2.r<1), t2_d2);
+	//}
+	//Quat1d q_qq_trwv					(Quat1d const &x, Quat1d const &y)
+	//{
+	//	Quat1d t=x-x.floor(), t2=1-x;
+	//	t2=t2-t2.floor();
+	//	Quat1d d=AND(y, -(y.r>0));
+	//	long long mask=d.r>1;
+	//	d=OR(AND(d, ~-mask), mask);
+	//	Quat1d d2=1-d;
+	//	Quat1d t_d=t/d, t2_d2=t2/d2;
+	//	return AND(-(t_d.r<1), t_d)+AND(-(t2_d2.r<1), t2_d2);
+	//}
+	//bool disc_c_trwv_i				(Value const &x0, Value const &x1){return std::floor(x0.r)!=std::floor(x1.r)||std::floor(x0.i)!=std::floor(x1.i);}//trwv is continuous
+	//bool disc_q_trwv_i				(Value const &x0, Value const &x1){return false;}//
+	//bool disc_rr_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return std::floor(x0.r)!=std::floor(x1.r);}
+	//bool disc_rc_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return std::floor(x0.r)!=std::floor(x1.r);}
+	//bool disc_rq_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return std::floor(x0.r)!=std::floor(x1.r);}
+	//bool disc_cr_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1)
+	//{
+	//	if(std::floor(x0.r)!=std::floor(x1.r)||std::floor(x0.i)!=std::floor(x1.i))
+	//		return true;
+	//	return y0.r<1?y1.r>=1:y0.r==1?y1.r<1||y1.r>1:y1.r<=1;
+	//}
+	//bool disc_cc_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	//bool disc_cq_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	//bool disc_qr_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	//bool disc_qc_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	//bool disc_qq_trwv_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
 
-	double  r_r_saw						(double const &x)
+	inline double sawtooth(double x)
 	{
-		double t=x-floor(x), t2=floor(1-t);
+		double t=x-::floor(x), t2=::floor(1-t);//dc=1
 		return (t2+1)*(t2*0.5+t);
 	}
-	Comp1d  c_c_saw						(Comp1d const &x)
+	inline double sawtooth_dc(double x, double y)
 	{
-		auto t=x-x.floor(), t2=(1-t).floor();
-		return (t2+1)*(t2*0.5+t);
-	}
-	Quat1d  q_q_saw						(Quat1d const &x)
-	{
-		auto t=x-x.floor(), t2=(1-t).floor();
-		return (t2+1)*(t2*0.5+t);
-	}
-	double r_rr_saw						(double const &x, double const &y)
-	{
-		auto t=x-floor(x), t2=floor(y-t);
+		if(!y)
+			return 0;
+		auto t=x-::floor(x), t2=::floor(y-t);
 		return (t2+1)*(t2*0.5+t)/y;
 	}
-	Comp1d c_rc_saw						(double const &x, Comp1d const &y)
-	{
-		auto t=x-floor(x);
-		auto t2=(y-t).floor();
-		return (t2+1)*(t2*0.5+t)/y;
-	}
-	Quat1d q_rq_saw						(double const &x, Quat1d const &y)
-	{
-		auto t=x-floor(x);
-		auto t2=(y-t).floor();
-		return (t2+1)*(t2*0.5+t)/y;
-	}
-	Comp1d c_cr_saw						(Comp1d const &x, double const &y)
-	{
-		auto t=x-x.floor();
-		auto t2=(y-t).floor();
-		return (t2+1)*(t2*0.5+t)/y;
-	}
-	Comp1d c_cc_saw						(Comp1d const &x, Comp1d const &y)
-	{
-		auto t=x-x.floor();
-		auto t2=(y-t).floor();
-		return (t2+1)*(t2*0.5+t)/y;
-	}
-	Quat1d q_cq_saw						(Comp1d const &x, Quat1d const &y)
-	{
-		auto t=x-x.floor();
-		auto t2=(y-t).floor();
-		return (t2+1)*(t2*0.5+t)/y;
-	}
-	Quat1d q_qr_saw						(Quat1d const &x, double const &y)
-	{
-		auto t=x-x.floor();
-		auto t2=(y-t).floor();
-		return (t2+1)*(t2*0.5+t)/y;
-	}
-	Quat1d q_qc_saw						(Quat1d const &x, Comp1d const &y)
-	{
-		auto t=x-x.floor();
-		auto t2=(y-t).floor();
-		return (t2+1)*(t2*0.5+t)/y;
-	}
-	Quat1d q_qq_saw						(Quat1d const &x, Quat1d const &y)
-	{
-		auto t=x-x.floor();
-		auto t2=(y-t).floor();
-		return (t2+1)*(t2*0.5+t)/y;
-	}
+	inline bool sawtooth_dc_disc(double t0, double t1){return std::floor(t0)!=std::floor(t1);}
+	double  r_r_saw					(double const &x)					{return sawtooth(x);}
+	double  r_c_saw					(Comp1d const &x)					{return sawtooth(x.r);}
+	double  r_q_saw					(Quat1d const &x)					{return sawtooth(x.r);}
+	double r_rr_saw					(double const &x, double const &y)	{return sawtooth_dc(x  , y  );}
+	double r_rc_saw					(double const &x, Comp1d const &y)	{return sawtooth_dc(x  , y.r);}
+	double r_rq_saw					(double const &x, Quat1d const &y)	{return sawtooth_dc(x  , y.r);}
+	double r_cr_saw					(Comp1d const &x, double const &y)	{return sawtooth_dc(x.r, y  );}
+	double r_cc_saw					(Comp1d const &x, Comp1d const &y)	{return sawtooth_dc(x.r, y.r);}
+	double r_cq_saw					(Comp1d const &x, Quat1d const &y)	{return sawtooth_dc(x.r, y.r);}
+	double r_qr_saw					(Quat1d const &x, double const &y)	{return sawtooth_dc(x.r, y  );}
+	double r_qc_saw					(Quat1d const &x, Comp1d const &y)	{return sawtooth_dc(x.r, y.r);}
+	double r_qq_saw					(Quat1d const &x, Quat1d const &y)	{return sawtooth_dc(x.r, y.r);}
 	bool disc_r_saw_i				(Value const &x0, Value const &x1){return std::ceil(x0.r)!=std::ceil(x1.r);}
-	bool disc_c_saw_i				(Value const &x0, Value const &x1){return _1d_int_in_range(x0.r, x1.r)||_1d_int_in_range(x0.i, x1.i);}
-	bool disc_q_saw_i				(Value const &x0, Value const &x1){return false;}//
-	bool disc_rr_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1)
-	{
-		double t0=x0.r-y0.r, t1=x1.r-y1.r;
-		return std::floor(t0)!=std::floor(t1);
-	}
-	bool disc_rc_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_rq_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_cr_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_cc_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_cq_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_qr_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_qc_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
-	bool disc_qq_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return false;}//
+	bool disc_c_saw_i				(Value const &x0, Value const &x1){return std::ceil(x0.r)!=std::ceil(x1.r);}
+	bool disc_q_saw_i				(Value const &x0, Value const &x1){return std::ceil(x0.r)!=std::ceil(x1.r);}
+	bool disc_rr_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return sawtooth_dc_disc(x0.r-y0.r, x1.r-y1.r);}
+	bool disc_rc_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return sawtooth_dc_disc(x0.r-y0.r, x1.r-y1.r);}
+	bool disc_rq_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return sawtooth_dc_disc(x0.r-y0.r, x1.r-y1.r);}
+	bool disc_cr_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return sawtooth_dc_disc(x0.r-y0.r, x1.r-y1.r);}
+	bool disc_cc_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return sawtooth_dc_disc(x0.r-y0.r, x1.r-y1.r);}
+	bool disc_cq_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return sawtooth_dc_disc(x0.r-y0.r, x1.r-y1.r);}
+	bool disc_qr_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return sawtooth_dc_disc(x0.r-y0.r, x1.r-y1.r);}
+	bool disc_qc_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return sawtooth_dc_disc(x0.r-y0.r, x1.r-y1.r);}
+	bool disc_qq_saw_i				(Value const &x0, Value const &y0, Value const &x1, Value const &y1){return sawtooth_dc_disc(x0.r-y0.r, x1.r-y1.r);}
 
 	double r_rr_hypot					(double const &x, double const &y)	{return sqrt(x*x+y*y);}
 	//Comp1d c_cc_hypot					(Comp1d const &x, Comp1d const &y)	{return sqrt(sq(x)+sq(y));}
@@ -4096,6 +4060,7 @@ namespace	G2
 	double r_c_mandelbrot			(Comp1d const &x)					{return mandelbrot(x, 200);}
 	double r_rr_mandelbrot			(double const &x, double const &y)	{return mandelbrot((Comp1d)(double)x, (int)(double)y);}
 	double r_cr_mandelbrot			(Comp1d const &x, double const &y)	{return mandelbrot(x, (int)(double)y);}
+	bool disc_r_mandelbrot_o		(Value const &x0, Value const &x1){return x0.r!=x1.r;}
 
 	double r_rr_min						(double const &x, double const &y)	{return (x+y-abs(x-y))*0.5;}
 	Comp1d c_cr_min						(Comp1d const &x, double const &y)	{return (x+y-(x-y).abs())*0.5;}
@@ -4675,8 +4640,10 @@ class		Compile
 	static int default_overload(int);
 
 	static void compile_instruction_f_def	(int);
-	static void compile_instruction_select_u(int, char, char, FunctionPointer&, char (*&)(char), DiscontinuityFunction&);
-	static void compile_instruction_select_b(int, char, char, FunctionPointer&, char (*&)(char, char), DiscontinuityFunction&);
+//	static void compile_instruction_select_u(int, char, char, FunctionPointer&, char (*&)(char), DiscontinuityFunction&);
+//	static void compile_instruction_select_b(int, char, char, FunctionPointer&, char (*&)(char, char), DiscontinuityFunction&);
+	static void compile_instruction_select_u(int, char, char, FunctionPointer&, int &signature, DiscontinuityFunction&, int &cl_idx, int &cl_disc_idx);
+	static void compile_instruction_select_b(int, char, char, FunctionPointer&, int &signature, DiscontinuityFunction&, int &cl_idx, int &cl_disc_idx);
 	static void compile_instruction_u		(int, char, int, bool=false);
 	static void compile_instruction_b		(int, int, int, bool=false);
 	static void compile_instruction_b2		(int, int, int);
@@ -4772,7 +4739,7 @@ int				Compile::bi_mass		(int m)
 	case M_LOGIC_AND:																						return 13;
 	case M_LOGIC_XOR:																						return 14;
 	case M_LOGIC_OR:																						return 15;
-	case M_LOGIC_CONDITION_ZERO:																			return 16;
+	case M_CONDITION_ZERO:																					return 16;
 	case M_S_EQUAL_ASSIGN:		case M_S_LESS:case M_S_LESS_EQUAL:case M_S_GREATER:case M_S_GREATER_EQUAL:	return 17;
 	}
 																											return -1;
@@ -4801,7 +4768,7 @@ int				Compile::prec_convert	(int m)
 	case M_LOGIC_AND:																						return 16;
 	case M_LOGIC_XOR:																						return 17;
 	case M_LOGIC_OR:																						return 18;
-	case M_LOGIC_CONDITION_ZERO:																			return 19;
+	case M_CONDITION_ZERO:																					return 19;
 	case M_S_EQUAL_ASSIGN:		case M_S_LESS:case M_S_LESS_EQUAL:case M_S_GREATER:case M_S_GREATER_EQUAL:	return 21;
 	}
 //	if(m>M_FUNCTION_START)																					return 20;
@@ -4874,8 +4841,8 @@ void			Compile::compile_instruction_f_def		(int f)
 	case M_GAUSS:		r=r_r_gauss(r);						break;
 	case M_PERMUTATION:	r=r_r_permutation(r);				break;
 	case M_COMBINATION:	r=r_r_combination(r);				break;
-	case M_BESSEL:		r=r_r_cyl_bessel_j(r);				break;
-	case M_NEUMANN:		r=r_r_cyl_neumann(r);				break;
+	case M_BESSEL_J:	r=r_r_bessel_j(r);					break;
+	case M_BESSEL_Y:	r=r_r_bessel_y(r);					break;
 	case M_HANKEL1:		c=c_rr_hankel1(r, r);complex=true;	break;
 	case M_SQWV:		r=r_r_sqwv(r);						break;
 	case M_TRWV:		r=r_r_trwv(r);						break;
@@ -4893,7 +4860,44 @@ void			Compile::compile_instruction_f_def		(int f)
 	term=(CompileTerm*)realloc(term, expr->n.size()*sizeof(CompileTerm));
 	term[expr->n.size()-1]=CompileTerm(true, expr->n.rbegin()->mathSet);
 }
-void			Compile::compile_instruction_select_u	(int f, char side, char op1type, FunctionPointer &function, char (*&umts)(char), DiscontinuityFunction &d)
+#define			ISEL_C(TOKEN, ret, args, RET, ARGS, name, NAME)		case M_##TOKEN:function.set(ret##_##args##_##name), signature=SIG_##RET##_##ARGS, d(), cl_idx=RET##_##ARGS##_##NAME, cl_disc_idx=-1; return;
+#define			ISEL_I(TOKEN, ret, args, RET, ARGS, name, NAME)		case M_##TOKEN:function.set(ret##_##args##_##name), signature=SIG_##RET##_##ARGS, d(disc_##args##_##name##_i), cl_idx=RET##_##ARGS##_##NAME, cl_disc_idx=DISC_##ARGS##_##NAME##_I; return;
+#define			ISEL_O(TOKEN, ret, args, RET, ARGS, name, NAME)		case M_##TOKEN:function.set(ret##_##args##_##name), signature=SIG_##RET##_##ARGS, d(disc_##ret##_##name##_o, false), cl_idx=RET##_##ARGS##_##NAME, cl_disc_idx=DISC_##RET##_##NAME##_O; return;
+
+#define			CASE_NONE(TOKEN)							case M_##TOKEN:function.set(), signature=SIG_NOOP, d(), cl_idx=-1; return;
+#define			CASE_R_R(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, r, r, R, R, name, NAME)
+#define			CASE_C_C(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, c, c, C, C, name, NAME)
+#define			CASE_Q_Q(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, q, q, Q, Q, name, NAME)
+#define			CASE_R_RR(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, r, rr, R, RR, name, NAME)
+#define			CASE_C_RC(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, c, rc, C, RC, name, NAME)
+#define			CASE_Q_RQ(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, q, rq, Q, RQ, name, NAME)
+#define			CASE_C_CR(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, c, cr, C, CR, name, NAME)
+#define			CASE_C_CC(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, c, cc, C, CC, name, NAME)
+#define			CASE_Q_CQ(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, q, cq, Q, CQ, name, NAME)
+#define			CASE_Q_QR(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, q, qr, Q, QR, name, NAME)
+#define			CASE_Q_QC(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, q, qc, Q, QC, name, NAME)
+#define			CASE_Q_QQ(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, q, qq, Q, QQ, name, NAME)
+#define			CASE_C_R(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, c, r, C, R, name, NAME)
+#define			CASE_C_Q(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, c, q, C, Q, name, NAME)
+#define			CASE_R_C(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, r, c, R, C, name, NAME)
+#define			CASE_R_Q(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, r, q, R, Q, name, NAME)
+
+#define			CASE_C_RR(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, c, rr, C, RR, name, NAME)
+
+#define			CASE_R_RC(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, r, rc, R, RC, name, NAME)
+#define			CASE_R_RQ(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, r, rq, R, RQ, name, NAME)
+#define			CASE_R_CR(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, r, cr, R, CR, name, NAME)
+#define			CASE_R_CC(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, r, cc, R, CC, name, NAME)
+#define			CASE_R_CQ(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, r, cq, R, CQ, name, NAME)
+#define			CASE_R_QR(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, r, qr, R, QR, name, NAME)
+#define			CASE_R_QC(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, r, qc, R, QC, name, NAME)
+#define			CASE_R_QQ(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, r, qq, R, QQ, name, NAME)
+
+#define			CASE_C_QC(TOKEN, name, NAME, DISCTYPE)		ISEL_##DISCTYPE(TOKEN, c, qc, C, QC, name, NAME)
+
+#define			CASE(SIG, NAME, name, DISCTYPE)				CASE_##SIG(NAME, name, NAME, DISCTYPE)
+//void			Compile::compile_instruction_select_u	(int f, char side, char op1type, FunctionPointer &function, char (*&umts)(char), DiscontinuityFunction &d)
+void			Compile::compile_instruction_select_u	(int f, char side, char op1type, FunctionPointer &function, int &signature, DiscontinuityFunction &d, int &cl_idx, int &cl_disc_idx)
 {
 	using namespace G2;
 	switch(op1type)
@@ -4901,315 +4905,454 @@ void			Compile::compile_instruction_select_u	(int f, char side, char op1type, Fu
 	case 'R':
 		switch(f)
 		{
-		case M_REAL:				function.set(),							umts=returns_rrr,		d();								return;
-		case M_IMAG:				function.setzero(),						umts=returns_rrr,		d();								return;
-	//	case M_CONJUGATE:			function.set(r_r_conjugate),				umts=returns_rcq,		d();								return;
-		case M_POLAR:				function.set(c_r_polar),					umts=returns_ccc,		d(disc_r_polar_i, true);			return;
-	//	case M_CARTESIAN:			function.set(c_r_cartesian),				umts=returns_rcq,		d();								return;
-		case M_DIVIDE:				function.set(r_r_divide),					umts=returns_rcq,		d(disc_r_divide_i, true);			return;
-		case M_MINUS:				function.set(r_r_minus),					umts=returns_rcq,		d();								return;
-		case M_MODULO_PERCENT:		function.set(r_r_percent),				umts=returns_rcq,		d();								return;
-		case M_INCREMENT:			function.set(r_r_increment),				umts=returns_rcq,		d();								return;
-		case M_DECREMENT:			function.set(r_r_decrement),				umts=returns_rcq,		d();								return;
-		case M_BITWISE_NOT:			function.set(r_r_bitwise_not),			umts=returns_rcq,		d(disc_r_bitwise_not_i, true);		return;
-		case M_BITWISE_SHIFT_LEFT:		 if(side=='<')	function.set(r_r_bitwise_shift_left_l),	umts=returns_rcq,	d(disc_r_bitwise_shift_left_l_o, false);
-									else				function.set(r_r_bitwise_shift_left_r),	umts=returns_rcq,	d();										return;
-		case M_BITWISE_SHIFT_RIGHT:		 if(side=='<')	function.set(r_r_bitwise_shift_right_l),	umts=returns_rcq,	d(disc_r_bitwise_shift_right_l_o, false);
-									else				function.set(r_r_bitwise_shift_right_r),	umts=returns_rcq,	d();										return;
-		case M_FACTORIAL_LOGIC_NOT:		 if(side=='<')	function.set(r_r_logic_not),				umts=returns_rrr,	d(disc_r_logic_not_i, true);
-									else				function.set(r_r_factorial),				umts=returns_rcq,	d(disc_r_factorial_i, true);				return;
-		case M_LOGIC_LESS:				 if(side=='<')	function.set(r_r_logic_less_l),			umts=returns_rrr,	d(disc_r_logic_less_l_i, true);
-									else				function.set(r_r_logic_less_r),			umts=returns_rrr,	d(disc_r_logic_less_r_i, true);				return;
-		case M_LOGIC_LESS_EQUAL:		 if(side=='<')	function.set(r_r_logic_less_equal_l),		umts=returns_rrr,	d(disc_r_logic_less_equal_l_i, true);
-									else				function.set(r_r_logic_less_equal_r),		umts=returns_rrr,	d(disc_r_logic_less_equal_r_i, true);		return;
-		case M_LOGIC_GREATER:			 if(side=='<')	function.set(r_r_logic_greater_l),			umts=returns_rrr,	d(disc_r_logic_greater_l_i, true);
-									else				function.set(r_r_logic_greater_r),			umts=returns_rrr,	d(disc_r_logic_greater_r_i, true);			return;
-		case M_LOGIC_GREATER_EQUAL:		 if(side=='<')	function.set(r_r_logic_greater_equal_l),	umts=returns_rrr,	d(disc_r_logic_greater_equal_l_i, true);
-									else				function.set(r_r_logic_greater_equal_r),	umts=returns_rrr,	d(disc_r_logic_greater_equal_r_i, true);	return;
-		case M_LOGIC_EQUAL:			function.set(r_r_logic_equal),			umts=returns_rrr,		d(disc_r_logic_equal_i, true);		return;
-		case M_LOGIC_NOT_EQUAL:		function.set(r_r_logic_not_equal),		umts=returns_rrr,		d(disc_r_logic_not_equal_i, true);	return;
-		case M_BITWISE_AND:			function.set(r_r_bitwise_and),			umts=returns_rcq,		d(disc_r_bitwise_and_o, false);		return;
-		case M_BITWISE_NAND:		function.set(r_r_bitwise_nand),			umts=returns_rcq,		d(disc_r_bitwise_nand_o, false);	return;
-		case M_BITWISE_XOR:			function.set(r_r_bitwise_xor),			umts=returns_rcq,		d(disc_r_bitwise_xor_o, false);		return;
-		case M_BITWISE_XNOR:		function.set(r_r_bitwise_xnor),			umts=returns_rcq,		d(disc_r_bitwise_xnor_o, false);	return;
-		case M_VERTICAL_BAR:		function.set(r_r_bitwise_or),				umts=returns_rcq,		d(disc_r_bitwise_or_o, false);		return;
-		case M_BITWISE_NOR:			function.set(r_r_bitwise_nor),			umts=returns_rcq,		d(disc_r_bitwise_nor_o, false);		return;
-		case M_COS:					function.set(r_r_cos),					umts=returns_rcq,		d();								return;
-		case M_ACOS:				function.set(c_c_acos),					umts=returns_ccq,		d(disc_c_acos_i, true);				return;
-		case M_COSH:				function.set(r_r_cosh),					umts=returns_rcq,		d();								return;
-		case M_ACOSH:				function.set(c_c_acosh),					umts=returns_ccq,		d();								return;
-		case M_COSC:				function.set(r_r_cosc),					umts=returns_rcq,		d(disc_r_cosc_i, true);				return;
-		case M_SEC:					function.set(r_r_sec),					umts=returns_rcq,		d(disc_r_sec_i, true);				return;
-		case M_ASEC:				function.set(c_c_asec),					umts=returns_ccq,		d(disc_c_asec_i, true);				return;
-		case M_SECH:				function.set(r_r_sech),					umts=returns_rcq,		d();								return;
-		case M_ASECH:				function.set(c_c_asech),					umts=returns_ccq,		d(disc_c_asech_i, true);			return;
-		case M_SIN:					function.set(r_r_sin),					umts=returns_rcq,		d();								return;
-		case M_ASIN:				function.set(c_c_asin),					umts=returns_ccq,		d(disc_c_asin_i, true);				return;
-		case M_SINH:				function.set(r_r_sinh),					umts=returns_rcq,		d();								return;
-		case M_ASINH:				function.set(r_r_asinh),					umts=returns_rcq,		d();								return;
-		case M_SINC:				function.set(r_r_sinc),					umts=returns_rcq,		d();								return;
-		case M_SINHC:				function.set(r_r_sinhc),					umts=returns_rcq,		d();								return;
-		case M_CSC:					function.set(r_r_csc),					umts=returns_rcq,		d(disc_r_csc_i, true);				return;
-		case M_ACSC:				function.set(c_c_acsc),					umts=returns_ccq,		d(disc_c_acsc_i, true);				return;
-		case M_CSCH:				function.set(r_r_csch),					umts=returns_rcq,		d(disc_r_csch_i, true);				return;
-		case M_ACSCH:				function.set(r_r_acsch),					umts=returns_rcq,		d(disc_r_acsch_i, true);			return;
-		case M_TAN:					function.set(r_r_tan),					umts=returns_rcq,		d(disc_r_tan_i, true);				return;
-		case M_ATAN:				function.set(r_r_atan),					umts=returns_rcq,		d(disc_c_atan_i, true);				return;
-		case M_TANH:				function.set(r_r_tanh),					umts=returns_rcq,		d();								return;
-		case M_ATANH:				function.set(c_c_atanh),					umts=returns_ccq,		d(disc_c_atanh_i, true);			return;
-		case M_TANC:				function.set(r_r_tanc),					umts=returns_rcq,		d(disc_r_tanc_i, true);				return;
-		case M_COT:					function.set(r_r_cot),					umts=returns_rcq,		d(disc_r_cot_i, true);				return;
-		case M_ACOT:				function.set(r_r_acot),					umts=returns_rcq,		d(disc_r_acot_i, true);				return;
-		case M_COTH:				function.set(r_r_coth),					umts=returns_rcq,		d(disc_r_coth_i, true);				return;
-		case M_ACOTH:				function.set(c_c_acoth),					umts=returns_ccq,		d(disc_c_acoth_i, true);			return;
-		case M_EXP:					function.set(r_r_exp),					umts=returns_rcq,		d();								return;
-		case M_LN:					function.set(c_c_ln),						umts=returns_ccq,		d(disc_c_ln_i, true);				return;
-		case M_LOG:					function.set(c_c_log),					umts=returns_ccq,		d(disc_c_log_i, true);				return;
-		case M_SQRT:				function.set(c_c_sqrt),					umts=returns_ccq,		d();								return;
-		case M_CBRT:				function.set(r_r_cbrt),					umts=returns_rcq,		d();								return;
-		case M_INVSQRT:				function.set(r_r_invsqrt),				umts=returns_rXX,		d();								return;
-		case M_SQ:					function.set(r_r_sq),						umts=returns_rcq,		d();								return;
-		case M_ERF:					function.set(r_r_erf),					umts=returns_rXX,		d();								return;
-		case M_FIB:					function.set(r_r_fib),					umts=returns_rcq,		d();								return;
-		case M_ZETA:				function.set(r_r_zeta),					umts=returns_rXX,		d(disc_r_zeta_i, true);				return;
-		case M_STEP:				function.set(r_r_step),					umts=returns_rcq,		d(disc_r_step_i, true);				return;
-		case M_SGN:					function.set(r_r_sgn),					umts=returns_rcq,		d(disc_r_sgn_i, true);				return;
-		case M_RECT:				function.set(r_r_rect),					umts=returns_rcq,		d(disc_r_rect_i, true);				return;
-		case M_TENT:				function.set(r_r_trgl),					umts=returns_rrr,		d();								return;
-		case M_CEIL:				function.set(r_r_ceil),	umts=returns_rcq,		d(disc_r_ceil_o, false);			return;
-		case M_FLOOR:				function.set(r_r_floor),	umts=returns_rcq,		d(disc_r_floor_o, false);			return;
-		case M_ROUND:				function.set(r_r_round),	umts=returns_rcq,		d(disc_r_round_o, false);			return;
-		case M_INT:					function.set(r_r_int),			umts=returns_rcq,		d(disc_r_int_o, false);				return;
-		case M_FRAC:				function.set(r_r_frac),			umts=returns_rcq,		d(disc_r_frac_i, true);				return;
-		case M_ABS:					function.set(r_r_abs),					umts=returns_rrr,		d();								return;
-		case M_ARG:					function.set(r_r_arg),					umts=returns_rrr,		d(disc_r_arg_i, true);				return;
-		case M_RAND:				function.set(r_r_random),					umts=returns_rcq,		d(disc_r_random, false);			return;
-		case M_GAMMA:				function.set(r_r_tgamma),					umts=returns_rcq,		d(disc_r_tgamma_i, true);			return;
-		case M_LNGAMMA:				function.set(r_r_loggamma),				umts=returns_rXX,		d(disc_r_loggamma_i, true);			return;
-		case M_GAUSS:				function.set(r_r_gauss),					umts=returns_rcq,		d();								return;
-		case M_PERMUTATION:			function.set(r_r_permutation),			umts=returns_rcq,		d();								return;
-		case M_COMBINATION:			function.set(r_r_combination),			umts=returns_rcq,		d();								return;
-		case M_SQWV:				function.set(r_r_sqwv),					umts=returns_rcq,		d(disc_r_sqwv_i, true);				return;
-		case M_TRWV:				function.set(r_r_trwv),					umts=returns_rcq,		d();								return;
-		case M_SAW:					function.set(r_r_saw),					umts=returns_rcq,		d(disc_r_saw_i, true);				return;
-		case M_HYPOT:				function.set(r_r_abs),					umts=returns_rrr,		d();								return;
-		case M_MANDELBROT:			function.set(r_r_mandelbrot),		umts=returns_rrr,		d();								return;
-	//	case M_MIN:					function.set(r_r_min),					umts=returns_rcq,		d();								return;
-	//	case M_MAX:					function.set(r_r_max),					umts=returns_rcq,		d();								return;
-		case M_BETA:				function.set(r_r_beta),					umts=returns_rXX,		d(disc_r_beta_i, true);				return;
-		case M_BESSEL:				function.set(r_r_cyl_bessel_j),			umts=returns_rXX,		d(disc_r_cyl_bessel_j_i, true);		return;
-		case M_NEUMANN:				function.set(r_r_cyl_neumann),			umts=returns_rXX,		d(disc_r_cyl_neumann_i, true);		return;
-		case M_HANKEL1:				function.set(c_r_hankel1),				umts=returns_cXX,		d(disc_r_hankel1_i, true);			return;
+		CASE_NONE(REAL)
+		CASE_NONE(IMAG)
+	//	CASE(R_R, CONJUGATE,		conjugate,		C)
+		CASE(C_R, POLAR,			polar,			I)
+	//	CASE(C_R, CARTESIAN,		cartesian,		C)
+		CASE(R_R, DIVIDE,			divide,			I)
+		CASE(R_R, MINUS,			minus,			C)
+		CASE_R_R(MODULO_PERCENT, percent, PERCENT, C)
+		CASE(R_R, INCREMENT,		increment,		C)
+		CASE(R_R, DECREMENT,		decrement,		C)
+		CASE(R_R, BITWISE_NOT,		bitwise_not,	I)
+		case M_BITWISE_SHIFT_LEFT:		 if(side=='<')	function.set(r_r_bitwise_shift_left_l),		signature=SIG_R_R,	d(disc_r_bitwise_shift_left_l_o, false);
+									else				function.set(r_r_bitwise_shift_left_r),		signature=SIG_R_R,	d();											return;
+		case M_BITWISE_SHIFT_RIGHT:		 if(side=='<')	function.set(r_r_bitwise_shift_right_l),	signature=SIG_R_R,	d(disc_r_bitwise_shift_right_l_o, false);
+									else				function.set(r_r_bitwise_shift_right_r),	signature=SIG_R_R,	d();											return;
+		case M_FACTORIAL_LOGIC_NOT:		 if(side=='<')	function.set(r_r_logic_not),				signature=SIG_R_R,	d(disc_r_logic_not_o, true);
+									else				function.set(r_r_factorial),				signature=SIG_R_R,	d(disc_r_factorial_i, true);			return;
+		case M_LOGIC_LESS:				 if(side=='<')	function.set(r_r_logic_less_l),				signature=SIG_R_R,	d(disc_r_logic_less_o, true);
+									else				function.set(r_r_logic_less_r),				signature=SIG_R_R,	d(disc_r_logic_less_o, true);			return;
+		case M_LOGIC_LESS_EQUAL:		 if(side=='<')	function.set(r_r_logic_less_equal_l),		signature=SIG_R_R,	d(disc_r_logic_less_equal_o, true);
+									else				function.set(r_r_logic_less_equal_r),		signature=SIG_R_R,	d(disc_r_logic_less_equal_o, true);		return;
+		case M_LOGIC_GREATER:			 if(side=='<')	function.set(r_r_logic_greater_l),			signature=SIG_R_R,	d(disc_r_logic_greater_o, true);
+									else				function.set(r_r_logic_greater_r),			signature=SIG_R_R,	d(disc_r_logic_greater_o, true);		return;
+		case M_LOGIC_GREATER_EQUAL:		 if(side=='<')	function.set(r_r_logic_greater_equal_l),	signature=SIG_R_R,	d(disc_r_logic_greater_equal_o, true);
+									else				function.set(r_r_logic_greater_equal_r),	signature=SIG_R_R,	d(disc_r_logic_greater_equal_o, true);	return;
+		CASE(R_R, LOGIC_EQUAL,		logic_equal, 		O)//TODO: all logic (boolean) functions have output disc	DONE
+		CASE(R_R, LOGIC_NOT_EQUAL,	logic_not_equal,	O)
+		CASE(R_R, BITWISE_AND,		bitwise_and,		O)
+		CASE(R_R, BITWISE_NAND,		bitwise_nand,		O)
+		CASE(R_R, BITWISE_XOR,		bitwise_xor,		O)
+		CASE(R_R, BITWISE_XNOR,		bitwise_xnor,		O)
+		CASE_R_R(VERTICAL_BAR, bitwise_or, BITWISE_OR, O)
+		CASE(R_R, BITWISE_NOR,		bitwise_nor,		O)
+		CASE(R_R, COS,				cos,				C)
+		CASE(C_C, ACOS,				acos,				I)
+		CASE(R_R, COSH,				cosh,				C)
+		CASE(C_C, ACOSH,			acosh,				C)
+		CASE(R_R, COSC,				cosc,				I)
+		CASE(R_R, SEC,				sec,				I)
+		CASE(C_C, ASEC,				asec,				I)
+		CASE(R_R, SECH,				sech,				C)
+		CASE(C_C, ASECH,			asech,				I)
+		CASE(R_R, SIN,				sin,				C)
+		CASE(C_C, ASIN,				asin,				I)
+		CASE(R_R, SINH,				sinh,				C)
+		CASE(R_R, ASINH,			asinh,				C)
+		CASE(R_R, SINC,				sinc,				C)
+		CASE(R_R, SINHC,			sinhc,				C)
+		CASE(R_R, CSC,				csc,				I)
+		CASE(C_C, ACSC,				acsc,				I)
+		CASE(R_R, CSCH,				csch,				I)
+		CASE(R_R, ACSCH,			acsch,				I)
+		CASE(R_R, TAN,				tan,				I)
+		CASE(R_R, ATAN,				atan,				C)
+		CASE(R_R, TANH,				tanh,				C)
+		CASE(C_C, ATANH,			atanh,				I)
+		CASE(R_R, TANC,				tanc,				I)
+		CASE(R_R, COT,				cot,				I)
+		CASE(R_R, ACOT,				acot,				I)
+		CASE(R_R, COTH,				coth,				I)
+		CASE(C_C, ACOTH,			acoth,				I)
+		CASE(R_R, EXP,				exp,				C)
+		CASE(C_C, LN,				ln,					I)
+		CASE(C_C, LOG,				log,				I)
+		CASE(C_C, SQRT,				sqrt,				C)
+		CASE(R_R, CBRT,				cbrt,				C)
+		CASE(R_R, INVSQRT,			invsqrt,			C)
+		CASE(R_R, SQ,				sq,					C)
+		CASE(R_R, ERF,				erf,				C)
+		CASE(R_R, FIB,				fib,				C)
+		CASE(R_R, ZETA,				zeta,				I)
+		CASE(R_R, STEP,				step,				I)
+		CASE(R_R, SGN,				sgn,				I)
+		CASE(R_R, RECT,				rect,				I)
+		CASE_R_R(TENT,				trgl, TRGL,			C)
+		CASE(R_R, CEIL,				ceil,				O)
+		CASE(R_R, FLOOR,			floor,				O)
+		CASE(R_R, ROUND,			round,				O)
+		CASE(R_R, INT,				int,				O)
+		CASE(R_R, FRAC,				frac,				I)
+		CASE(R_R, ABS,				abs,				C)
+		CASE(R_R, ARG,				arg,				I)
+		CASE_R_R(RAND,				random, RANDOM,		O)
+		CASE_R_R(GAMMA,				tgamma, TGAMMA,		I)
+		CASE_R_R(LNGAMMA,			loggamma, LOGGAMMA,	I)
+		CASE(R_R, GAUSS,			gauss,				C)
+		CASE(R_R, PERMUTATION,		permutation,		C)
+		CASE(R_R, COMBINATION,		combination,		C)
+		CASE(R_R, SQWV,				sqwv,				O)//TODO: output disc	DONE
+		CASE(R_R, TRWV,				trwv,				C)
+		CASE(R_R, SAW,				saw,				I)
+		CASE_R_R(HYPOT,				abs, ABS,			C)
+		CASE(R_R, MANDELBROT,		mandelbrot,			O)//TODO: output disc	DONE
+	//	CASE(R_R, MIN,				min,				C)
+	//	CASE(R_R, MAX,				max,				C)
+		CASE(R_R, BETA,				beta,				I)
+		CASE(R_R, BESSEL_J,			bessel_j,			I)//TODO: rename M_BESSEL->M_BESSEL_J, r_r_cyl_bessel_j->r_r_bessel_j	DONE
+		CASE(R_R, BESSEL_Y,			bessel_y,			I)//TODO: rename M_NEUMANN->M_BESSEL_Y, r_r_cyl_neumann->r_r_bessel_y	DONE
+		CASE(C_R, HANKEL1,			hankel1,			I)
 		}
 		break;
 	case 'c':
 		switch(f)
 		{
-		case M_REAL:				function.set(r_c_real),					umts=returns_rrr,		d();								return;
-		case M_IMAG:				function.set(r_c_imag),					umts=returns_rrr,		d();								return;
-		case M_CONJUGATE:			function.set(c_c_conjugate),				umts=returns_rcq,		d();								return;
-		case M_POLAR:				function.set(c_c_polar),					umts=returns_ccc,		d(disc_c_polar_i, true);			return;
-		case M_CARTESIAN:			function.set(c_c_cartesian),				umts=returns_rcq,		d();								return;
-		case M_DIVIDE:				function.set(c_c_divide),					umts=returns_rcq,		d(disc_c_divide_i, true);			return;
-		case M_MINUS:				function.set(c_c_minus),					umts=returns_rcq,		d();								return;
-		case M_MODULO_PERCENT:		function.set(c_c_percent),					umts=returns_rcq,		d();								return;
-		case M_INCREMENT:			function.set(c_c_increment),				umts=returns_rcq,		d();								return;
-		case M_DECREMENT:			function.set(c_c_decrement),				umts=returns_rcq,		d();								return;
-		case M_BITWISE_NOT:			function.set(c_c_bitwise_not),				umts=returns_rcq,		d(disc_c_bitwise_not_i, true);		return;
-		case M_BITWISE_SHIFT_LEFT:		 if(side=='<')	function.set(c_c_bitwise_shift_left_l),	umts=returns_rcq,		d(disc_c_bitwise_shift_left_l_o, false);
-									else				function.set(c_c_bitwise_shift_left_r),	umts=returns_rcq,		d();										return;
-		case M_BITWISE_SHIFT_RIGHT:		 if(side=='<')	function.set(c_c_bitwise_shift_right_l),	umts=returns_rcq,		d(disc_c_bitwise_shift_right_l_o, false);
-									else				function.set(c_c_bitwise_shift_right_r),	umts=returns_rcq,		d();										return;
-		case M_FACTORIAL_LOGIC_NOT:		 if(side=='<')	function.set(r_c_logic_not),				umts=returns_rrr,		d(disc_c_logic_not_i, true);
-									else				function.set(c_c_factorial),				umts=returns_rcq,		d(disc_c_factorial_i, true);				return;
-		case M_LOGIC_LESS:				 if(side=='<')	function.set(r_c_logic_less_l),			umts=returns_rrr,		d(disc_c_logic_less_l_i, true);
-									else				function.set(r_c_logic_less_r),			umts=returns_rrr,		d(disc_c_logic_less_r_i, true);				return;
-		case M_LOGIC_LESS_EQUAL:		 if(side=='<')	function.set(r_c_logic_less_equal_l),		umts=returns_rrr,		d(disc_c_logic_less_equal_l_i, true);
-									else				function.set(r_c_logic_less_equal_r),		umts=returns_rrr,		d(disc_c_logic_less_equal_r_i, true);		return;
-		case M_LOGIC_GREATER:			 if(side=='<')	function.set(r_c_logic_greater_l),			umts=returns_rrr,		d(disc_c_logic_greater_l_i, true);
-									else				function.set(r_c_logic_greater_r),			umts=returns_rrr,		d(disc_c_logic_greater_r_i, true);			return;
-		case M_LOGIC_GREATER_EQUAL:		 if(side=='<')	function.set(r_c_logic_greater_equal_l),	umts=returns_rrr,		d(disc_c_logic_greater_equal_l_i, true);
-									else				function.set(r_c_logic_greater_equal_r),	umts=returns_rrr,		d(disc_c_logic_greater_equal_r_i, true);	return;
-		case M_LOGIC_EQUAL:			function.set(r_c_logic_equal),				umts=returns_rrr,		d(disc_c_logic_equal_i, true);		return;
-		case M_LOGIC_NOT_EQUAL:		function.set(r_c_logic_not_equal),			umts=returns_rrr,		d(disc_c_logic_not_equal_i, true);	return;
-		case M_BITWISE_AND:			function.set(c_c_bitwise_and),				umts=returns_rcq,		d(disc_c_bitwise_and_o, false);		return;
-		case M_BITWISE_NAND:		function.set(c_c_bitwise_nand),			umts=returns_rcq,		d(disc_c_bitwise_nand_o, false);	return;
-		case M_BITWISE_XOR:			function.set(c_c_bitwise_xor),				umts=returns_rcq,		d(disc_c_bitwise_xor_o, false);		return;
-		case M_BITWISE_XNOR:		function.set(c_c_bitwise_xnor),			umts=returns_rcq,		d(disc_c_bitwise_xnor_o, false);	return;
-		case M_VERTICAL_BAR:		function.set(c_c_bitwise_or),				umts=returns_rcq,		d(disc_c_bitwise_or_o, false);		return;
-		case M_BITWISE_NOR:			function.set(c_c_bitwise_nor),				umts=returns_rcq,		d(disc_c_bitwise_nor_o, false);		return;
-		case M_COS:					function.set(c_c_cos),						umts=returns_rcq,		d();								return;
-		case M_ACOS:				function.set(c_c_acos),					umts=returns_ccq,		d(disc_c_ln_i, true);				return;
-		case M_COSH:				function.set(c_c_cosh),					umts=returns_rcq,		d();								return;
-		case M_ACOSH:				function.set(c_c_acosh),					umts=returns_ccq,		d();								return;
-		case M_COSC:				function.set(c_c_cosc),					umts=returns_rcq,		d(disc_c_cosc_i, true);				return;
-		case M_SEC:					function.set(c_c_sec),						umts=returns_rcq,		d(disc_c_sec_i, true);				return;
-		case M_ASEC:				function.set(c_c_asec),					umts=returns_ccq,		d(disc_c_asec_i, true);				return;
-		case M_SECH:				function.set(c_c_sech),					umts=returns_rcq,		d(disc_c_sech_i, true);				return;
-		case M_ASECH:				function.set(c_c_asech),					umts=returns_ccq,		d(disc_c_asech_i, true);			return;
-		case M_SIN:					function.set(c_c_sin),						umts=returns_rcq,		d();								return;
-		case M_ASIN:				function.set(c_c_asin),					umts=returns_ccq,		d(disc_c_asin_i, true);				return;
-		case M_SINH:				function.set(c_c_sinh),					umts=returns_rcq,		d();								return;
-		case M_ASINH:				function.set(c_c_asinh),					umts=returns_rcq,		d(disc_c_asinh_i, true);			return;
-		case M_SINC:				function.set(c_c_sinc),					umts=returns_rcq,		d();								return;
-		case M_SINHC:				function.set(c_c_sinhc),					umts=returns_rcq,		d();								return;
-		case M_CSC:					function.set(c_c_csc),						umts=returns_rcq,		d(disc_c_csc_i, true);				return;
-		case M_ACSC:				function.set(c_c_acsc),					umts=returns_ccq,		d(disc_c_acsc_i, true);				return;
-		case M_CSCH:				function.set(c_c_csch),					umts=returns_rcq,		d(disc_c_csch_i, true);				return;
-		case M_ACSCH:				function.set(c_c_acsch),					umts=returns_rcq,		d(disc_c_acsch_i, true);			return;
-		case M_TAN:					function.set(c_c_tan),						umts=returns_rcq,		d(disc_c_tan_i, true);				return;
-		case M_ATAN:				function.set(c_c_atan),					umts=returns_rcq,		d(disc_c_atan_i, true);				return;
-		case M_TANH:				function.set(c_c_tanh),					umts=returns_rcq,		d();				return;
-		case M_ATANH:				function.set(c_c_atanh),					umts=returns_ccq,		d(disc_c_atanh_i, true);			return;
-		case M_TANC:				function.set(c_c_tanc),					umts=returns_rcq,		d(disc_c_tanc_i, true);				return;
-		case M_COT:					function.set(c_c_cot),						umts=returns_rcq,		d(disc_c_cot_i, true);				return;
-		case M_ACOT:				function.set(c_c_acot),					umts=returns_rcq,		d(disc_c_acot_i, true);				return;
-		case M_COTH:				function.set(c_c_coth),					umts=returns_rcq,		d(disc_c_acoth_i, true);			return;
-		case M_ACOTH:				function.set(c_c_acoth),					umts=returns_ccq,		d(disc_c_acoth_i, true);			return;
-		case M_EXP:					function.set(c_c_exp),						umts=returns_rcq,		d();								return;
-		case M_LN:					function.set(c_c_ln),						umts=returns_ccq,		d(disc_c_ln_i, true);				return;
-		case M_LOG:					function.set(c_c_log),						umts=returns_ccq,		d(disc_c_log_i, true);				return;
-		case M_SQRT:				function.set(c_c_sqrt),					umts=returns_ccq,		d();								return;
-		case M_CBRT:				function.set(c_c_cbrt),					umts=returns_rcq,		d();								return;
-		case M_SQ:					function.set(c_c_sq),						umts=returns_rcq,		d();								return;
-		case M_FIB:					function.set(c_c_fib),						umts=returns_rcq,		d();								return;
-		case M_SGN:					function.set(c_c_sgn),						umts=returns_rcq,		d(disc_c_sgn_i, true);				return;
-		case M_STEP:				function.set(c_c_step),					umts=returns_rcq,		d(disc_c_step_i, true);				return;
-		case M_RECT:				function.set(c_c_rect),					umts=returns_rcq,		d(disc_c_rect_i, true);				return;
-		case M_TENT:				function.set(r_c_trgl),					umts=returns_rrr,		d();								return;
-		case M_CEIL:				function.set(c_c_ceil),	umts=returns_rcq,		d(disc_c_ceil_o, false);			return;
-		case M_FLOOR:				function.set(c_c_floor),	umts=returns_rcq,		d(disc_c_floor_o, false);			return;
-		case M_ROUND:				function.set(c_c_round),	umts=returns_rcq,		d(disc_c_round_o, false);			return;
-		case M_INT:					function.set(c_c_int),			umts=returns_rcq,		d(disc_c_int_o, false);				return;
-		case M_FRAC:				function.set(c_c_frac),			umts=returns_rcq,		d(disc_c_frac_i, true);				return;
-		case M_ABS:					function.set(r_c_abs),						umts=returns_rrr,		d();								return;
-		case M_ARG:					function.set(r_c_arg),						umts=returns_rrr,		d(disc_c_arg_i, true);				return;
-		case M_INVSQRT:				function.set();																						return;
-		case M_ERF:					function.set();																						return;
-		case M_ZETA:				function.set();																						return;
-		case M_RAND:				function.set(c_c_random),					umts=returns_rcq,		d(disc_c_random, false);			return;
-		case M_GAMMA:				function.set(c_c_tgamma),					umts=returns_rcq,		d(disc_c_tgamma_i, true);			return;
-		case M_LNGAMMA:				function.set(),							umts=returns_rXX,		d();								return;
-		case M_GAUSS:				function.set(c_c_gauss),					umts=returns_rcq,		d();								return;
-		case M_COMBINATION:			function.set(c_c_combination),				umts=returns_rcq,		d();								return;
-		case M_PERMUTATION:			function.set(c_c_permutation),				umts=returns_rcq,		d();								return;
-		case M_SQWV:				function.set(r_c_sqwv),					umts=returns_rcq,		d(disc_c_sqwv_i, true);				return;
-		case M_TRWV:				function.set(r_c_trwv),					umts=returns_rcq,		d(disc_c_trwv_i, true);				return;
-		case M_SAW:					function.set(c_c_saw),						umts=returns_rcq,		d(disc_c_saw_i, true);				return;
-		case M_MANDELBROT:			function.set(r_c_mandelbrot);		umts=returns_rrr,		d();								return;
-	//	case M_MIN:					function.set(c_c_min),						umts=returns_rcq,		d();								return;
-	//	case M_MAX:					function.set(c_c_max),						umts=returns_rcq,		d();								return;
-		case M_BETA:				function.set();																						return;
-		case M_BESSEL:				function.set();																						return;
-		case M_NEUMANN:				function.set();																						return;
-		case M_HANKEL1:				function.set(c_c_hankel1);					umts=returns_rcq,		d();							return;
+		CASE(R_C, REAL,				real,				C)
+		CASE(R_C, IMAG,				imag,				C)
+		CASE(C_C, CONJUGATE,		conjugate,			C)
+		CASE(C_C, POLAR,			polar,				I)
+		CASE(C_C, CARTESIAN,		cartesian,			C)
+		CASE(C_C, DIVIDE,			divide,				I)
+		CASE(C_C, MINUS,			minus,				C)
+		CASE_C_C(MODULO_PERCENT,	percent, PERCENT,	C)
+		CASE(C_C, INCREMENT,		increment,			C)
+		CASE(C_C, DECREMENT,		decrement,			C)
+		CASE(C_C, BITWISE_NOT,		bitwise_not,		I)
+		case M_BITWISE_SHIFT_LEFT:		 if(side=='<')	function.set(c_c_bitwise_shift_left_l),		signature=SIG_C_C,		d(disc_c_bitwise_shift_left_l_o, false);
+									else				function.set(c_c_bitwise_shift_left_r),		signature=SIG_C_C,		d();											return;
+		case M_BITWISE_SHIFT_RIGHT:		 if(side=='<')	function.set(c_c_bitwise_shift_right_l),	signature=SIG_C_C,		d(disc_c_bitwise_shift_right_l_o, false);
+									else				function.set(c_c_bitwise_shift_right_r),	signature=SIG_C_C,		d();											return;
+		case M_FACTORIAL_LOGIC_NOT:		 if(side=='<')	function.set(r_c_logic_not),				signature=SIG_R_C,		d(disc_r_logic_not_o, true);
+									else				function.set(c_c_factorial),				signature=SIG_C_C,		d(disc_c_factorial_i, true);			return;
+		case M_LOGIC_LESS:				 if(side=='<')	function.set(r_c_logic_less_l),				signature=SIG_R_C,		d(disc_r_logic_less_o, true);
+									else				function.set(r_c_logic_less_r),				signature=SIG_R_C,		d(disc_r_logic_less_o, true);			return;
+		case M_LOGIC_LESS_EQUAL:		 if(side=='<')	function.set(r_c_logic_less_equal_l),		signature=SIG_R_C,		d(disc_r_logic_less_equal_o, true);
+									else				function.set(r_c_logic_less_equal_r),		signature=SIG_R_C,		d(disc_r_logic_less_equal_o, true);		return;
+		case M_LOGIC_GREATER:			 if(side=='<')	function.set(r_c_logic_greater_l),			signature=SIG_R_C,		d(disc_r_logic_greater_o, true);
+									else				function.set(r_c_logic_greater_r),			signature=SIG_R_C,		d(disc_r_logic_greater_o, true);		return;
+		case M_LOGIC_GREATER_EQUAL:		 if(side=='<')	function.set(r_c_logic_greater_equal_l),	signature=SIG_R_C,		d(disc_r_logic_greater_equal_o, true);
+									else				function.set(r_c_logic_greater_equal_r),	signature=SIG_R_C,		d(disc_r_logic_greater_equal_o, true);	return;
+		CASE(R_C, LOGIC_EQUAL,		logic_equal,		O)
+		CASE(R_C, LOGIC_NOT_EQUAL,	logic_not_equal,	O)
+		CASE(C_C, BITWISE_AND,		bitwise_and,		O)
+		CASE(C_C, BITWISE_NAND,		bitwise_nand,		O)
+		CASE(C_C, BITWISE_XOR,		bitwise_xor,		O)
+		CASE(C_C, BITWISE_XNOR,		bitwise_xnor,		O)
+		CASE_C_C(VERTICAL_BAR,		bitwise_or, BITWISE_OR, O)
+		CASE(C_C, BITWISE_NOR,		bitwise_nor,		O)
+		CASE(C_C, COS,				cos,				C)
+		CASE(C_C, ACOS,				acos,				I)//disc_c_ln_i?
+		CASE(C_C, COSH,				cosh,				C)
+		CASE(C_C, ACOSH,			acosh,				C)
+		CASE(C_C, COSC,				cosc,				I)
+		CASE(C_C, SEC,				sec,				I)
+		CASE(C_C, ASEC,				asec,				I)
+		CASE(C_C, SECH,				sech,				I)
+		CASE(C_C, ASECH,			asech,				I)
+		CASE(C_C, SIN,				sin,				C)
+		CASE(C_C, ASIN,				asin,				I)
+		CASE(C_C, SINH,				sinh,				C)
+		CASE(C_C, ASINH,			asinh,				I)
+
+		CASE(C_C, SINC,				sinc,				C)
+		CASE(C_C, SINHC,			sinhc,				C)
+		CASE(C_C, CSC,				csc,				I)
+		CASE(C_C, ACSC,				acsc,				I)
+		CASE(C_C, CSCH,				csch,				I)
+		CASE(C_C, ACSCH,			acsch,				I)
+		CASE(C_C, TAN,				tan,				I)
+		CASE(C_C, ATAN,				atan,				I)
+		CASE(C_C, TANH,				tanh,				C)
+		CASE(C_C, ATANH,			atanh,				I)
+		CASE(C_C, TANC,				tanc,				I)
+		CASE(C_C, COT,				cot,				I)
+		CASE(C_C, ACOT,				acot,				I)
+		CASE(C_C, COTH,				coth,				I)
+		CASE(C_C, ACOTH,			acoth,				I)
+		CASE(C_C, EXP,				exp,				C)
+		CASE(C_C, LN,				ln,					I)
+		CASE(C_C, LOG,				log,				I)
+		CASE(C_C, SQRT,				sqrt,				C)
+		CASE(C_C, CBRT,				cbrt,				C)
+		CASE(C_C, SQ,				sq,					C)
+		CASE(C_C, FIB,				fib,				C)
+		CASE(C_C, SGN,				sgn,				I)
+		CASE(C_C, STEP,				step,				I)
+		CASE(C_C, RECT,				rect,				I)
+		CASE_R_C(TENT,				trgl, TRGL,			C)
+		CASE(C_C, CEIL,				ceil,				O)
+		CASE(C_C, FLOOR,			floor,				O)
+		CASE(C_C, ROUND,			round,				O)
+		CASE(C_C, INT,				int,				O)
+		CASE(C_C, FRAC,				frac,				I)
+		CASE(R_C, ABS,				abs,				C)
+		CASE(R_C, ARG,				arg,				I)
+		CASE_NONE(INVSQRT)
+		CASE_NONE(ERF)
+		CASE_NONE(ZETA)
+		CASE_C_C(RAND,				random, RANDOM,		O)
+		CASE_C_C(GAMMA,				tgamma, TGAMMA,		I)
+		CASE_NONE(LNGAMMA)
+		CASE(C_C, GAUSS,			gauss,				C)
+		CASE(C_C, COMBINATION,		combination,		C)
+		CASE(C_C, PERMUTATION,		permutation,		C)
+		CASE(R_C, SQWV,				sqwv,				O)
+		CASE(R_C, TRWV,				trwv,				C)
+		CASE(R_C, SAW,				saw,				I)
+		CASE(R_C, MANDELBROT,		mandelbrot,			C)
+	//	CASE(C_C, MIN,				min,				C)
+	//	CASE(C_C, MAX,				max,				C)
+		CASE_NONE(BETA)
+		CASE_NONE(BESSEL_J)
+		CASE_NONE(BESSEL_Y)
+		CASE(C_C, HANKEL1,			hankel1,			C)
+
+//		case M_SINC:				function.set(c_c_sinc),					umts=returns_rcq,		d();								return;
+//		case M_SINHC:				function.set(c_c_sinhc),					umts=returns_rcq,		d();								return;
+//		case M_CSC:					function.set(c_c_csc),						umts=returns_rcq,		d(disc_c_csc_i, true);				return;
+//		case M_ACSC:				function.set(c_c_acsc),					umts=returns_ccq,		d(disc_c_acsc_i, true);				return;
+//		case M_CSCH:				function.set(c_c_csch),					umts=returns_rcq,		d(disc_c_csch_i, true);				return;
+//		case M_ACSCH:				function.set(c_c_acsch),					umts=returns_rcq,		d(disc_c_acsch_i, true);			return;
+//		case M_TAN:					function.set(c_c_tan),						umts=returns_rcq,		d(disc_c_tan_i, true);				return;
+//		case M_ATAN:				function.set(c_c_atan),					umts=returns_rcq,		d(disc_c_atan_i, true);				return;
+//		case M_TANH:				function.set(c_c_tanh),					umts=returns_rcq,		d();				return;
+//		case M_ATANH:				function.set(c_c_atanh),					umts=returns_ccq,		d(disc_c_atanh_i, true);			return;
+//		case M_TANC:				function.set(c_c_tanc),					umts=returns_rcq,		d(disc_c_tanc_i, true);				return;
+//		case M_COT:					function.set(c_c_cot),						umts=returns_rcq,		d(disc_c_cot_i, true);				return;
+//		case M_ACOT:				function.set(c_c_acot),					umts=returns_rcq,		d(disc_c_acot_i, true);				return;
+//		case M_COTH:				function.set(c_c_coth),					umts=returns_rcq,		d(disc_c_acoth_i, true);			return;
+//		case M_ACOTH:				function.set(c_c_acoth),					umts=returns_ccq,		d(disc_c_acoth_i, true);			return;
+//		case M_EXP:					function.set(c_c_exp),						umts=returns_rcq,		d();								return;
+//		case M_LN:					function.set(c_c_ln),						umts=returns_ccq,		d(disc_c_ln_i, true);				return;
+//		case M_LOG:					function.set(c_c_log),						umts=returns_ccq,		d(disc_c_log_i, true);				return;
+//		case M_SQRT:				function.set(c_c_sqrt),					umts=returns_ccq,		d();								return;
+//		case M_CBRT:				function.set(c_c_cbrt),					umts=returns_rcq,		d();								return;
+//		case M_SQ:					function.set(c_c_sq),						umts=returns_rcq,		d();								return;
+//		case M_FIB:					function.set(c_c_fib),						umts=returns_rcq,		d();								return;
+//		case M_SGN:					function.set(c_c_sgn),						umts=returns_rcq,		d(disc_c_sgn_i, true);				return;
+//		case M_STEP:				function.set(c_c_step),					umts=returns_rcq,		d(disc_c_step_i, true);				return;
+//		case M_RECT:				function.set(c_c_rect),					umts=returns_rcq,		d(disc_c_rect_i, true);				return;
+//		case M_TENT:				function.set(r_c_trgl),					umts=returns_rrr,		d();								return;
+//		case M_CEIL:				function.set(c_c_ceil),	umts=returns_rcq,		d(disc_c_ceil_o, false);			return;
+//		case M_FLOOR:				function.set(c_c_floor),	umts=returns_rcq,		d(disc_c_floor_o, false);			return;
+//		case M_ROUND:				function.set(c_c_round),	umts=returns_rcq,		d(disc_c_round_o, false);			return;
+//		case M_INT:					function.set(c_c_int),			umts=returns_rcq,		d(disc_c_int_o, false);				return;
+//		case M_FRAC:				function.set(c_c_frac),			umts=returns_rcq,		d(disc_c_frac_i, true);				return;
+//		case M_ABS:					function.set(r_c_abs),						umts=returns_rrr,		d();								return;
+//		case M_ARG:					function.set(r_c_arg),						umts=returns_rrr,		d(disc_c_arg_i, true);				return;
+//		case M_INVSQRT:				function.set();																						return;
+//		case M_ERF:					function.set();																						return;
+//		case M_ZETA:				function.set();																						return;
+//		case M_RAND:				function.set(c_c_random),					umts=returns_rcq,		d(disc_c_random_o, false);			return;
+//		case M_GAMMA:				function.set(c_c_tgamma),					umts=returns_rcq,		d(disc_c_tgamma_i, true);			return;
+//		case M_LNGAMMA:				function.set(),							umts=returns_rXX,		d();								return;
+//		case M_GAUSS:				function.set(c_c_gauss),					umts=returns_rcq,		d();								return;
+//		case M_COMBINATION:			function.set(c_c_combination),				umts=returns_rcq,		d();								return;
+//		case M_PERMUTATION:			function.set(c_c_permutation),				umts=returns_rcq,		d();								return;
+//		case M_SQWV:				function.set(r_c_sqwv),					umts=returns_rcq,		d(disc_c_sqwv_i, true);				return;
+//		case M_TRWV:				function.set(r_c_trwv),					umts=returns_rcq,		d(disc_c_trwv_i, true);				return;
+//		case M_SAW:					function.set(c_c_saw),						umts=returns_rcq,		d(disc_c_saw_i, true);				return;
+//		case M_MANDELBROT:			function.set(r_c_mandelbrot);		umts=returns_rrr,		d();								return;
+//	//	case M_MIN:					function.set(c_c_min),						umts=returns_rcq,		d();								return;
+//	//	case M_MAX:					function.set(c_c_max),						umts=returns_rcq,		d();								return;
+//		case M_BETA:				function.set();																						return;
+//		case M_BESSEL_J:				function.set();																						return;
+//		case M_BESSEL_Y:				function.set();																						return;
+//		case M_HANKEL1:				function.set(c_c_hankel1);					umts=returns_rcq,		d();							return;
 		}
 		break;
 	case 'h':
 		switch(f)
 		{
-		case M_REAL:				function.set(r_c_real),					umts=returns_rrr,		d();								return;
-		case M_IMAG:				function.set(r_c_imag),					umts=returns_rrr,		d();								return;
-		case M_CONJUGATE:			function.set(q_q_conjugate),				umts=returns_rcq,		d();								return;
-		case M_POLAR:				function.set(c_q_polar),					umts=returns_ccc,		d(disc_q_polar_i, true);			return;
-		case M_CARTESIAN:			function.set(q_q_cartesian),				umts=returns_rcq,		d();								return;
-		case M_DIVIDE:				function.set(q_q_divide),					umts=returns_rcq,		d(disc_q_divide_i, true);			return;
-		case M_MINUS:				function.set(q_q_minus),					umts=returns_rcq,		d();								return;
-		case M_MODULO_PERCENT:		function.set(q_q_percent),					umts=returns_rcq,		d();								return;
-		case M_INCREMENT:			function.set(q_q_increment),					umts=returns_rcq,		d();								return;
-		case M_DECREMENT:			function.set(q_q_decrement),					umts=returns_rcq,		d();								return;
-		case M_BITWISE_NOT:			function.set(q_q_bitwise_not),				umts=returns_rcq,		d(disc_q_bitwise_not_i, true);		return;
-		case M_BITWISE_SHIFT_LEFT:		 if(side=='<')	function.set(q_q_bitwise_shift_left_l),	umts=returns_rcq,		d(disc_q_bitwise_shift_left_l_o, false);
-									else				function.set(q_q_bitwise_shift_left_r),	umts=returns_rcq,		d();										return;
-		case M_BITWISE_SHIFT_RIGHT:		 if(side=='<')	function.set(q_q_bitwise_shift_right_l),	umts=returns_rcq,		d(disc_q_bitwise_shift_right_l_o, false);
-									else				function.set(q_q_bitwise_shift_right_r),	umts=returns_rcq,		d();										return;
-		case M_FACTORIAL_LOGIC_NOT:		 if(side=='<')	function.set(r_q_logic_not),				umts=returns_rrr,		d(disc_q_logic_not_i, true);
-									else				function.set(q_q_factorial),				umts=returns_rcq,		d(disc_q_factorial_i, true);				return;
-		case M_LOGIC_LESS:				 if(side=='<')	function.set(r_q_logic_less_l),			umts=returns_rrr,		d(disc_q_logic_less_l_i, true);
-									else				function.set(r_q_logic_less_r),			umts=returns_rrr,		d(disc_q_logic_less_r_i, true);				return;
-		case M_LOGIC_LESS_EQUAL:		 if(side=='<')	function.set(r_q_logic_less_equal_l),		umts=returns_rrr,		d(disc_q_logic_less_equal_l_i, true);
-									else				function.set(r_q_logic_less_equal_r),		umts=returns_rrr,		d(disc_q_logic_less_equal_r_i, true);		return;
-		case M_LOGIC_GREATER:			 if(side=='<')	function.set(r_q_logic_greater_l),			umts=returns_rrr,		d(disc_q_logic_greater_l_i, true);
-									else				function.set(r_q_logic_greater_r),			umts=returns_rrr,		d(disc_q_logic_greater_r_i, true);			return;
-		case M_LOGIC_GREATER_EQUAL:		 if(side=='<')	function.set(r_q_logic_greater_equal_l),	umts=returns_rrr,		d(disc_q_logic_greater_equal_l_i, true);
-									else				function.set(r_q_logic_greater_equal_r),	umts=returns_rrr,		d(disc_q_logic_greater_equal_r_i, true);	return;
-		case M_LOGIC_EQUAL:			function.set(r_q_logic_equal),				umts=returns_rrr,		d(disc_q_logic_equal_i, true);		return;
-		case M_LOGIC_NOT_EQUAL:		function.set(r_q_logic_not_equal),			umts=returns_rrr,		d(disc_q_logic_not_equal_i, true);	return;
-		case M_BITWISE_AND:			function.set(q_q_bitwise_and),				umts=returns_rcq,		d(disc_q_bitwise_and_o, false);		return;
-		case M_BITWISE_NAND:		function.set(q_q_bitwise_nand),			umts=returns_rcq,		d(disc_q_bitwise_or_o, false);		return;
-		case M_BITWISE_XOR:			function.set(q_q_bitwise_xor),				umts=returns_rcq,		d(disc_q_bitwise_xor_o, false);		return;
-		case M_BITWISE_XNOR:		function.set(q_q_bitwise_xnor),			umts=returns_rcq,		d(disc_q_bitwise_xnor_o, false);	return;
-		case M_VERTICAL_BAR:		function.set(q_q_bitwise_or),				umts=returns_rcq,		d(disc_q_bitwise_or_o, false);		return;
-		case M_BITWISE_NOR:			function.set(q_q_bitwise_nor),				umts=returns_rcq,		d(disc_q_bitwise_nor_o, false);		return;
-		case M_COS:					function.set(q_q_cos),						umts=returns_rcq,		d();								return;
-		case M_ACOS:				function.set(q_q_acos),					umts=returns_ccq,		d(disc_q_acos_i, true);				return;
-		case M_COSH:				function.set(q_q_cosh),					umts=returns_rcq,		d();								return;
-		case M_ACOSH:				function.set(q_q_acosh),					umts=returns_ccq,		d();								return;
-		case M_COSC:				function.set(q_q_cosc),					umts=returns_rcq,		d(disc_q_cosc_i, true);				return;
-		case M_SEC:					function.set(q_q_sec),						umts=returns_rcq,		d(disc_q_sec_i, true);				return;
-		case M_ASEC:				function.set(q_q_asec),					umts=returns_ccq,		d(disc_q_asec_i, true);				return;
-		case M_SECH:				function.set(q_q_sech),					umts=returns_rcq,		d(disc_q_sech_i, true);				return;
-		case M_ASECH:				function.set(q_q_asech),					umts=returns_ccq,		d(disc_q_asech_i, true);			return;
-		case M_SIN:					function.set(q_q_sin),						umts=returns_rcq,		d();								return;
-		case M_ASIN:				function.set(q_q_asin),					umts=returns_ccq,		d(disc_q_asin_i, true);				return;
-		case M_SINH:				function.set(q_q_sinh),					umts=returns_rcq,		d();								return;
-		case M_ASINH:				function.set(q_q_asinh),					umts=returns_rcq,		d(disc_q_asinh_i, true);			return;
-		case M_SINC:				function.set(q_q_sinc),					umts=returns_rcq,		d();								return;
-		case M_SINHC:				function.set(q_q_sinhc),					umts=returns_rcq,		d();								return;
-		case M_CSC:					function.set(q_q_csc),						umts=returns_rcq,		d(disc_q_csc_i, true);				return;
-		case M_ACSC:				function.set(q_q_acsc),					umts=returns_ccq,		d(disc_q_acsc_i, true);				return;
-		case M_CSCH:				function.set(q_q_csch),					umts=returns_rcq,		d(disc_q_csch_i, true);				return;
-		case M_ACSCH:				function.set(q_q_acsch),					umts=returns_rcq,		d(disc_q_acsch_i, true);			return;
-		case M_TAN:					function.set(q_q_tan),						umts=returns_rcq,		d(disc_q_tan_i, true);				return;
-		case M_ATAN:				function.set(q_q_atan),					umts=returns_rcq,		d(disc_q_atan_i, true);				return;
-		case M_TANH:				function.set(q_q_tanh),					umts=returns_rcq,		d();				return;
-		case M_ATANH:				function.set(q_q_atanh),					umts=returns_ccq,		d(disc_q_atanh_i, true);			return;
-		case M_TANC:				function.set(q_q_tanc),					umts=returns_rcq,		d(disc_q_tanc_i, true);				return;
-		case M_COT:					function.set(q_q_cot),						umts=returns_rcq,		d(disc_q_cot_i, true);				return;
-		case M_ACOT:				function.set(q_q_acot),					umts=returns_rcq,		d(disc_q_acot_i, true);				return;
-		case M_COTH:				function.set(q_q_coth),					umts=returns_rcq,		d(disc_q_coth_i, true);				return;
-		case M_ACOTH:				function.set(q_q_acoth),					umts=returns_ccq,		d(disc_q_acoth_i, true);			return;
-		case M_EXP:					function.set(q_q_exp),						umts=returns_rcq,		d();								return;
-		case M_LN:					function.set(q_q_ln),						umts=returns_ccq,		d(disc_q_ln_i, true);				return;
-		case M_LOG:					function.set(q_q_log),						umts=returns_ccq,		d(disc_q_log_i, true);				return;
-		case M_SQRT:				function.set(q_q_sqrt),					umts=returns_ccq,		d();								return;
-		case M_CBRT:				function.set(q_q_cbrt),					umts=returns_rcq,		d();								return;
-		case M_SQ:					function.set(q_q_sq),						umts=returns_rcq,		d();								return;
-		case M_FIB:					function.set(q_q_fib),						umts=returns_rcq,		d();								return;
-		case M_SGN:					function.set(q_q_sgn),						umts=returns_rcq,		d(disc_q_sgn_i, true);				return;
-		case M_STEP:				function.set(q_q_step),					umts=returns_rcq,		d(disc_q_step_i, true);				return;
-		case M_RECT:				function.set(q_q_rect),					umts=returns_rcq,		d(disc_q_rect_i, true);				return;
-		case M_TENT:				function.set(r_q_trgl),					umts=returns_rrr,		d();								return;
-		case M_CEIL:				function.set(q_q_ceil),	umts=returns_rcq,		d(disc_q_ceil_o, false);			return;
-		case M_FLOOR:				function.set(q_q_floor),	umts=returns_rcq,		d(disc_q_floor_o, false);			return;
-		case M_ROUND:				function.set(q_q_round),	umts=returns_rcq,		d(disc_q_round_o, false);			return;
-		case M_INT:					function.set(q_q_int),			umts=returns_rcq,		d(disc_q_int_o, false);				return;
-		case M_FRAC:				function.set(q_q_frac),			umts=returns_rcq,		d(disc_q_frac_i, true);				return;
-		case M_ABS:					function.set(r_q_abs),						umts=returns_rrr,		d();								return;
-		case M_ARG:					function.set(r_q_arg),						umts=returns_rrr,		d(disc_q_arg_i, true);				return;
-		case M_INVSQRT:				function.set();																						return;
-		case M_ERF:					function.set();																						return;
-		case M_ZETA:				function.set();																						return;
-		case M_RAND:				function.set(q_q_random),					umts=returns_rcq,		d(disc_q_random, false);			return;
-		case M_GAMMA:				function.set(q_q_tgamma),					umts=returns_rcq,		d(disc_q_tgamma_i, true);			return;
-		case M_LNGAMMA:				function.set(),							umts=returns_rXX,		d();								return;
-		case M_GAUSS:				function.set(q_q_gauss),					umts=returns_rcq,		d();								return;
-		case M_PERMUTATION:			function.set(q_q_permutation),				umts=returns_rcq,		d();								return;
-		case M_COMBINATION:			function.set(q_q_combination),				umts=returns_rcq,		d();								return;
-		case M_SQWV:				function.set(r_q_sqwv),					umts=returns_rcq,		d(disc_q_sqwv_i, true);				return;
-		case M_TRWV:				function.set(r_q_trwv),					umts=returns_rcq,		d(disc_q_trwv_i, true);				return;
-		case M_SAW:					function.set(q_q_saw),						umts=returns_rcq,		d(disc_q_saw_i, true);				return;
-	//	case M_MIN:					function.set(q_q_min),						umts=returns_rcq,		d();								return;
-	//	case M_MAX:					function.set(q_q_max),						umts=returns_rcq,		d();								return;
-		case M_BETA:				function.set();																						return;
-		case M_BESSEL:				function.set();																						return;
-		case M_NEUMANN:				function.set();																						return;
-		case M_HANKEL1:				function.set();																						return;
+		CASE(R_C, REAL,				real,				C)
+		CASE(R_C, IMAG,				imag,				C)
+		CASE(Q_Q, CONJUGATE,		conjugate,			C)
+		CASE(C_Q, POLAR,			polar,				I)
+		CASE(Q_Q, CARTESIAN,		cartesian,			C)
+		CASE(Q_Q, DIVIDE,			divide,				I)
+		CASE(Q_Q, MINUS,			minus,				C)
+		CASE_Q_Q(MODULO_PERCENT,	percent, PERCENT,	C)
+		CASE(Q_Q, INCREMENT,		increment,			C)
+		CASE(Q_Q, DECREMENT,		decrement,			C)
+		CASE(Q_Q, BITWISE_NOT,		bitwise_not,		I)
+//		case M_REAL:				function.set(r_c_real),					umts=returns_rrr,		d();								return;
+//		case M_IMAG:				function.set(r_c_imag),					umts=returns_rrr,		d();								return;
+//		case M_CONJUGATE:			function.set(q_q_conjugate),				umts=returns_rcq,		d();								return;
+//		case M_POLAR:				function.set(c_q_polar),					umts=returns_ccc,		d(disc_q_polar_i, true);			return;
+//		case M_CARTESIAN:			function.set(q_q_cartesian),				umts=returns_rcq,		d();								return;
+//		case M_DIVIDE:				function.set(q_q_divide),					umts=returns_rcq,		d(disc_q_divide_i, true);			return;
+//		case M_MINUS:				function.set(q_q_minus),					umts=returns_rcq,		d();								return;
+//		case M_MODULO_PERCENT:		function.set(q_q_percent),					umts=returns_rcq,		d();								return;
+//		case M_INCREMENT:			function.set(q_q_increment),					umts=returns_rcq,		d();								return;
+//		case M_DECREMENT:			function.set(q_q_decrement),					umts=returns_rcq,		d();								return;
+//		case M_BITWISE_NOT:			function.set(q_q_bitwise_not),				umts=returns_rcq,		d(disc_q_bitwise_not_i, true);		return;
+		case M_BITWISE_SHIFT_LEFT:		 if(side=='<')	function.set(q_q_bitwise_shift_left_l),		signature=SIG_Q_Q,		d(disc_q_bitwise_shift_left_l_o, false);
+									else				function.set(q_q_bitwise_shift_left_r),		signature=SIG_Q_Q,		d();										return;
+		case M_BITWISE_SHIFT_RIGHT:		 if(side=='<')	function.set(q_q_bitwise_shift_right_l),	signature=SIG_Q_Q,		d(disc_q_bitwise_shift_right_l_o, false);
+									else				function.set(q_q_bitwise_shift_right_r),	signature=SIG_Q_Q,		d();										return;
+		case M_FACTORIAL_LOGIC_NOT:		 if(side=='<')	function.set(r_q_logic_not),				signature=SIG_R_Q,		d(disc_r_logic_not_o, true);
+									else				function.set(q_q_factorial),				signature=SIG_Q_Q,		d(disc_q_factorial_i, true);				return;
+		case M_LOGIC_LESS:				 if(side=='<')	function.set(r_q_logic_less_l),				signature=SIG_R_Q,		d(disc_r_logic_less_o, true);
+									else				function.set(r_q_logic_less_r),				signature=SIG_R_Q,		d(disc_r_logic_less_o, true);				return;
+		case M_LOGIC_LESS_EQUAL:		 if(side=='<')	function.set(r_q_logic_less_equal_l),		signature=SIG_R_Q,		d(disc_r_logic_less_equal_o, true);
+									else				function.set(r_q_logic_less_equal_r),		signature=SIG_R_Q,		d(disc_r_logic_less_equal_o, true);			return;
+		case M_LOGIC_GREATER:			 if(side=='<')	function.set(r_q_logic_greater_l),			signature=SIG_R_Q,		d(disc_r_logic_greater_o, true);
+									else				function.set(r_q_logic_greater_r),			signature=SIG_R_Q,		d(disc_r_logic_greater_o, true);			return;
+		case M_LOGIC_GREATER_EQUAL:		 if(side=='<')	function.set(r_q_logic_greater_equal_l),	signature=SIG_R_Q,		d(disc_r_logic_greater_equal_o, true);
+									else				function.set(r_q_logic_greater_equal_r),	signature=SIG_R_Q,		d(disc_r_logic_greater_equal_o, true);		return;
+		CASE(R_Q, LOGIC_EQUAL,		logic_equal,		O)
+		CASE(R_Q, LOGIC_NOT_EQUAL,	logic_not_equal,	O)
+		CASE(Q_Q, BITWISE_AND,		bitwise_and,		O)
+		CASE(Q_Q, BITWISE_NAND,		bitwise_nand,		O)
+		CASE(Q_Q, BITWISE_XOR,		bitwise_xor,		O)
+		CASE(Q_Q, BITWISE_XNOR,		bitwise_xnor,		O)
+		CASE_Q_Q(VERTICAL_BAR,		bitwise_or, BITWISE_OR, O)
+		CASE(Q_Q, BITWISE_NOR,		bitwise_nor,		O)
+		CASE(Q_Q, COS,				cos,				C)
+		CASE(Q_Q, ACOS,				acos,				I)
+		CASE(Q_Q, COSH,				cosh,				C)
+		CASE(Q_Q, ACOSH,			acosh,				C)
+		CASE(Q_Q, COSC,				cosc,				I)
+		CASE(Q_Q, SEC,				sec,				I)
+		CASE(Q_Q, ASEC,				asec,				I)
+		CASE(Q_Q, SECH,				sech,				I)
+		CASE(Q_Q, ASECH,			asech,				I)
+		CASE(Q_Q, SIN,				sin,				C)
+		CASE(Q_Q, ASIN,				asin,				I)
+		CASE(Q_Q, SINH,				sinh,				C)
+		CASE(Q_Q, ASINH,			asinh,				I)
+		CASE(Q_Q, SINC,				sinc,				C)
+		CASE(Q_Q, SINHC,			sinhc,				C)
+		CASE(Q_Q, CSC,				csc,				I)
+		CASE(Q_Q, ACSC,				acsc,				I)
+		CASE(Q_Q, CSCH,				csch,				I)
+		CASE(Q_Q, ACSCH,			acsch,				I)
+		CASE(Q_Q, TAN,				tan,				I)
+		CASE(Q_Q, ATAN,				atan,				I)
+		CASE(Q_Q, TANH,				tanh,				C)
+		CASE(Q_Q, ATANH,			atanh,				I)
+		CASE(Q_Q, TANC,				tanc,				I)
+		CASE(Q_Q, COT,				cot,				I)
+		CASE(Q_Q, ACOT,				acot,				I)
+		CASE(Q_Q, COTH,				coth,				I)
+		CASE(Q_Q, ACOTH,			acoth,				I)
+		CASE(Q_Q, EXP,				exp,				C)
+		CASE(Q_Q, LN,				ln,					I)
+		CASE(Q_Q, LOG,				log,				I)
+		CASE(Q_Q, SQRT,				sqrt,				C)
+		CASE(Q_Q, CBRT,				cbrt,				C)
+		CASE(Q_Q, SQ,				sq,					C)
+		CASE(Q_Q, FIB,				fib,				C)
+		CASE(Q_Q, SGN,				sgn,				I)
+		CASE(Q_Q, STEP,				step,				I)
+		CASE(Q_Q, RECT,				rect,				I)
+		CASE_R_Q(TENT,				trgl, TRGL,			C)
+		CASE(Q_Q, CEIL,				ceil,				O)
+		CASE(Q_Q, FLOOR,			floor,				O)
+		CASE(Q_Q, ROUND,			round,				O)
+		CASE(Q_Q, INT,				int,				O)
+		CASE(Q_Q, FRAC,				frac,				I)
+		CASE(R_Q, ABS,				abs,				C)
+		CASE(R_Q, ARG,				arg,				I)
+		CASE_NONE(INVSQRT)
+		CASE_NONE(ERF)
+		CASE_NONE(ZETA)
+		CASE_Q_Q(RAND,				random, RANDOM,		O)
+		CASE_Q_Q(GAMMA,				tgamma, TGAMMA,		I)
+		CASE_NONE(LNGAMMA)
+		CASE(Q_Q, GAUSS,			gauss,				C)
+		CASE(Q_Q, PERMUTATION,		permutation,		C)
+		CASE(Q_Q, COMBINATION,		combination,		C)
+		CASE(R_Q, SQWV,				sqwv,				O)
+		CASE(R_Q, TRWV,				trwv,				C)
+		CASE(R_Q, SAW,				saw,				I)
+	//	CASE(Q_Q, MIN,				min,				C)
+	//	CASE(Q_Q, MAX,				max,				C)
+		CASE_NONE(BETA)
+		CASE_NONE(BESSEL_J)
+		CASE_NONE(BESSEL_Y)
+		CASE_NONE(HANKEL1)
+
+//		case M_LOGIC_EQUAL:			function.set(r_q_logic_equal),				umts=returns_rrr,		d(disc_q_logic_equal_i, true);		return;
+//		case M_LOGIC_NOT_EQUAL:		function.set(r_q_logic_not_equal),			umts=returns_rrr,		d(disc_q_logic_not_equal_i, true);	return;
+//		case M_BITWISE_AND:			function.set(q_q_bitwise_and),				umts=returns_rcq,		d(disc_q_bitwise_and_o, false);		return;
+//		case M_BITWISE_NAND:		function.set(q_q_bitwise_nand),			umts=returns_rcq,		d(disc_q_bitwise_or_o, false);		return;
+//		case M_BITWISE_XOR:			function.set(q_q_bitwise_xor),				umts=returns_rcq,		d(disc_q_bitwise_xor_o, false);		return;
+//		case M_BITWISE_XNOR:		function.set(q_q_bitwise_xnor),			umts=returns_rcq,		d(disc_q_bitwise_xnor_o, false);	return;
+//		case M_VERTICAL_BAR:		function.set(q_q_bitwise_or),				umts=returns_rcq,		d(disc_q_bitwise_or_o, false);		return;
+//		case M_BITWISE_NOR:			function.set(q_q_bitwise_nor),				umts=returns_rcq,		d(disc_q_bitwise_nor_o, false);		return;
+//		case M_COS:					function.set(q_q_cos),						umts=returns_rcq,		d();								return;
+//		case M_ACOS:				function.set(q_q_acos),					umts=returns_ccq,		d(disc_q_acos_i, true);				return;
+//		case M_COSH:				function.set(q_q_cosh),					umts=returns_rcq,		d();								return;
+//		case M_ACOSH:				function.set(q_q_acosh),					umts=returns_ccq,		d();								return;
+//		case M_COSC:				function.set(q_q_cosc),					umts=returns_rcq,		d(disc_q_cosc_i, true);				return;
+//		case M_SEC:					function.set(q_q_sec),						umts=returns_rcq,		d(disc_q_sec_i, true);				return;
+//		case M_ASEC:				function.set(q_q_asec),					umts=returns_ccq,		d(disc_q_asec_i, true);				return;
+//		case M_SECH:				function.set(q_q_sech),					umts=returns_rcq,		d(disc_q_sech_i, true);				return;
+//		case M_ASECH:				function.set(q_q_asech),					umts=returns_ccq,		d(disc_q_asech_i, true);			return;
+//		case M_SIN:					function.set(q_q_sin),						umts=returns_rcq,		d();								return;
+//		case M_ASIN:				function.set(q_q_asin),					umts=returns_ccq,		d(disc_q_asin_i, true);				return;
+//		case M_SINH:				function.set(q_q_sinh),					umts=returns_rcq,		d();								return;
+//		case M_ASINH:				function.set(q_q_asinh),					umts=returns_rcq,		d(disc_q_asinh_i, true);			return;
+//		case M_SINC:				function.set(q_q_sinc),					umts=returns_rcq,		d();								return;
+//		case M_SINHC:				function.set(q_q_sinhc),					umts=returns_rcq,		d();								return;
+//		case M_CSC:					function.set(q_q_csc),						umts=returns_rcq,		d(disc_q_csc_i, true);				return;
+//		case M_ACSC:				function.set(q_q_acsc),					umts=returns_ccq,		d(disc_q_acsc_i, true);				return;
+//		case M_CSCH:				function.set(q_q_csch),					umts=returns_rcq,		d(disc_q_csch_i, true);				return;
+//		case M_ACSCH:				function.set(q_q_acsch),					umts=returns_rcq,		d(disc_q_acsch_i, true);			return;
+//		case M_TAN:					function.set(q_q_tan),						umts=returns_rcq,		d(disc_q_tan_i, true);				return;
+//		case M_ATAN:				function.set(q_q_atan),					umts=returns_rcq,		d(disc_q_atan_i, true);				return;
+//		case M_TANH:				function.set(q_q_tanh),					umts=returns_rcq,		d();				return;
+//		case M_ATANH:				function.set(q_q_atanh),					umts=returns_ccq,		d(disc_q_atanh_i, true);			return;
+//		case M_TANC:				function.set(q_q_tanc),					umts=returns_rcq,		d(disc_q_tanc_i, true);				return;
+//		case M_COT:					function.set(q_q_cot),						umts=returns_rcq,		d(disc_q_cot_i, true);				return;
+//		case M_ACOT:				function.set(q_q_acot),					umts=returns_rcq,		d(disc_q_acot_i, true);				return;
+//		case M_COTH:				function.set(q_q_coth),					umts=returns_rcq,		d(disc_q_coth_i, true);				return;
+//		case M_ACOTH:				function.set(q_q_acoth),					umts=returns_ccq,		d(disc_q_acoth_i, true);			return;
+//		case M_EXP:					function.set(q_q_exp),						umts=returns_rcq,		d();								return;
+//		case M_LN:					function.set(q_q_ln),						umts=returns_ccq,		d(disc_q_ln_i, true);				return;
+//		case M_LOG:					function.set(q_q_log),						umts=returns_ccq,		d(disc_q_log_i, true);				return;
+//		case M_SQRT:				function.set(q_q_sqrt),					umts=returns_ccq,		d();								return;
+//		case M_CBRT:				function.set(q_q_cbrt),					umts=returns_rcq,		d();								return;
+//		case M_SQ:					function.set(q_q_sq),						umts=returns_rcq,		d();								return;
+//		case M_FIB:					function.set(q_q_fib),						umts=returns_rcq,		d();								return;
+//		case M_SGN:					function.set(q_q_sgn),						umts=returns_rcq,		d(disc_q_sgn_i, true);				return;
+//		case M_STEP:				function.set(q_q_step),					umts=returns_rcq,		d(disc_q_step_i, true);				return;
+//		case M_RECT:				function.set(q_q_rect),					umts=returns_rcq,		d(disc_q_rect_i, true);				return;
+//		case M_TENT:				function.set(r_q_trgl),					umts=returns_rrr,		d();								return;
+//		case M_CEIL:				function.set(q_q_ceil),	umts=returns_rcq,		d(disc_q_ceil_o, false);			return;
+//		case M_FLOOR:				function.set(q_q_floor),	umts=returns_rcq,		d(disc_q_floor_o, false);			return;
+//		case M_ROUND:				function.set(q_q_round),	umts=returns_rcq,		d(disc_q_round_o, false);			return;
+//		case M_INT:					function.set(q_q_int),			umts=returns_rcq,		d(disc_q_int_o, false);				return;
+//		case M_FRAC:				function.set(q_q_frac),			umts=returns_rcq,		d(disc_q_frac_i, true);				return;
+//		case M_ABS:					function.set(r_q_abs),						umts=returns_rrr,		d();								return;
+//		case M_ARG:					function.set(r_q_arg),						umts=returns_rrr,		d(disc_q_arg_i, true);				return;
+//		case M_INVSQRT:				function.set();																						return;
+//		case M_ERF:					function.set();																						return;
+//		case M_ZETA:				function.set();																						return;
+//		case M_RAND:				function.set(q_q_random),					umts=returns_rcq,		d(disc_q_random_o, false);			return;
+//		case M_GAMMA:				function.set(q_q_tgamma),					umts=returns_rcq,		d(disc_q_tgamma_i, true);			return;
+//		case M_LNGAMMA:				function.set(),							umts=returns_rXX,		d();								return;
+//		case M_GAUSS:				function.set(q_q_gauss),					umts=returns_rcq,		d();								return;
+//		case M_PERMUTATION:			function.set(q_q_permutation),				umts=returns_rcq,		d();								return;
+//		case M_COMBINATION:			function.set(q_q_combination),				umts=returns_rcq,		d();								return;
+//		case M_SQWV:				function.set(r_q_sqwv),					umts=returns_rcq,		d(disc_q_sqwv_i, true);				return;
+//		case M_TRWV:				function.set(r_q_trwv),					umts=returns_rcq,		d(disc_q_trwv_i, true);				return;
+//		case M_SAW:					function.set(q_q_saw),						umts=returns_rcq,		d(disc_q_saw_i, true);				return;
+//	//	case M_MIN:					function.set(q_q_min),						umts=returns_rcq,		d();								return;
+//	//	case M_MAX:					function.set(q_q_max),						umts=returns_rcq,		d();								return;
+//		case M_BETA:				function.set();																						return;
+//		case M_BESSEL_J:				function.set();																						return;
+//		case M_BESSEL_Y:				function.set();																						return;
+//		case M_HANKEL1:				function.set();																						return;
 		}
 		break;
 	}
 }
-void			Compile::compile_instruction_select_b	(int f, char op1type, char op2type, FunctionPointer &function, char (*&bmts)(char, char), DiscontinuityFunction &d)
+//void			Compile::compile_instruction_select_b	(int f, char op1type, char op2type, FunctionPointer &function, char (*&bmts)(char, char), DiscontinuityFunction &d)
+void			Compile::compile_instruction_select_b	(int f, char op1type, char op2type, FunctionPointer &function, int &signature, DiscontinuityFunction &d, int &cl_idx, int &cl_disc_idx)
 {
 	using namespace G2;
 	switch(op1type)
@@ -5220,191 +5363,368 @@ void			Compile::compile_instruction_select_b	(int f, char op1type, char op2type,
 		case 'R':
 			switch(f)
 			{
-			case M_POWER:				function.set(c_cr_pow),					bmts=returns_ccq_ccq_qqq,	d(disc_cr_pow_i);					return;
+			CASE_C_CR(POWER,			pow, POW,		I)
+		//	case M_POWER:				function.set(c_cr_pow),						bmts=returns_ccq_ccq_qqq,	d(disc_cr_pow_i);					return;
 			case M_ASSIGN_DIVIDE:
-			case M_DIVIDE:				function.set(r_rr_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_rr_divide_i);				return;
-			case M_LOGIC_DIVIDES:		function.set(r_rr_logic_divides),	bmts=returns_rcq_ccq_qqq,	d();	return;
+			CASE(R_RR, DIVIDE,			divide,			I)
+			CASE(R_RR, LOGIC_DIVIDES,	logic_divides,	C)
+		//	case M_DIVIDE:				function.set(r_rr_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_rr_divide_i);				return;
+		//	case M_LOGIC_DIVIDES:		function.set(r_rr_logic_divides),			bmts=returns_rcq_ccq_qqq,	d();	return;
 			case M_ASSIGN_MINUS:
-			case M_MINUS:				function.set(r_rr_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_PENTATE:				function.set(c_rr_pentate),				bmts=returns_rXX_rXX_XXX,	d(disc_rr_pentate_i);				return;
-			case M_TETRATE:				function.set(c_rr_tetrate),				bmts=returns_ccX_ccX_qXX,	d(disc_rr_tetrate_i);				return;
-			case M_POWER_REAL:			function.set(r_rr_power_real),			bmts=returns_rXX_cXX_qXX,	d(disc_rr_power_real_i);			return;
+			CASE(R_RR, MINUS,			minus,			C)
+			CASE(C_RR, PENTATE,			pentate,		I)
+			CASE(C_RR, TETRATE,			tetrate,		I)
+			CASE(R_RR, POWER_REAL,		power_real,		I)
 			case M_ASSIGN_MULTIPLY:
-			case M_MULTIPLY:			function.set(r_rr_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+			CASE(R_RR, MULTIPLY,		multiply,		C)
 			case M_ASSIGN_PLUS:
-			case M_PLUS:				function.set(r_rr_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_LOGIC_AND:			function.set(r_rr_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_and_i);				return;
-			case M_LOGIC_XOR:			function.set(r_rr_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_xor_i);				return;
-			case M_LOGIC_OR:			function.set(r_rr_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_or_i);				return;
-			case M_LOGIC_CONDITION_ZERO:function.set(r_rr_logic_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_rr_logic_condition_zero_i);	return;
+			CASE(R_RR, PLUS,			plus,			C)
+			CASE(R_RR, LOGIC_AND,		logic_and,		O)
+			CASE(R_RR, LOGIC_XOR,		logic_xor,		O)
+			CASE(R_RR, LOGIC_OR,		logic_or,		O)
+			CASE(R_RR, CONDITION_ZERO,	condition_zero,	I)
 			case M_ASSIGN_MOD:
-			case M_MODULO_PERCENT:		function.set(r_rr_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_rr_modulo_i);				return;
+			CASE_R_RR(MODULO_PERCENT,	modulo, MODULO,	I)
 			case M_ASSIGN_LEFT:
-			case M_BITWISE_SHIFT_LEFT:	function.set(r_rr_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_shift_left_i);	return;
+			CASE(R_RR, BITWISE_SHIFT_LEFT, bitwise_shift_left, I)
 			case M_ASSIGN_RIGHT:
-			case M_BITWISE_SHIFT_RIGHT:	function.set(r_rr_bitwise_shift_right),	bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_shift_right_i);	return;
-			case M_LOGIC_LESS:			function.set(r_rr_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_less_i);			return;
-			case M_LOGIC_LESS_EQUAL:	function.set(r_rr_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_less_equal_i);		return;
-			case M_LOGIC_GREATER:		function.set(r_rr_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_greater_i);			return;
-			case M_LOGIC_GREATER_EQUAL:	function.set(r_rr_logic_greater_equal),	bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_greater_equal_i);	return;
-			case M_LOGIC_EQUAL:			function.set(r_rr_logic_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_equal_i);			return;
-			case M_LOGIC_NOT_EQUAL:		function.set(r_rr_logic_not_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_not_equal_i);		return;
+			CASE(R_RR, BITWISE_SHIFT_RIGHT, bitwise_shift_right, I)
+			CASE(R_RR, LOGIC_LESS,		logic_less,		O)
+			CASE(R_RR, LOGIC_LESS_EQUAL, logic_less_equal, O)
+			CASE(R_RR, LOGIC_GREATER,	logic_greater,	O)
+			CASE(R_RR, LOGIC_GREATER_EQUAL, logic_greater_equal, O)
+			CASE(R_RR, LOGIC_EQUAL,		logic_equal,	O)
+			CASE(R_RR, LOGIC_NOT_EQUAL,	logic_not_equal, O)
 			case M_ASSIGN_AND:
-			case M_BITWISE_AND:			function.set(r_rr_bitwise_and),			bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_and_o, false);	return;
-			case M_BITWISE_NAND:		function.set(r_rr_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_nand_o, false);	return;
+			CASE(R_RR, BITWISE_AND,		bitwise_and,	O)
+			CASE(R_RR, BITWISE_NAND,	bitwise_nand,	O)
 			case M_ASSIGN_XOR:
-			case M_BITWISE_XOR:			function.set(r_rr_bitwise_xor),			bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_xor_o, false);	return;
-			case M_BITWISE_XNOR:		function.set(r_rr_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_xnor_o, false);	return;
+			CASE(R_RR, BITWISE_XOR,		bitwise_xor,	O)
+			CASE(R_RR, BITWISE_XNOR,	bitwise_xnor,	O)
 			case M_ASSIGN_OR:
-			case M_VERTICAL_BAR:		function.set(r_rr_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_or_o, false);		return;
-			case M_BITWISE_NOR:			function.set(r_rr_bitwise_nor),			bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_nor_o, false);	return;
-			case M_LOG:					function.set(c_cr_log),					bmts=returns_ccq_ccq_qqq,	d(disc_cr_log_i);					return;
-			case M_RAND:				function.set(r_rr_random),					bmts=returns_rcq_ccq_qqq,	d(disc_rr_random, false);			return;
-			case M_ATAN:				function.set(r_rr_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_rr_atan_i);					return;
-			case M_SQWV:				function.set(r_rr_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rr_sqwv_o, false);			return;
-			case M_TRWV:				function.set(r_rr_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rr_trwv_i);					return;
-			case M_SAW:					function.set(r_rr_saw),					bmts=returns_rcq_ccq_qqq,	d(disc_rr_saw_i);					return;
-			case M_HYPOT:				function.set(r_rr_hypot),				bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_MANDELBROT:			function.set(r_rr_mandelbrot),			bmts=returns_rrr_rrr_rrr,	d();								return;
-			case M_MIN:					function.set(r_rr_min),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_MAX:					function.set(r_rr_max),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_BETA:				function.set(r_rr_beta),					bmts=returns_rXX_XXX_XXX,	d(disc_rr_beta_i);					return;
-			case M_GAMMA:				function.set(r_rr_tgamma),				bmts=returns_rXX_XXX_XXX,	d(disc_rr_tgamma_i);				return;
-			case M_PERMUTATION:			function.set(r_rr_permutation),			bmts=returns_rcq_ccq_qqq,	d(disc_rr_permutation_i);			return;
-			case M_COMBINATION:			function.set(r_rr_combination),			bmts=returns_rcq_ccq_qqq,	d(disc_rr_combination_i);			return;
-			case M_BESSEL:				function.set(r_rr_cyl_bessel_j),			bmts=returns_rXX_XXX_XXX,	d(disc_rr_cyl_bessel_j_i);			return;
-			case M_NEUMANN:				function.set(r_rr_cyl_neumann),			bmts=returns_rXX_XXX_XXX,	d(disc_rr_cyl_neumann_i);			return;
-			case M_HANKEL1:				function.set(c_rr_hankel1),				bmts=returns_cXX_XXX_XXX,	d(disc_rr_hankel1_i);				return;
-		//	case M_HANKEL1:				function.set(r_rr_hankel1),				bmts=returns_cXX_XXX_XXX,	d(disc_rr_hankel1_i);				return;
-			case M_ASSIGN:				function.set(r_r_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
+			CASE_R_RR(VERTICAL_BAR,		bitwise_or, BITWISE_OR, O)
+			CASE(R_RR, BITWISE_NOR,		bitwise_nor,	O)
+			CASE(C_CR, LOG,				log,			I)
+			CASE_R_RR(RAND,				random, RANDOM,	O)
+			CASE(R_RR, ATAN,			atan,			I)
+			CASE(R_RR, SQWV,			sqwv,			O)
+			CASE(R_RR, TRWV,			trwv,			C)
+			CASE(R_RR, SAW,				saw,			I)
+			CASE(R_RR, HYPOT,			hypot,			C)
+			CASE(R_RR, MANDELBROT,		mandelbrot,		C)
+			CASE(R_RR, MIN,				min,			C)
+			CASE(R_RR, MAX,				max,			C)
+			CASE(R_RR, BETA,			beta,			I)
+			CASE_R_RR(GAMMA,			tgamma, TGAMMA,	I)
+			CASE(R_RR, PERMUTATION,		permutation,	I)
+			CASE(R_RR, COMBINATION,		combination,	I)
+			CASE(R_RR, BESSEL_J,		bessel_j,		I)
+			CASE(R_RR, BESSEL_Y,		bessel_y,		I)
+			CASE(C_RR, HANKEL1,			hankel1,		I)
+		//	CASE(R_RR, HANKEL1,			hankel1,		I)
+			CASE(R_R, ASSIGN,			assign,			C)
+//			case M_ASSIGN_MINUS:
+//			case M_MINUS:				function.set(r_rr_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_PENTATE:				function.set(c_rr_pentate),					bmts=returns_rXX_rXX_XXX,	d(disc_rr_pentate_i);				return;
+//			case M_TETRATE:				function.set(c_rr_tetrate),					bmts=returns_ccX_ccX_qXX,	d(disc_rr_tetrate_i);				return;
+//			case M_POWER_REAL:			function.set(r_rr_power_real),				bmts=returns_rXX_cXX_qXX,	d(disc_rr_power_real_i);			return;
+//			case M_ASSIGN_MULTIPLY:
+//			case M_MULTIPLY:			function.set(r_rr_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_ASSIGN_PLUS:
+//			case M_PLUS:				function.set(r_rr_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_LOGIC_AND:			function.set(r_rr_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_and_i);				return;
+//			case M_LOGIC_XOR:			function.set(r_rr_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_xor_i);				return;
+//			case M_LOGIC_OR:			function.set(r_rr_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_or_i);				return;
+//			case M_CONDITION_ZERO:		function.set(r_rr_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_rr_condition_zero_i);	return;
+//			case M_ASSIGN_MOD:
+//			case M_MODULO_PERCENT:		function.set(r_rr_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_rr_modulo_i);				return;
+//			case M_ASSIGN_LEFT:
+//			case M_BITWISE_SHIFT_LEFT:	function.set(r_rr_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_shift_left_i);	return;
+//			case M_ASSIGN_RIGHT:
+//			case M_BITWISE_SHIFT_RIGHT:	function.set(r_rr_bitwise_shift_right),		bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_shift_right_i);	return;
+//			case M_LOGIC_LESS:			function.set(r_rr_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_less_i);			return;
+//			case M_LOGIC_LESS_EQUAL:	function.set(r_rr_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_less_equal_i);		return;
+//			case M_LOGIC_GREATER:		function.set(r_rr_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_greater_i);			return;
+//			case M_LOGIC_GREATER_EQUAL:	function.set(r_rr_logic_greater_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_greater_equal_i);	return;
+//			case M_LOGIC_EQUAL:			function.set(r_rr_logic_equal),				bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_equal_i);			return;
+//			case M_LOGIC_NOT_EQUAL:		function.set(r_rr_logic_not_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_rr_logic_not_equal_i);		return;
+//			case M_ASSIGN_AND:
+//			case M_BITWISE_AND:			function.set(r_rr_bitwise_and),				bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_and_o, false);	return;
+//			case M_BITWISE_NAND:		function.set(r_rr_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_nand_o, false);	return;
+//			case M_ASSIGN_XOR:
+//			case M_BITWISE_XOR:			function.set(r_rr_bitwise_xor),				bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_xor_o, false);	return;
+//			case M_BITWISE_XNOR:		function.set(r_rr_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_xnor_o, false);	return;
+//			case M_ASSIGN_OR:
+//			case M_VERTICAL_BAR:		function.set(r_rr_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_or_o, false);		return;
+//			case M_BITWISE_NOR:			function.set(r_rr_bitwise_nor),				bmts=returns_rcq_ccq_qqq,	d(disc_rr_bitwise_nor_o, false);	return;
+//			case M_LOG:					function.set(c_cr_log),						bmts=returns_ccq_ccq_qqq,	d(disc_cr_log_i);					return;
+//			case M_RAND:				function.set(r_rr_random),					bmts=returns_rcq_ccq_qqq,	d(disc_rr_random_o, false);			return;
+//			case M_ATAN:				function.set(r_rr_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_rr_atan_i);					return;
+//			case M_SQWV:				function.set(r_rr_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rr_sqwv_o, false);			return;
+//			case M_TRWV:				function.set(r_rr_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rr_trwv_i);					return;
+//			case M_SAW:					function.set(r_rr_saw),						bmts=returns_rcq_ccq_qqq,	d(disc_rr_saw_i);					return;
+//			case M_HYPOT:				function.set(r_rr_hypot),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_MANDELBROT:			function.set(r_rr_mandelbrot),				bmts=returns_rrr_rrr_rrr,	d();								return;
+//			case M_MIN:					function.set(r_rr_min),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_MAX:					function.set(r_rr_max),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_BETA:				function.set(r_rr_beta),					bmts=returns_rXX_XXX_XXX,	d(disc_rr_beta_i);					return;
+//			case M_GAMMA:				function.set(r_rr_tgamma),					bmts=returns_rXX_XXX_XXX,	d(disc_rr_tgamma_i);				return;
+//			case M_PERMUTATION:			function.set(r_rr_permutation),				bmts=returns_rcq_ccq_qqq,	d(disc_rr_permutation_i);			return;
+//			case M_COMBINATION:			function.set(r_rr_combination),				bmts=returns_rcq_ccq_qqq,	d(disc_rr_combination_i);			return;
+//			case M_BESSEL_J:				function.set(r_rr_bessel_j),			bmts=returns_rXX_XXX_XXX,	d(disc_rr_cyl_bessel_j_i);			return;
+//			case M_BESSEL_Y:				function.set(r_rr_bessel_y),				bmts=returns_rXX_XXX_XXX,	d(disc_rr_cyl_neumann_i);			return;
+//			case M_HANKEL1:				function.set(c_rr_hankel1),					bmts=returns_cXX_XXX_XXX,	d(disc_rr_hankel1_i);				return;
+//		//	case M_HANKEL1:				function.set(r_rr_hankel1),					bmts=returns_cXX_XXX_XXX,	d(disc_rr_hankel1_i);				return;
+//			case M_ASSIGN:				function.set(r_r_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
 			}
 			break;
 		case 'c':
 			switch(f)
 			{
-			case M_POWER:				function.set(c_cc_pow),					bmts=returns_ccq_ccq_qqq,	d(disc_cc_pow_i);					return;
+			CASE_C_CC(POWER,			pow, POW,		I)
 			case M_ASSIGN_DIVIDE:
-			case M_DIVIDE:				function.set(c_rc_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_rc_divide_i);				return;
-			case M_LOGIC_DIVIDES:		function.set(r_rc_logic_divides),	bmts=returns_rcq_ccq_qqq,	d();	return;
+			CASE(C_RC, DIVIDE,			divide,			I)
+			CASE(R_RC, LOGIC_DIVIDES,	logic_divides,	C)
 			case M_ASSIGN_MINUS:
-			case M_MINUS:				function.set(c_rc_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_PENTATE:				function.set();																							return;
-			case M_TETRATE:				function.set(c_rc_tetrate),				bmts=returns_ccX_ccX_qXX,	d(disc_rc_tetrate_i);				return;
+			CASE(C_RC, MINUS,			minus,			C)
+			CASE_NONE(PENTATE)
+			CASE(C_RC, TETRATE,			tetrate,		I)
 			case M_ASSIGN_MULTIPLY:
-			case M_MULTIPLY:			function.set(c_rc_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+			CASE(C_RC, MULTIPLY,		multiply,		C)
 			case M_ASSIGN_PLUS:
-			case M_PLUS:				function.set(c_rc_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_LOGIC_AND:			function.set(r_rc_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_and_i);				return;
-			case M_LOGIC_XOR:			function.set(r_rc_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_xor_i);				return;
-			case M_LOGIC_OR:			function.set(r_rc_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_or_i);				return;
-			case M_LOGIC_CONDITION_ZERO:function.set(c_rc_logic_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_rc_logic_condition_zero_i);	return;
+			CASE(C_RC, PLUS,			plus,			C)
+			CASE(R_RC, LOGIC_AND,		logic_and,		O)
+			CASE(R_RC, LOGIC_XOR,		logic_xor,		O)
+			CASE(R_RC, LOGIC_OR,		logic_or,		O)
+			CASE(C_RC, CONDITION_ZERO,	condition_zero,	I)
 			case M_ASSIGN_MOD:
-			case M_MODULO_PERCENT:		function.set(c_rc_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_rc_modulo_i);				return;
+			CASE_C_RC(MODULO_PERCENT,	modulo, MODULO,	I)
 			case M_ASSIGN_LEFT:
-			case M_BITWISE_SHIFT_LEFT:	function.set(c_rc_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_rc_bitwise_shift_left_i);	return;
+			CASE(C_RC, BITWISE_SHIFT_LEFT, bitwise_shift_left, I)
 			case M_ASSIGN_RIGHT:
-			case M_BITWISE_SHIFT_RIGHT:	function.set(c_rc_bitwise_shift_right),	bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_shift_right_i);	return;
-			case M_LOGIC_LESS:			function.set(r_rc_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_less_i);			return;
-			case M_LOGIC_LESS_EQUAL:	function.set(r_rc_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_equal_i);			return;
-			case M_LOGIC_GREATER:		function.set(r_rc_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_greater_i);			return;
-			case M_LOGIC_GREATER_EQUAL:	function.set(r_rc_logic_greater_equal),	bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_greater_equal_i);	return;
-			case M_LOGIC_EQUAL:			function.set(r_rc_logic_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_equal_i);			return;
-			case M_LOGIC_NOT_EQUAL:		function.set(r_rc_logic_not_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_not_equal_i);		return;
+			CASE(C_RC, BITWISE_SHIFT_RIGHT, bitwise_shift_right, I)
+			CASE(R_RC, LOGIC_LESS,		logic_less,		O)
+			CASE(R_RC, LOGIC_LESS_EQUAL, logic_less_equal, O)
+			CASE(R_RC, LOGIC_GREATER,	logic_greater,	O)
+			CASE(R_RC, LOGIC_GREATER_EQUAL, logic_greater_equal, O)
+			CASE(R_RC, LOGIC_EQUAL,		logic_equal,	O)
+			CASE(R_RC, LOGIC_NOT_EQUAL,	logic_not_equal, O)
 			case M_ASSIGN_AND:
-			case M_BITWISE_AND:			function.set(c_rc_bitwise_and),			bmts=returns_rcq_ccq_qqq,	d(disc_rc_bitwise_and_o, false);	return;
-			case M_BITWISE_NAND:		function.set(c_rc_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_rc_bitwise_nand_o, false);	return;
+			CASE(C_RC, BITWISE_AND,		bitwise_and,	O)
+			CASE(C_RC, BITWISE_NAND,	bitwise_nand,	O)
 			case M_ASSIGN_XOR:
-			case M_BITWISE_XOR:			function.set(c_rc_bitwise_xor),			bmts=returns_rcq_ccq_qqq,	d(disc_rc_bitwise_xor_o, false);	return;
-			case M_BITWISE_XNOR:		function.set(c_rc_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_rc_bitwise_xnor_o, false);	return;
+			CASE(C_RC, BITWISE_XOR,		bitwise_xor,	O)
+			CASE(C_RC, BITWISE_XNOR,	bitwise_xnor,	O)
 			case M_ASSIGN_OR:
-			case M_VERTICAL_BAR:		function.set(c_rc_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_rc_bitwise_or_o, false);		return;
-			case M_BITWISE_NOR:			function.set(c_rc_bitwise_nor),			bmts=returns_rcq_ccq_qqq,	d(disc_rc_bitwise_nor_o, false);	return;
-			case M_LOG:					function.set(c_cc_log),					bmts=returns_ccq_ccq_qqq,	d(disc_cc_log_i);					return;
-			case M_RAND:				function.set(c_cc_random),					bmts=returns_rcq_ccq_qqq,	d(disc_cc_random, false);			return;
-		//	case M_RAND:				function.set(c_rc_random),					bmts=returns_rcq_ccq_qqq,	d(disc_rc_random, false);			return;
-			case M_ATAN:				function.set(c_rc_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_rc_atan_i);					return;
-			case M_SQWV:				function.set(r_rc_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rc_sqwv_i);					return;
-		//	case M_TRWV:				function.set(c_rc_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rc_trwv_i);					return;
-			case M_TRWV:				function.set(c_cc_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rc_trwv_i);					return;
-			case M_SAW:					function.set(c_rc_saw),					bmts=returns_rcq_ccq_qqq,	d(disc_rc_saw_i);					return;
-		//	case M_MIN:					function.set(c_rc_min),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_MIN:					function.set(c_cc_min),					bmts=returns_rcq_ccq_qqq,	d();								return;
-		//	case M_MAX:					function.set(c_rc_max),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_MAX:					function.set(c_cc_max),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_BETA:				function.set();																							return;
-			case M_GAMMA:				function.set();																							return;
-			case M_PERMUTATION:			function.set(c_cc_permutation),			bmts=returns_rcq_ccq_qqq,	d(disc_rc_permutation_i);			return;
-		//	case M_PERMUTATION:			function.set(c_rc_permutation),			bmts=returns_rcq_ccq_qqq,	d(disc_rc_permutation_i);			return;
-		//	case M_COMBINATION:			function.set(c_rc_combination),			bmts=returns_rcq_ccq_qqq,	d(disc_rc_combination_i);			return;
-			case M_COMBINATION:			function.set(c_cc_combination),			bmts=returns_rcq_ccq_qqq,	d(disc_rc_combination_i);			return;
-			case M_BESSEL:				function.set();																							return;
-			case M_NEUMANN:				function.set();																							return;
-			case M_HANKEL1:				function.set();																							return;
-			case M_ASSIGN:				function.set(c_c_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
+			CASE_C_RC(VERTICAL_BAR,		bitwise_or, BITWISE_OR, O)
+			CASE(C_RC, BITWISE_NOR,		bitwise_nor,	O)
+			CASE(C_CC, LOG,				log,			I)
+			CASE_C_CC(RAND,				random, RANDOM,	O)
+		//	CASE_C_RC(RAND,				random, RANDOM,	O)
+			CASE(C_RC, ATAN,			atan,			I)
+			CASE(R_RC, SQWV,			sqwv,			O)
+			CASE(R_RC, TRWV,			trwv,			C)
+		//	CASE(C_RC, TRWV,			trwv,			I)
+		//	CASE(C_CC, TRWV,			trwv,			C)
+			CASE(R_RC, SAW,				saw,			I)
+		//	CASE(C_RC, MIN,				min,			C)
+			CASE(C_CC, MIN,				min,			C)
+		//	CASE(C_RC, MAX,				max,			C)
+			CASE(C_CC, MAX,				max,			C)
+			CASE_NONE(BETA)
+			CASE_NONE(GAMMA)
+		//	CASE(C_RC, PERMUTATION,		permutation,	I)
+			CASE(C_CC, PERMUTATION,		permutation,	I)
+		//	CASE(C_RC, COMBINATION,		combination,	I)
+			CASE(C_CC, COMBINATION,		combination,	I)
+			CASE_NONE(BESSEL_J)
+			CASE_NONE(BESSEL_Y)
+			CASE_NONE(HANKEL1)
+			CASE(C_C, ASSIGN,			assign,			C)
+
+//			case M_POWER:				function.set(c_cc_pow),						bmts=returns_ccq_ccq_qqq,	d(disc_cc_pow_i);					return;
+//			case M_ASSIGN_DIVIDE:
+//			case M_DIVIDE:				function.set(c_rc_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_rc_divide_i);				return;
+//			case M_LOGIC_DIVIDES:		function.set(r_rc_logic_divides),			bmts=returns_rcq_ccq_qqq,	d();	return;
+//			case M_ASSIGN_MINUS:
+//			case M_MINUS:				function.set(c_rc_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_PENTATE:				function.set();																								return;
+//			case M_TETRATE:				function.set(c_rc_tetrate),					bmts=returns_ccX_ccX_qXX,	d(disc_rc_tetrate_i);				return;
+//			case M_ASSIGN_MULTIPLY:
+//			case M_MULTIPLY:			function.set(c_rc_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_ASSIGN_PLUS:
+//			case M_PLUS:				function.set(c_rc_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_LOGIC_AND:			function.set(r_rc_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_and_i);				return;
+//			case M_LOGIC_XOR:			function.set(r_rc_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_xor_i);				return;
+//			case M_LOGIC_OR:			function.set(r_rc_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_or_i);				return;
+//			case M_CONDITION_ZERO:		function.set(c_rc_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_rc_condition_zero_i);	return;
+//			case M_ASSIGN_MOD:
+//			case M_MODULO_PERCENT:		function.set(c_rc_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_rc_modulo_i);				return;
+//			case M_ASSIGN_LEFT:
+//			case M_BITWISE_SHIFT_LEFT:	function.set(c_rc_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_rc_bitwise_shift_left_i);	return;
+//			case M_ASSIGN_RIGHT:
+//			case M_BITWISE_SHIFT_RIGHT:	function.set(c_rc_bitwise_shift_right),		bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_shift_right_i);	return;
+//			case M_LOGIC_LESS:			function.set(r_rc_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_less_i);			return;
+//			case M_LOGIC_LESS_EQUAL:	function.set(r_rc_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_equal_i);			return;
+//			case M_LOGIC_GREATER:		function.set(r_rc_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_greater_i);			return;
+//			case M_LOGIC_GREATER_EQUAL:	function.set(r_rc_logic_greater_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_greater_equal_i);	return;
+//			case M_LOGIC_EQUAL:			function.set(r_rc_logic_equal),				bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_equal_i);			return;
+//			case M_LOGIC_NOT_EQUAL:		function.set(r_rc_logic_not_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_rc_logic_not_equal_i);		return;
+//			case M_ASSIGN_AND:
+//			case M_BITWISE_AND:			function.set(c_rc_bitwise_and),				bmts=returns_rcq_ccq_qqq,	d(disc_rc_bitwise_and_o, false);	return;
+//			case M_BITWISE_NAND:		function.set(c_rc_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_rc_bitwise_nand_o, false);	return;
+//			case M_ASSIGN_XOR:
+//			case M_BITWISE_XOR:			function.set(c_rc_bitwise_xor),				bmts=returns_rcq_ccq_qqq,	d(disc_rc_bitwise_xor_o, false);	return;
+//			case M_BITWISE_XNOR:		function.set(c_rc_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_rc_bitwise_xnor_o, false);	return;
+//			case M_ASSIGN_OR:
+//			case M_VERTICAL_BAR:		function.set(c_rc_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_rc_bitwise_or_o, false);		return;
+//			case M_BITWISE_NOR:			function.set(c_rc_bitwise_nor),				bmts=returns_rcq_ccq_qqq,	d(disc_rc_bitwise_nor_o, false);	return;
+//			case M_LOG:					function.set(c_cc_log),						bmts=returns_ccq_ccq_qqq,	d(disc_cc_log_i);					return;
+//			case M_RAND:				function.set(c_cc_random),					bmts=returns_rcq_ccq_qqq,	d(disc_cc_random_o, false);			return;
+//		//	case M_RAND:				function.set(c_rc_random),					bmts=returns_rcq_ccq_qqq,	d(disc_rc_random_o, false);			return;
+//			case M_ATAN:				function.set(c_rc_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_rc_atan_i);					return;
+//			case M_SQWV:				function.set(r_rc_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rc_sqwv_i);					return;
+//		//	case M_TRWV:				function.set(c_rc_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rc_trwv_i);					return;
+//			case M_TRWV:				function.set(c_cc_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rc_trwv_i);					return;
+//			case M_SAW:					function.set(c_rc_saw),						bmts=returns_rcq_ccq_qqq,	d(disc_rc_saw_i);					return;
+//		//	case M_MIN:					function.set(c_rc_min),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_MIN:					function.set(c_cc_min),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//		//	case M_MAX:					function.set(c_rc_max),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_MAX:					function.set(c_cc_max),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_BETA:				function.set();																								return;
+//			case M_GAMMA:				function.set();																								return;
+//			case M_PERMUTATION:			function.set(c_cc_permutation),				bmts=returns_rcq_ccq_qqq,	d(disc_rc_permutation_i);			return;
+//		//	case M_PERMUTATION:			function.set(c_rc_permutation),				bmts=returns_rcq_ccq_qqq,	d(disc_rc_permutation_i);			return;
+//		//	case M_COMBINATION:			function.set(c_rc_combination),				bmts=returns_rcq_ccq_qqq,	d(disc_rc_combination_i);			return;
+//			case M_COMBINATION:			function.set(c_cc_combination),				bmts=returns_rcq_ccq_qqq,	d(disc_rc_combination_i);			return;
+//			case M_BESSEL_J:				function.set();																								return;
+//			case M_BESSEL_Y:				function.set();																								return;
+//			case M_HANKEL1:				function.set();																								return;
+//			case M_ASSIGN:				function.set(c_c_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
 			}
 			break;
 		case 'h':
 			switch(f)
 			{
-			case M_POWER:				function.set(q_cq_pow),					bmts=returns_ccq_ccq_qqq,	d(disc_cq_pow_i);					return;
+			CASE_Q_CQ(POWER,			pow, POW,		I)
 			case M_ASSIGN_DIVIDE:
-			case M_DIVIDE:				function.set(q_rq_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_rq_divide_i);				return;
-			case M_LOGIC_DIVIDES:		function.set(r_rq_logic_divides),	bmts=returns_rcq_ccq_qqq,	d();	return;
+			CASE(Q_RQ, DIVIDE,			divide,			I)
+			CASE(R_RQ, LOGIC_DIVIDES,	logic_divides,	C)
 			case M_ASSIGN_MINUS:
-			case M_MINUS:				function.set(q_rq_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_PENTATE:				function.set();																							return;
-			case M_TETRATE:				function.set();																							return;
+			CASE(Q_RQ, MINUS,			minus,			C)
+			CASE_NONE(PENTATE)
+			CASE_NONE(TETRATE)
 			case M_ASSIGN_MULTIPLY:
-			case M_MULTIPLY:			function.set(q_rq_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+			CASE(Q_RQ, MULTIPLY,		multiply,		C)
 			case M_ASSIGN_PLUS:
-			case M_PLUS:				function.set(q_rq_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_LOGIC_AND:			function.set(r_rq_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_and_i);				return;
-			case M_LOGIC_XOR:			function.set(r_rq_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_xor_i);				return;
-			case M_LOGIC_OR:			function.set(r_rq_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_or_i);				return;
-			case M_LOGIC_CONDITION_ZERO:function.set(q_rq_logic_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_rq_logic_condition_zero_i);	return;
+			CASE(Q_RQ, PLUS,			plus,			C)
+			CASE(R_RQ, LOGIC_AND,		logic_and,		O)
+			CASE(R_RQ, LOGIC_XOR,		logic_xor,		O)
+			CASE(R_RQ, LOGIC_OR,		logic_or,		O)
+			CASE(Q_RQ, CONDITION_ZERO,	condition_zero,	I)
 			case M_ASSIGN_MOD:
-			case M_MODULO_PERCENT:		function.set(q_rq_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_rq_modulo_i);				return;
+			CASE_Q_RQ(MODULO_PERCENT,	modulo, MODULO,	I)
 			case M_ASSIGN_LEFT:
-			case M_BITWISE_SHIFT_LEFT:	function.set(q_rq_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_shift_left_i);	return;
+			CASE(Q_RQ, BITWISE_SHIFT_LEFT, bitwise_shift_left, I)
 			case M_ASSIGN_RIGHT:
-			case M_BITWISE_SHIFT_RIGHT:	function.set(q_rq_bitwise_shift_right),	bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_shift_right_i);	return;
-			case M_LOGIC_LESS:			function.set(r_rq_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_less_i);			return;
-			case M_LOGIC_LESS_EQUAL:	function.set(r_rq_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_less_equal_i);		return;
-			case M_LOGIC_GREATER:		function.set(r_rq_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_greater_i);			return;
-			case M_LOGIC_GREATER_EQUAL:	function.set(r_rq_logic_greater_equal),	bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_greater_equal_i);	return;
-			case M_LOGIC_EQUAL:			function.set(r_rq_logic_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_equal_i);			return;
-			case M_LOGIC_NOT_EQUAL:		function.set(r_rq_logic_not_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_not_equal_i);		return;
+			CASE(Q_RQ, BITWISE_SHIFT_RIGHT, bitwise_shift_right, I)
+			CASE(R_RQ, LOGIC_LESS,		logic_less,		O)
+			CASE(R_RQ, LOGIC_LESS_EQUAL, logic_less_equal, O)
+			CASE(R_RQ, LOGIC_GREATER,	logic_greater,	O)
+			CASE(R_RQ, LOGIC_GREATER_EQUAL, logic_greater_equal, O)
+			CASE(R_RQ, LOGIC_EQUAL,		logic_equal,	O)
+			CASE(R_RQ, LOGIC_NOT_EQUAL,	logic_not_equal, O)
 			case M_ASSIGN_AND:
-			case M_BITWISE_AND:			function.set(q_rq_bitwise_and),			bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_and_o, false);	return;
-			case M_BITWISE_NAND:		function.set(q_rq_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_nand_o, false);	return;
+			CASE(Q_RQ, BITWISE_AND,		bitwise_and,	O)
+			CASE(Q_RQ, BITWISE_NAND,	bitwise_nand,	O)
 			case M_ASSIGN_XOR:
-			case M_BITWISE_XOR:			function.set(q_rq_bitwise_xor),			bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_xor_o, false);	return;
-			case M_BITWISE_XNOR:		function.set(q_rq_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_xnor_o, false);	return;
+			CASE(Q_RQ, BITWISE_XOR,		bitwise_xor,	O)
+			CASE(Q_RQ, BITWISE_XNOR,	bitwise_xnor,	O)
 			case M_ASSIGN_OR:
-			case M_VERTICAL_BAR:		function.set(q_rq_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_or_o, false);		return;
-			case M_BITWISE_NOR:			function.set(q_rq_bitwise_nor),			bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_nor_o, false);	return;
-			case M_LOG:					function.set(q_cq_log),					bmts=returns_ccq_ccq_qqq,	d(disc_cq_log_i);					return;
-			case M_RAND:				function.set(q_qq_random),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_random, false);			return;
-		//	case M_RAND:				function.set(q_rq_random),					bmts=returns_rcq_ccq_qqq,	d(disc_rq_random, false);			return;
-			case M_ATAN:				function.set(q_rq_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_rq_atan_i);					return;
-			case M_SQWV:				function.set(r_rq_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rq_sqwv_i);					return;
-		//	case M_TRWV:				function.set(q_rq_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rq_trwv_i);					return;
-			case M_TRWV:				function.set(q_qq_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rq_trwv_i);					return;//
-			case M_SAW:					function.set(q_rq_saw),					bmts=returns_rcq_ccq_qqq,	d(disc_rq_saw_i);					return;
-		//	case M_MIN:					function.set(q_rq_min),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_MIN:					function.set(q_qq_min),					bmts=returns_rcq_ccq_qqq,	d();								return;
-		//	case M_MAX:					function.set(q_rq_max),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_MAX:					function.set(q_qq_max),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_BETA:				function.set();																							return;
-			case M_GAMMA:				function.set();																							return;
-		//	case M_PERMUTATION:			function.set(q_rq_permutation),			bmts=returns_rcq_ccq_qqq,	d(disc_rq_permutation_i);			return;
-			case M_PERMUTATION:			function.set(q_qq_permutation),			bmts=returns_rcq_ccq_qqq,	d(disc_rq_permutation_i);			return;
-		//	case M_COMBINATION:			function.set(q_rq_combination),			bmts=returns_rcq_ccq_qqq,	d(disc_rq_combination_i);			return;
-			case M_COMBINATION:			function.set(q_qq_combination),			bmts=returns_rcq_ccq_qqq,	d(disc_rq_combination_i);			return;
-			case M_BESSEL:				function.set();																							return;
-			case M_NEUMANN:				function.set();																							return;
-			case M_HANKEL1:				function.set();																							return;
-			case M_ASSIGN:				function.set(q_q_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
+			CASE_Q_RQ(VERTICAL_BAR,		bitwise_or, BITWISE_OR, O)
+			CASE(Q_RQ, BITWISE_NOR,		bitwise_nor,	O)
+			CASE(Q_CQ, LOG,				log,			I)
+			CASE_Q_QQ(RAND,				random, RANDOM,	O)
+		//	CASE_Q_RQ(RAND,				random, RANDOM,	O)
+			CASE(Q_RQ, ATAN,			atan,			I)
+			CASE(R_RQ, SQWV,			sqwv,			O)
+			CASE(R_RQ, TRWV,			trwv,			C)
+		//	CASE(Q_QQ, TRWV,			trwv,			C)
+			CASE(R_RQ, SAW,				saw,			I)
+		//	CASE(Q_RQ, MIN,				min,			C)
+			CASE(Q_QQ, MIN,				min,			C)
+		//	CASE(Q_RQ, MAX,				max,			C)
+			CASE(Q_QQ, MAX,				max,			C)
+			CASE_NONE(BETA)
+			CASE_NONE(GAMMA)
+		//	CASE(Q_RQ, PERMUTATION,		permutation,	I)
+			CASE(Q_QQ, PERMUTATION,		permutation,	I)
+		//	CASE(Q_RQ, COMBINATION,		combination,	I)
+			CASE(Q_QQ, COMBINATION,		combination,	I)
+			CASE_NONE(BESSEL_J)
+			CASE_NONE(BESSEL_Y)
+			CASE_NONE(HANKEL1)
+			CASE(Q_Q, ASSIGN,			assign,			C)
+
+//			case M_POWER:				function.set(q_cq_pow),						bmts=returns_ccq_ccq_qqq,	d(disc_cq_pow_i);					return;
+//			case M_ASSIGN_DIVIDE:
+//			case M_DIVIDE:				function.set(q_rq_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_rq_divide_i);				return;
+//			case M_LOGIC_DIVIDES:		function.set(r_rq_logic_divides),			bmts=returns_rcq_ccq_qqq,	d();	return;
+//			case M_ASSIGN_MINUS:
+//			case M_MINUS:				function.set(q_rq_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_PENTATE:				function.set();																								return;
+//			case M_TETRATE:				function.set();																								return;
+//			case M_ASSIGN_MULTIPLY:
+//			case M_MULTIPLY:			function.set(q_rq_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_ASSIGN_PLUS:
+//			case M_PLUS:				function.set(q_rq_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_LOGIC_AND:			function.set(r_rq_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_and_i);				return;
+//			case M_LOGIC_XOR:			function.set(r_rq_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_xor_i);				return;
+//			case M_LOGIC_OR:			function.set(r_rq_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_or_i);				return;
+//			case M_CONDITION_ZERO:		function.set(q_rq_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_rq_condition_zero_i);	return;
+//			case M_ASSIGN_MOD:
+//			case M_MODULO_PERCENT:		function.set(q_rq_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_rq_modulo_i);				return;
+//			case M_ASSIGN_LEFT:
+//			case M_BITWISE_SHIFT_LEFT:	function.set(q_rq_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_shift_left_i);	return;
+//			case M_ASSIGN_RIGHT:
+//			case M_BITWISE_SHIFT_RIGHT:	function.set(q_rq_bitwise_shift_right),		bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_shift_right_i);	return;
+//			case M_LOGIC_LESS:			function.set(r_rq_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_less_i);			return;
+//			case M_LOGIC_LESS_EQUAL:	function.set(r_rq_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_less_equal_i);		return;
+//			case M_LOGIC_GREATER:		function.set(r_rq_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_greater_i);			return;
+//			case M_LOGIC_GREATER_EQUAL:	function.set(r_rq_logic_greater_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_greater_equal_i);	return;
+//			case M_LOGIC_EQUAL:			function.set(r_rq_logic_equal),				bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_equal_i);			return;
+//			case M_LOGIC_NOT_EQUAL:		function.set(r_rq_logic_not_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_rq_logic_not_equal_i);		return;
+//			case M_ASSIGN_AND:
+//			case M_BITWISE_AND:			function.set(q_rq_bitwise_and),				bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_and_o, false);	return;
+//			case M_BITWISE_NAND:		function.set(q_rq_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_nand_o, false);	return;
+//			case M_ASSIGN_XOR:
+//			case M_BITWISE_XOR:			function.set(q_rq_bitwise_xor),				bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_xor_o, false);	return;
+//			case M_BITWISE_XNOR:		function.set(q_rq_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_xnor_o, false);	return;
+//			case M_ASSIGN_OR:
+//			case M_VERTICAL_BAR:		function.set(q_rq_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_or_o, false);		return;
+//			case M_BITWISE_NOR:			function.set(q_rq_bitwise_nor),				bmts=returns_rcq_ccq_qqq,	d(disc_rq_bitwise_nor_o, false);	return;
+//			case M_LOG:					function.set(q_cq_log),						bmts=returns_ccq_ccq_qqq,	d(disc_cq_log_i);					return;
+//			case M_RAND:				function.set(q_qq_random),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_random_o, false);			return;
+//		//	case M_RAND:				function.set(q_rq_random),					bmts=returns_rcq_ccq_qqq,	d(disc_rq_random_o, false);			return;
+//			case M_ATAN:				function.set(q_rq_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_rq_atan_i);					return;
+//			case M_SQWV:				function.set(r_rq_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rq_sqwv_i);					return;
+//		//	case M_TRWV:				function.set(q_rq_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rq_trwv_i);					return;
+//			case M_TRWV:				function.set(q_qq_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_rq_trwv_i);					return;//
+//			case M_SAW:					function.set(q_rq_saw),						bmts=returns_rcq_ccq_qqq,	d(disc_rq_saw_i);					return;
+//		//	case M_MIN:					function.set(q_rq_min),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_MIN:					function.set(q_qq_min),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//		//	case M_MAX:					function.set(q_rq_max),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_MAX:					function.set(q_qq_max),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_BETA:				function.set();																								return;
+//			case M_GAMMA:				function.set();																								return;
+//		//	case M_PERMUTATION:			function.set(q_rq_permutation),				bmts=returns_rcq_ccq_qqq,	d(disc_rq_permutation_i);			return;
+//			case M_PERMUTATION:			function.set(q_qq_permutation),				bmts=returns_rcq_ccq_qqq,	d(disc_rq_permutation_i);			return;
+//		//	case M_COMBINATION:			function.set(q_rq_combination),				bmts=returns_rcq_ccq_qqq,	d(disc_rq_combination_i);			return;
+//			case M_COMBINATION:			function.set(q_qq_combination),				bmts=returns_rcq_ccq_qqq,	d(disc_rq_combination_i);			return;
+//			case M_BESSEL_J:				function.set();																								return;
+//			case M_BESSEL_Y:				function.set();																								return;
+//			case M_HANKEL1:				function.set();																								return;
+//			case M_ASSIGN:				function.set(q_q_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
 			}
 			break;
 		}
@@ -5415,183 +5735,353 @@ void			Compile::compile_instruction_select_b	(int f, char op1type, char op2type,
 		case 'R':
 			switch(f)
 			{
-			case M_POWER:				function.set(c_cr_pow),					bmts=returns_ccq_ccq_qqq,	d(disc_cr_pow_i);					return;
+			CASE_C_CR(POWER,			pow, POW,		I)
 			case M_ASSIGN_DIVIDE:
-			case M_DIVIDE:				function.set(c_cr_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_cr_divide_i);				return;
-			case M_LOGIC_DIVIDES:		function.set(r_cr_logic_divides),	bmts=returns_rcq_ccq_qqq,	d();	return;
+			CASE(C_CR, DIVIDE,			divide,			I)
+			CASE(R_CR, LOGIC_DIVIDES,	logic_divides,	C)
 			case M_ASSIGN_MINUS:
-			case M_MINUS:				function.set(c_cr_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_PENTATE:				function.set(c_cr_pentate);				bmts=returns_rXX_rXX_XXX,	d(disc_cr_pentate_i);				return;
-			case M_TETRATE:				function.set(c_cr_tetrate),				bmts=returns_ccX_ccX_qXX,	d(disc_cr_tetrate_i);				return;
-			case M_POWER_REAL:			function.set(c_cr_power_real),			bmts=returns_rXX_cXX_qXX,	d(disc_cr_power_real_i);			return;
+			CASE(C_CR, MINUS,			minus,			C)
+			CASE(C_CR, PENTATE,			pentate,		I)
+			CASE(C_CR, TETRATE,			tetrate,		I)
+			CASE(C_CR, POWER_REAL,		power_real,		I)
 			case M_ASSIGN_MULTIPLY:
-			case M_MULTIPLY:			function.set(c_cr_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+			CASE(C_CR, MULTIPLY,		multiply,		C)
 			case M_ASSIGN_PLUS:
-			case M_PLUS:				function.set(c_cr_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_LOGIC_AND:			function.set(r_cr_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_and_i);				return;
-			case M_LOGIC_XOR:			function.set(r_cr_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_xor_i);				return;
-			case M_LOGIC_OR:			function.set(r_cr_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_or_i);				return;
-			case M_LOGIC_CONDITION_ZERO:function.set(c_cr_logic_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_cr_logic_condition_zero_i);	return;
+			CASE(C_CR, PLUS,			plus,			C)
+			CASE(R_CR, LOGIC_AND,		logic_and,		O)
+			CASE(R_CR, LOGIC_XOR,		logic_xor,		O)
+			CASE(R_CR, LOGIC_OR,		logic_or,		O)
+			CASE(C_CR, CONDITION_ZERO,	condition_zero,	I)
 			case M_ASSIGN_MOD:
-			case M_MODULO_PERCENT:		function.set(c_cr_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_cr_modulo_i);				return;
+			CASE_C_CR(MODULO_PERCENT,	modulo, MODULO,	I)
 			case M_ASSIGN_LEFT:
-			case M_BITWISE_SHIFT_LEFT:	function.set(c_cr_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_shift_left_i);	return;
+			CASE(C_CR, BITWISE_SHIFT_LEFT, bitwise_shift_left, I)
 			case M_ASSIGN_RIGHT:
-			case M_BITWISE_SHIFT_RIGHT:	function.set(c_cr_bitwise_shift_right),	bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_shift_right_i);	return;
-			case M_LOGIC_LESS:			function.set(r_cr_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_less_i);			return;
-			case M_LOGIC_LESS_EQUAL:	function.set(r_cr_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_less_equal_i);		return;
-			case M_LOGIC_GREATER:		function.set(r_cr_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_greater_i);			return;
-			case M_LOGIC_GREATER_EQUAL:	function.set(r_cr_logic_greater_equal),	bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_greater_equal_i);	return;
-			case M_LOGIC_EQUAL:			function.set(r_cr_logic_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_equal_i);			return;
-			case M_LOGIC_NOT_EQUAL:		function.set(r_cr_logic_not_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_not_equal_i);		return;
+			CASE(C_CR, BITWISE_SHIFT_RIGHT, bitwise_shift_right, I)
+			CASE(R_CR, LOGIC_LESS,		logic_less,		O)
+			CASE(R_CR, LOGIC_LESS_EQUAL, logic_less_equal, O)
+			CASE(R_CR, LOGIC_GREATER,	logic_greater,	O)
+			CASE(R_CR, LOGIC_GREATER_EQUAL, logic_greater_equal, O)
+			CASE(R_CR, LOGIC_EQUAL,		logic_equal,	O)
+			CASE(R_CR, LOGIC_NOT_EQUAL,	logic_not_equal, O)
 			case M_ASSIGN_AND:
-			case M_BITWISE_AND:			function.set(c_cr_bitwise_and),			bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_and_o, false);	return;
-			case M_BITWISE_NAND:		function.set(c_cr_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_nand_o, false);	return;
+			CASE(C_CR, BITWISE_AND,		bitwise_and,	O)
+			CASE(C_CR, BITWISE_NAND,	bitwise_nand,	O)
 			case M_ASSIGN_XOR:
-			case M_BITWISE_XOR:			function.set(c_cr_bitwise_xor),			bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_xor_o, false);	return;
-			case M_BITWISE_XNOR:		function.set(c_cr_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_xnor_o, false);	return;
+			CASE(C_CR, BITWISE_XOR,		bitwise_xor,	O)
+			CASE(C_CR, BITWISE_XNOR,	bitwise_xnor,	O)
 			case M_ASSIGN_OR:
-			case M_VERTICAL_BAR:		function.set(c_cr_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_or_o, false);		return;
-			case M_BITWISE_NOR:			function.set(c_cr_bitwise_nor),			bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_nor_o, false);	return;
-			case M_LOG:					function.set(c_cr_log),					bmts=returns_ccq_ccq_qqq,	d(disc_cr_log_i);					return;
-			case M_RAND:				function.set(c_cr_random),					bmts=returns_rcq_ccq_qqq,	d(disc_cr_random, false);			return;
-			case M_ATAN:				function.set(c_cr_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_cr_atan_i);					return;
-			case M_SQWV:				function.set(r_cr_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_cr_sqwv_i);					return;
-			case M_TRWV:				function.set(c_cr_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_cr_trwv_i);					return;
-			case M_SAW:					function.set(c_cr_saw),					bmts=returns_rcq_ccq_qqq,	d(disc_cr_saw_i);					return;
-			case M_MANDELBROT:			function.set(r_cr_mandelbrot),			bmts=returns_rrr_rrr_rrr,	d();								return;
-			case M_MIN:					function.set(c_cr_min),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_MAX:					function.set(c_cr_max),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_BETA:				function.set();																							return;
-			case M_GAMMA:				function.set();																							return;
-			case M_PERMUTATION:			function.set(c_cr_permutation),			bmts=returns_rcq_ccq_qqq,	d(disc_cr_permutation_i);			return;
-			case M_COMBINATION:			function.set(c_cr_combination),			bmts=returns_rcq_ccq_qqq,	d(disc_cr_combination_i);			return;
-			case M_BESSEL:				function.set();																							return;
-			case M_NEUMANN:				function.set();																							return;
-			case M_HANKEL1:				function.set();																							return;
-			case M_ASSIGN:				function.set(r_r_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
+			CASE_C_CR(VERTICAL_BAR,		bitwise_or, BITWISE_OR, O)
+			CASE(C_CR, BITWISE_NOR,		bitwise_nor,	O)
+			CASE(C_CR, LOG,				log,			I)
+			CASE_C_CR(RAND,				random, RANDOM,	O)
+			CASE(C_CR, ATAN,			atan,			I)
+			CASE(R_CR, SQWV,			sqwv,			O)
+			CASE(R_CR, TRWV,			trwv,			C)
+			CASE(R_CR, SAW,				saw,			I)
+			CASE(R_CR, MANDELBROT,		mandelbrot,		C)
+			CASE(C_CR, MIN,				min,			C)
+			CASE(C_CR, MAX,				max,			C)
+			CASE_NONE(BETA)
+			CASE_NONE(GAMMA)
+			CASE(C_CR, PERMUTATION,		permutation,	I)
+			CASE(C_CR, COMBINATION,		combination,	I)
+			CASE_NONE(BESSEL_J)
+			CASE_NONE(BESSEL_Y)
+			CASE_NONE(HANKEL1)
+			CASE(R_R, ASSIGN,			assign,			C)
+
+//			case M_POWER:				function.set(c_cr_pow),						bmts=returns_ccq_ccq_qqq,	d(disc_cr_pow_i);					return;
+//			case M_ASSIGN_DIVIDE:
+//			case M_DIVIDE:				function.set(c_cr_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_cr_divide_i);				return;
+//			case M_LOGIC_DIVIDES:		function.set(r_cr_logic_divides),			bmts=returns_rcq_ccq_qqq,	d();	return;
+//			case M_ASSIGN_MINUS:
+//			case M_MINUS:				function.set(c_cr_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_PENTATE:				function.set(c_cr_pentate);					bmts=returns_rXX_rXX_XXX,	d(disc_cr_pentate_i);				return;
+//			case M_TETRATE:				function.set(c_cr_tetrate),					bmts=returns_ccX_ccX_qXX,	d(disc_cr_tetrate_i);				return;
+//			case M_POWER_REAL:			function.set(c_cr_power_real),				bmts=returns_rXX_cXX_qXX,	d(disc_cr_power_real_i);			return;
+//			case M_ASSIGN_MULTIPLY:
+//			case M_MULTIPLY:			function.set(c_cr_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_ASSIGN_PLUS:
+//			case M_PLUS:				function.set(c_cr_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_LOGIC_AND:			function.set(r_cr_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_and_i);				return;
+//			case M_LOGIC_XOR:			function.set(r_cr_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_xor_i);				return;
+//			case M_LOGIC_OR:			function.set(r_cr_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_or_i);				return;
+//			case M_CONDITION_ZERO:		function.set(c_cr_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_cr_condition_zero_i);	return;
+//			case M_ASSIGN_MOD:
+//			case M_MODULO_PERCENT:		function.set(c_cr_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_cr_modulo_i);				return;
+//			case M_ASSIGN_LEFT:
+//			case M_BITWISE_SHIFT_LEFT:	function.set(c_cr_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_shift_left_i);	return;
+//			case M_ASSIGN_RIGHT:
+//			case M_BITWISE_SHIFT_RIGHT:	function.set(c_cr_bitwise_shift_right),		bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_shift_right_i);	return;
+//			case M_LOGIC_LESS:			function.set(r_cr_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_less_i);			return;
+//			case M_LOGIC_LESS_EQUAL:	function.set(r_cr_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_less_equal_i);		return;
+//			case M_LOGIC_GREATER:		function.set(r_cr_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_greater_i);			return;
+//			case M_LOGIC_GREATER_EQUAL:	function.set(r_cr_logic_greater_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_greater_equal_i);	return;
+//			case M_LOGIC_EQUAL:			function.set(r_cr_logic_equal),				bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_equal_i);			return;
+//			case M_LOGIC_NOT_EQUAL:		function.set(r_cr_logic_not_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_cr_logic_not_equal_i);		return;
+//			case M_ASSIGN_AND:
+//			case M_BITWISE_AND:			function.set(c_cr_bitwise_and),				bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_and_o, false);	return;
+//			case M_BITWISE_NAND:		function.set(c_cr_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_nand_o, false);	return;
+//			case M_ASSIGN_XOR:
+//			case M_BITWISE_XOR:			function.set(c_cr_bitwise_xor),				bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_xor_o, false);	return;
+//			case M_BITWISE_XNOR:		function.set(c_cr_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_xnor_o, false);	return;
+//			case M_ASSIGN_OR:
+//			case M_VERTICAL_BAR:		function.set(c_cr_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_or_o, false);		return;
+//			case M_BITWISE_NOR:			function.set(c_cr_bitwise_nor),				bmts=returns_rcq_ccq_qqq,	d(disc_cr_bitwise_nor_o, false);	return;
+//			case M_LOG:					function.set(c_cr_log),						bmts=returns_ccq_ccq_qqq,	d(disc_cr_log_i);					return;
+//			case M_RAND:				function.set(c_cr_random),					bmts=returns_rcq_ccq_qqq,	d(disc_cr_random_o, false);			return;
+//			case M_ATAN:				function.set(c_cr_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_cr_atan_i);					return;
+//			case M_SQWV:				function.set(r_cr_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_cr_sqwv_i);					return;
+//			case M_TRWV:				function.set(c_cr_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_cr_trwv_i);					return;
+//			case M_SAW:					function.set(c_cr_saw),						bmts=returns_rcq_ccq_qqq,	d(disc_cr_saw_i);					return;
+//			case M_MANDELBROT:			function.set(r_cr_mandelbrot),				bmts=returns_rrr_rrr_rrr,	d();								return;
+//			case M_MIN:					function.set(c_cr_min),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_MAX:					function.set(c_cr_max),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_BETA:				function.set();																								return;
+//			case M_GAMMA:				function.set();																								return;
+//			case M_PERMUTATION:			function.set(c_cr_permutation),				bmts=returns_rcq_ccq_qqq,	d(disc_cr_permutation_i);			return;
+//			case M_COMBINATION:			function.set(c_cr_combination),				bmts=returns_rcq_ccq_qqq,	d(disc_cr_combination_i);			return;
+//			case M_BESSEL_J:				function.set();																								return;
+//			case M_BESSEL_Y:				function.set();																								return;
+//			case M_HANKEL1:				function.set();																								return;
+//			case M_ASSIGN:				function.set(r_r_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
 			}
 			break;
 		case 'c':
 			switch(f)
 			{
-			case M_POWER:				function.set(c_cc_pow),					bmts=returns_ccq_ccq_qqq,	d(disc_cc_pow_i);					return;
+			CASE_C_CC(POWER,			pow, POW,		I)
 			case M_ASSIGN_DIVIDE:
-			case M_DIVIDE:				function.set(c_cc_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_cc_divide_i);				return;
-			case M_LOGIC_DIVIDES:		function.set(r_cc_logic_divides),	bmts=returns_rcq_ccq_qqq,	d();	return;
+			CASE(C_CC, DIVIDE,			divide,			I)
+			CASE(R_CC, LOGIC_DIVIDES,	logic_divides,	C)
 			case M_ASSIGN_MINUS:
-			case M_MINUS:				function.set(c_cc_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_PENTATE:				function.set();																							return;
-			case M_TETRATE:				function.set(c_cc_tetrate),				bmts=returns_ccX_ccX_qXX,	d(disc_cc_tetrate_i);				return;
+			CASE(C_CC, MINUS,			minus,			C)
+			CASE_NONE(PENTATE)
+			CASE(C_CC, TETRATE,			tetrate,		I)
 			case M_ASSIGN_MULTIPLY:
-			case M_MULTIPLY:			function.set(c_cc_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+			CASE(C_CC, MULTIPLY,		multiply,		C)
 			case M_ASSIGN_PLUS:
-			case M_PLUS:				function.set(c_cc_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_LOGIC_AND:			function.set(r_cc_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_and_i);				return;
-			case M_LOGIC_XOR:			function.set(r_cc_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_xor_i);				return;
-			case M_LOGIC_OR:			function.set(r_cc_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_or_i);				return;
-			case M_LOGIC_CONDITION_ZERO:function.set(c_cc_logic_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_cc_logic_condition_zero_i);	return;
+			CASE(C_CC, PLUS,			plus,			C)
+			CASE(R_CC, LOGIC_AND,		logic_and,		O)
+			CASE(R_CC, LOGIC_XOR,		logic_xor,		O)
+			CASE(R_CC, LOGIC_OR,		logic_or,		O)
+			CASE(C_CC, CONDITION_ZERO,	condition_zero,	I)
 			case M_ASSIGN_MOD:
-			case M_MODULO_PERCENT:		function.set(c_cc_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_cc_modulo_i);				return;
+			CASE_C_CC(MODULO_PERCENT,	modulo, MODULO,	I)
 			case M_ASSIGN_LEFT:
-			case M_BITWISE_SHIFT_LEFT:	function.set(c_cc_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_shift_left_i);	return;
+			CASE(C_CC, BITWISE_SHIFT_LEFT, bitwise_shift_left, I)
 			case M_ASSIGN_RIGHT:
-			case M_BITWISE_SHIFT_RIGHT:	function.set(c_cc_bitwise_shift_right),	bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_shift_right_i);	return;
-			case M_LOGIC_LESS:			function.set(r_cc_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_less_i);			return;
-			case M_LOGIC_LESS_EQUAL:	function.set(r_cc_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_less_equal_i);		return;
-			case M_LOGIC_GREATER:		function.set(r_cc_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_greater_i);			return;
-			case M_LOGIC_GREATER_EQUAL:	function.set(r_cc_logic_greater_equal),	bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_greater_equal_i);	return;
-			case M_LOGIC_EQUAL:			function.set(r_cc_logic_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_equal_i);			return;
-			case M_LOGIC_NOT_EQUAL:		function.set(r_cc_logic_not_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_not_equal_i);		return;
+			CASE(C_CC, BITWISE_SHIFT_RIGHT, bitwise_shift_right, I)
+			CASE(R_CC, LOGIC_LESS,		logic_less,		O)
+			CASE(R_CC, LOGIC_LESS_EQUAL, logic_less_equal, O)
+			CASE(R_CC, LOGIC_GREATER,	logic_greater,	O)
+			CASE(R_CC, LOGIC_GREATER_EQUAL, logic_greater_equal, O)
+			CASE(R_CC, LOGIC_EQUAL,		logic_equal,	O)
+			CASE(R_CC, LOGIC_NOT_EQUAL,	logic_not_equal, O)
 			case M_ASSIGN_AND:
-			case M_BITWISE_AND:			function.set(c_cc_bitwise_and),			bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_and_o, false);	return;
-			case M_BITWISE_NAND:		function.set(c_cc_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_nand_o, false);	return;
+			CASE(C_CC, BITWISE_AND,		bitwise_and,	O)
+			CASE(C_CC, BITWISE_NAND,	bitwise_nand,	O)
 			case M_ASSIGN_XOR:
-			case M_BITWISE_XOR:			function.set(c_cc_bitwise_xor),			bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_xor_o, false);	return;
-			case M_BITWISE_XNOR:		function.set(c_cc_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_xnor_o, false);	return;
+			CASE(C_CC, BITWISE_XOR,		bitwise_xor,	O)
+			CASE(C_CC, BITWISE_XNOR,	bitwise_xnor,	O)
 			case M_ASSIGN_OR:
-			case M_VERTICAL_BAR:		function.set(c_cc_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_or_o, false);		return;
-			case M_BITWISE_NOR:			function.set(c_cc_bitwise_nor),			bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_nor_o, false);	return;
-			case M_LOG:					function.set(c_cc_log),					bmts=returns_ccq_ccq_qqq,	d(disc_cc_log_i);					return;
-			case M_RAND:				function.set(c_cc_random),					bmts=returns_rcq_ccq_qqq,	d(disc_cc_random, false);			return;
-			case M_ATAN:				function.set(c_cc_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_cc_atan_i);					return;
-			case M_SQWV:				function.set(r_cc_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_cc_sqwv_i);					return;
-			case M_TRWV:				function.set(c_cc_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_cc_trwv_i);					return;
-			case M_SAW:					function.set(c_cc_saw),					bmts=returns_rcq_ccq_qqq,	d(disc_cc_saw_i);					return;
-			case M_MIN:					function.set(c_cc_min),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_MAX:					function.set(c_cc_max),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_BETA:				function.set();																							return;
-			case M_GAMMA:				function.set();																							return;
-			case M_PERMUTATION:			function.set(c_cc_permutation),			bmts=returns_rcq_ccq_qqq,	d(disc_cc_permutation_i);			return;
-			case M_COMBINATION:			function.set(c_cc_combination),			bmts=returns_rcq_ccq_qqq,	d(disc_cc_combination_i);			return;
-			case M_BESSEL:				function.set();																							return;
-			case M_NEUMANN:				function.set();																							return;
-			case M_HANKEL1:				function.set();																							return;
-			case M_ASSIGN:				function.set(c_c_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
+			CASE_C_CC(VERTICAL_BAR,		bitwise_or, BITWISE_OR, O)
+			CASE(C_CC, BITWISE_NOR,		bitwise_nor,	O)
+			CASE(C_CC, LOG,				log,			I)
+			CASE_C_CC(RAND,				random, RANDOM,	O)
+			CASE(C_CC, ATAN,			atan,			I)
+			CASE(R_CC, SQWV,			sqwv,			O)
+			CASE(R_CC, TRWV,			trwv,			C)
+			CASE(R_CC, SAW,				saw,			I)
+			CASE(C_CC, MIN,				min,			C)
+			CASE(C_CC, MAX,				max,			C)
+			CASE_NONE(BETA)
+			CASE_NONE(GAMMA)
+			CASE(C_CC, PERMUTATION,		permutation,	I)
+			CASE(C_CC, COMBINATION,		combination,	I)
+			CASE_NONE(BESSEL_J)
+			CASE_NONE(BESSEL_Y)
+			CASE_NONE(HANKEL1)
+			CASE(C_C, ASSIGN,			assign,			C)
+
+//			case M_POWER:				function.set(c_cc_pow),						bmts=returns_ccq_ccq_qqq,	d(disc_cc_pow_i);					return;
+//			case M_ASSIGN_DIVIDE:
+//			case M_DIVIDE:				function.set(c_cc_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_cc_divide_i);				return;
+//			case M_LOGIC_DIVIDES:		function.set(r_cc_logic_divides),			bmts=returns_rcq_ccq_qqq,	d();	return;
+//			case M_ASSIGN_MINUS:
+//			case M_MINUS:				function.set(c_cc_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_PENTATE:				function.set();																								return;
+//			case M_TETRATE:				function.set(c_cc_tetrate),					bmts=returns_ccX_ccX_qXX,	d(disc_cc_tetrate_i);				return;
+//			case M_ASSIGN_MULTIPLY:
+//			case M_MULTIPLY:			function.set(c_cc_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_ASSIGN_PLUS:
+//			case M_PLUS:				function.set(c_cc_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_LOGIC_AND:			function.set(r_cc_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_and_i);				return;
+//			case M_LOGIC_XOR:			function.set(r_cc_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_xor_i);				return;
+//			case M_LOGIC_OR:			function.set(r_cc_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_or_i);				return;
+//			case M_CONDITION_ZERO:		function.set(c_cc_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_cc_condition_zero_i);	return;
+//			case M_ASSIGN_MOD:
+//			case M_MODULO_PERCENT:		function.set(c_cc_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_cc_modulo_i);				return;
+//			case M_ASSIGN_LEFT:
+//			case M_BITWISE_SHIFT_LEFT:	function.set(c_cc_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_shift_left_i);	return;
+//			case M_ASSIGN_RIGHT:
+//			case M_BITWISE_SHIFT_RIGHT:	function.set(c_cc_bitwise_shift_right),		bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_shift_right_i);	return;
+//			case M_LOGIC_LESS:			function.set(r_cc_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_less_i);			return;
+//			case M_LOGIC_LESS_EQUAL:	function.set(r_cc_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_less_equal_i);		return;
+//			case M_LOGIC_GREATER:		function.set(r_cc_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_greater_i);			return;
+//			case M_LOGIC_GREATER_EQUAL:	function.set(r_cc_logic_greater_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_greater_equal_i);	return;
+//			case M_LOGIC_EQUAL:			function.set(r_cc_logic_equal),				bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_equal_i);			return;
+//			case M_LOGIC_NOT_EQUAL:		function.set(r_cc_logic_not_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_cc_logic_not_equal_i);		return;
+//			case M_ASSIGN_AND:
+//			case M_BITWISE_AND:			function.set(c_cc_bitwise_and),				bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_and_o, false);	return;
+//			case M_BITWISE_NAND:		function.set(c_cc_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_nand_o, false);	return;
+//			case M_ASSIGN_XOR:
+//			case M_BITWISE_XOR:			function.set(c_cc_bitwise_xor),				bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_xor_o, false);	return;
+//			case M_BITWISE_XNOR:		function.set(c_cc_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_xnor_o, false);	return;
+//			case M_ASSIGN_OR:
+//			case M_VERTICAL_BAR:		function.set(c_cc_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_or_o, false);		return;
+//			case M_BITWISE_NOR:			function.set(c_cc_bitwise_nor),				bmts=returns_rcq_ccq_qqq,	d(disc_cc_bitwise_nor_o, false);	return;
+//			case M_LOG:					function.set(c_cc_log),						bmts=returns_ccq_ccq_qqq,	d(disc_cc_log_i);					return;
+//			case M_RAND:				function.set(c_cc_random),					bmts=returns_rcq_ccq_qqq,	d(disc_cc_random_o, false);			return;
+//			case M_ATAN:				function.set(c_cc_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_cc_atan_i);					return;
+//			case M_SQWV:				function.set(r_cc_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_cc_sqwv_i);					return;
+//			case M_TRWV:				function.set(c_cc_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_cc_trwv_i);					return;
+//			case M_SAW:					function.set(c_cc_saw),						bmts=returns_rcq_ccq_qqq,	d(disc_cc_saw_i);					return;
+//			case M_MIN:					function.set(c_cc_min),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_MAX:					function.set(c_cc_max),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_BETA:				function.set();																								return;
+//			case M_GAMMA:				function.set();																								return;
+//			case M_PERMUTATION:			function.set(c_cc_permutation),				bmts=returns_rcq_ccq_qqq,	d(disc_cc_permutation_i);			return;
+//			case M_COMBINATION:			function.set(c_cc_combination),				bmts=returns_rcq_ccq_qqq,	d(disc_cc_combination_i);			return;
+//			case M_BESSEL_J:				function.set();																								return;
+//			case M_BESSEL_Y:				function.set();																								return;
+//			case M_HANKEL1:				function.set();																								return;
+//			case M_ASSIGN:				function.set(c_c_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
 			}
 			break;
 		case 'h':
 			switch(f)
 			{
-			case M_POWER:				function.set(q_cq_pow),					bmts=returns_ccq_ccq_qqq,	d(disc_cq_pow_i);					return;
+			CASE_Q_CQ(POWER,			pow, POW,		I)
 			case M_ASSIGN_DIVIDE:
-			case M_DIVIDE:				function.set(q_cq_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_cq_divide_i);				return;
-			case M_LOGIC_DIVIDES:		function.set(r_cq_logic_divides),	bmts=returns_rcq_ccq_qqq,	d();	return;
+			CASE(Q_CQ, DIVIDE,			divide,			I)
+			CASE(R_CQ, LOGIC_DIVIDES,	logic_divides,	C)
 			case M_ASSIGN_MINUS:
-			case M_MINUS:				function.set(q_cq_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_PENTATE:				function.set();																							return;
-			case M_TETRATE:				function.set();																							return;
+			CASE(Q_CQ, MINUS,			minus,			C)
+			CASE_NONE(PENTATE)
+			CASE_NONE(TETRATE)
 			case M_ASSIGN_MULTIPLY:
-			case M_MULTIPLY:			function.set(q_cq_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+			CASE(Q_CQ, MULTIPLY,		multiply,		C)
 			case M_ASSIGN_PLUS:
-			case M_PLUS:				function.set(q_cq_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_LOGIC_AND:			function.set(r_cq_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_and_i);				return;
-			case M_LOGIC_XOR:			function.set(r_cq_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_xor_i);				return;
-			case M_LOGIC_OR:			function.set(r_cq_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_or_i);				return;
-			case M_LOGIC_CONDITION_ZERO:function.set(q_cq_logic_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_cq_logic_condition_zero_i);	return;
+			CASE(Q_CQ, PLUS,			plus,			C)
+			CASE(R_CQ, LOGIC_AND,		logic_and,		O)
+			CASE(R_CQ, LOGIC_XOR,		logic_xor,		O)
+			CASE(R_CQ, LOGIC_OR,		logic_or,		O)
+			CASE(Q_CQ, CONDITION_ZERO,	condition_zero,	I)
 			case M_ASSIGN_MOD:
-			case M_MODULO_PERCENT:		function.set(q_cq_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_cq_modulo_i);				return;
+			CASE_Q_CQ(MODULO_PERCENT,	modulo, MODULO,	I)
 			case M_ASSIGN_LEFT:
-			case M_BITWISE_SHIFT_LEFT:	function.set(q_cq_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_shift_left_i);	return;
+			CASE(Q_CQ, BITWISE_SHIFT_LEFT, bitwise_shift_left, I)
 			case M_ASSIGN_RIGHT:
-			case M_BITWISE_SHIFT_RIGHT:	function.set(q_cq_bitwise_shift_right),	bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_shift_right_i);	return;
-			case M_LOGIC_LESS:			function.set(r_cq_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_less_i);			return;
-			case M_LOGIC_LESS_EQUAL:	function.set(r_cq_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_less_equal_i);		return;
-			case M_LOGIC_GREATER:		function.set(r_cq_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_greater_i);			return;
-			case M_LOGIC_GREATER_EQUAL:	function.set(r_cq_logic_greater_equal),	bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_greater_equal_i);	return;
-			case M_LOGIC_EQUAL:			function.set(r_cq_logic_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_equal_i);			return;
-			case M_LOGIC_NOT_EQUAL:		function.set(r_cq_logic_not_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_not_equal_i);		return;
+			CASE(Q_CQ, BITWISE_SHIFT_RIGHT, bitwise_shift_right, I)
+			CASE(R_CQ, LOGIC_LESS,		logic_less,		O)
+			CASE(R_CQ, LOGIC_LESS_EQUAL, logic_less_equal, O)
+			CASE(R_CQ, LOGIC_GREATER,	logic_greater,	O)
+			CASE(R_CQ, LOGIC_GREATER_EQUAL, logic_greater_equal, O)
+			CASE(R_CQ, LOGIC_EQUAL,		logic_equal,	O)
+			CASE(R_CQ, LOGIC_NOT_EQUAL,	logic_not_equal, O)
 			case M_ASSIGN_AND:
-			case M_BITWISE_AND:			function.set(q_cq_bitwise_and),			bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_and_o, false);	return;
-			case M_BITWISE_NAND:		function.set(q_cq_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_nand_o, false);	return;
+			CASE(Q_CQ, BITWISE_AND,		bitwise_and,	O)
+			CASE(Q_CQ, BITWISE_NAND,	bitwise_nand,	O)
 			case M_ASSIGN_XOR:
-			case M_BITWISE_XOR:			function.set(q_cq_bitwise_xor),			bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_xor_o, false);	return;
-			case M_BITWISE_XNOR:		function.set(q_cq_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_xnor_o, false);	return;
+			CASE(Q_CQ, BITWISE_XOR,		bitwise_xor,	O)
+			CASE(Q_CQ, BITWISE_XNOR,	bitwise_xnor,	O)
 			case M_ASSIGN_OR:
-			case M_VERTICAL_BAR:		function.set(q_cq_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_or_o, false);		return;
-			case M_BITWISE_NOR:			function.set(q_cq_bitwise_nor),			bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_nor_o, false);	return;
-			case M_LOG:					function.set(q_cq_log),					bmts=returns_ccq_ccq_qqq,	d(disc_cq_log_i);					return;
-			case M_RAND:				function.set(q_qq_random),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_random, false);			return;
-		//	case M_RAND:				function.set(q_cq_random),					bmts=returns_rcq_ccq_qqq,	d(disc_cq_random, false);			return;
-			case M_ATAN:				function.set(q_cq_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_cq_atan_i);					return;
-			case M_SQWV:				function.set(r_cq_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_cq_sqwv_i);					return;
-		//	case M_TRWV:				function.set(q_cq_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_cq_trwv_i);					return;
-			case M_TRWV:				function.set(q_qq_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_cq_trwv_i);					return;
-			case M_SAW:					function.set(q_cq_saw),					bmts=returns_rcq_ccq_qqq,	d(disc_cq_saw_i);					return;
-		//	case M_MIN:					function.set(q_cq_min),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_MIN:					function.set(q_qq_min),					bmts=returns_rcq_ccq_qqq,	d();								return;
-		//	case M_MAX:					function.set(q_cq_max),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_MAX:					function.set(q_qq_max),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_BETA:				function.set();																							return;
-			case M_GAMMA:				function.set();																							return;
-		//	case M_PERMUTATION:			function.set(q_cq_permutation),			bmts=returns_rcq_ccq_qqq,	d(disc_cq_permutation_i);			return;
-			case M_PERMUTATION:			function.set(q_qq_permutation),			bmts=returns_rcq_ccq_qqq,	d(disc_cq_permutation_i);			return;
-		//	case M_COMBINATION:			function.set(q_cq_combination),			bmts=returns_rcq_ccq_qqq,	d(disc_cq_combination_i);			return;
-			case M_COMBINATION:			function.set(q_qq_combination),			bmts=returns_rcq_ccq_qqq,	d(disc_cq_combination_i);			return;
-			case M_BESSEL:				function.set();																							return;
-			case M_NEUMANN:				function.set();																							return;
-			case M_HANKEL1:				function.set();																							return;
-			case M_ASSIGN:				function.set(q_q_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
+			CASE_Q_CQ(VERTICAL_BAR,		bitwise_or, BITWISE_OR, O)
+			CASE(Q_CQ, BITWISE_NOR,		bitwise_nor,	O)
+			CASE(Q_CQ, LOG,				log,			I)
+			CASE_Q_QQ(RAND,				random, RANDOM,	O)
+		//	CASE_Q_CQ(RAND,				random, RANDOM,	O)
+			CASE(Q_CQ, ATAN,			atan,			I)
+			CASE(R_CQ, SQWV,			sqwv,			O)
+			CASE(R_CQ, TRWV,			trwv,			C)
+		//	CASE(R_QQ, TRWV,			trwv,			C)
+			CASE(R_CQ, SAW,				saw,			I)
+		//	CASE(Q_CQ, MIN,				min,			C)
+			CASE(Q_QQ, MIN,				min,			C)
+		//	CASE(Q_CQ, MAX,				max,			C)
+			CASE(Q_QQ, MAX,				max,			C)
+			CASE_NONE(BETA)
+			CASE_NONE(GAMMA)
+		//	CASE(Q_CQ, PERMUTATION,		permutation,	I)
+			CASE(Q_QQ, PERMUTATION,		permutation,	I)
+		//	CASE(Q_CQ, COMBINATION,		combination,	I)
+			CASE(Q_QQ, COMBINATION,		combination,	I)
+			CASE_NONE(BESSEL_J)
+			CASE_NONE(BESSEL_Y)
+			CASE_NONE(HANKEL1)
+			CASE(Q_Q, ASSIGN,			assign,			C)
+
+//			case M_POWER:				function.set(q_cq_pow),						bmts=returns_ccq_ccq_qqq,	d(disc_cq_pow_i);					return;
+//			case M_ASSIGN_DIVIDE:
+//			case M_DIVIDE:				function.set(q_cq_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_cq_divide_i);				return;
+//			case M_LOGIC_DIVIDES:		function.set(r_cq_logic_divides),			bmts=returns_rcq_ccq_qqq,	d();	return;
+//			case M_ASSIGN_MINUS:
+//			case M_MINUS:				function.set(q_cq_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_PENTATE:				function.set();																								return;
+//			case M_TETRATE:				function.set();																								return;
+//			case M_ASSIGN_MULTIPLY:
+//			case M_MULTIPLY:			function.set(q_cq_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_ASSIGN_PLUS:
+//			case M_PLUS:				function.set(q_cq_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_LOGIC_AND:			function.set(r_cq_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_and_i);				return;
+//			case M_LOGIC_XOR:			function.set(r_cq_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_xor_i);				return;
+//			case M_LOGIC_OR:			function.set(r_cq_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_or_i);				return;
+//			case M_CONDITION_ZERO:		function.set(q_cq_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_cq_condition_zero_i);	return;
+//			case M_ASSIGN_MOD:
+//			case M_MODULO_PERCENT:		function.set(q_cq_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_cq_modulo_i);				return;
+//			case M_ASSIGN_LEFT:
+//			case M_BITWISE_SHIFT_LEFT:	function.set(q_cq_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_shift_left_i);	return;
+//			case M_ASSIGN_RIGHT:
+//			case M_BITWISE_SHIFT_RIGHT:	function.set(q_cq_bitwise_shift_right),		bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_shift_right_i);	return;
+//			case M_LOGIC_LESS:			function.set(r_cq_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_less_i);			return;
+//			case M_LOGIC_LESS_EQUAL:	function.set(r_cq_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_less_equal_i);		return;
+//			case M_LOGIC_GREATER:		function.set(r_cq_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_greater_i);			return;
+//			case M_LOGIC_GREATER_EQUAL:	function.set(r_cq_logic_greater_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_greater_equal_i);	return;
+//			case M_LOGIC_EQUAL:			function.set(r_cq_logic_equal),				bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_equal_i);			return;
+//			case M_LOGIC_NOT_EQUAL:		function.set(r_cq_logic_not_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_cq_logic_not_equal_i);		return;
+//			case M_ASSIGN_AND:
+//			case M_BITWISE_AND:			function.set(q_cq_bitwise_and),				bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_and_o, false);	return;
+//			case M_BITWISE_NAND:		function.set(q_cq_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_nand_o, false);	return;
+//			case M_ASSIGN_XOR:
+//			case M_BITWISE_XOR:			function.set(q_cq_bitwise_xor),				bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_xor_o, false);	return;
+//			case M_BITWISE_XNOR:		function.set(q_cq_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_xnor_o, false);	return;
+//			case M_ASSIGN_OR:
+//			case M_VERTICAL_BAR:		function.set(q_cq_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_or_o, false);		return;
+//			case M_BITWISE_NOR:			function.set(q_cq_bitwise_nor),				bmts=returns_rcq_ccq_qqq,	d(disc_cq_bitwise_nor_o, false);	return;
+//			case M_LOG:					function.set(q_cq_log),						bmts=returns_ccq_ccq_qqq,	d(disc_cq_log_i);					return;
+//			case M_RAND:				function.set(q_qq_random),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_random_o, false);			return;
+//		//	case M_RAND:				function.set(q_cq_random),					bmts=returns_rcq_ccq_qqq,	d(disc_cq_random_o, false);			return;
+//			case M_ATAN:				function.set(q_cq_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_cq_atan_i);					return;
+//			case M_SQWV:				function.set(r_cq_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_cq_sqwv_i);					return;
+//		//	case M_TRWV:				function.set(q_cq_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_cq_trwv_i);					return;
+//			case M_TRWV:				function.set(q_qq_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_cq_trwv_i);					return;
+//			case M_SAW:					function.set(q_cq_saw),						bmts=returns_rcq_ccq_qqq,	d(disc_cq_saw_i);					return;
+//		//	case M_MIN:					function.set(q_cq_min),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_MIN:					function.set(q_qq_min),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//		//	case M_MAX:					function.set(q_cq_max),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_MAX:					function.set(q_qq_max),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_BETA:				function.set();																								return;
+//			case M_GAMMA:				function.set();																								return;
+//		//	case M_PERMUTATION:			function.set(q_cq_permutation),				bmts=returns_rcq_ccq_qqq,	d(disc_cq_permutation_i);			return;
+//			case M_PERMUTATION:			function.set(q_qq_permutation),				bmts=returns_rcq_ccq_qqq,	d(disc_cq_permutation_i);			return;
+//		//	case M_COMBINATION:			function.set(q_cq_combination),				bmts=returns_rcq_ccq_qqq,	d(disc_cq_combination_i);			return;
+//			case M_COMBINATION:			function.set(q_qq_combination),				bmts=returns_rcq_ccq_qqq,	d(disc_cq_combination_i);			return;
+//			case M_BESSEL_J:				function.set();																								return;
+//			case M_BESSEL_Y:				function.set();																								return;
+//			case M_HANKEL1:				function.set();																								return;
+//			case M_ASSIGN:				function.set(q_q_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
 			}
 			break;
 		}
@@ -5601,188 +6091,363 @@ void			Compile::compile_instruction_select_b	(int f, char op1type, char op2type,
 		case 'R':
 			switch(f)
 			{
-			case M_POWER:				function.set(q_qr_pow),					bmts=returns_ccq_ccq_qqq,	d(disc_qr_pow_i);					return;
+			CASE_Q_QR(POWER,			pow, POW,		I)
 			case M_ASSIGN_DIVIDE:
-			case M_DIVIDE:				function.set(q_qr_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_qr_divide_i);				return;
-			case M_LOGIC_DIVIDES:		function.set(r_qr_logic_divides),	bmts=returns_rcq_ccq_qqq,	d();	return;
+			CASE(Q_QR, DIVIDE,			divide,			I)
+			CASE(R_QR, LOGIC_DIVIDES,	logic_divides,	C)
 			case M_ASSIGN_MINUS:
-			case M_MINUS:				function.set(q_qr_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_PENTATE:				function.set();																							return;
-			case M_TETRATE:				function.set(q_qr_tetrate),				bmts=returns_ccX_ccX_qXX,	d(disc_qr_tetrate_i);				return;
-			case M_POWER_REAL:			function.set(q_qr_power_real),			bmts=returns_rXX_cXX_qXX,	d(disc_rr_power_real_i);			return;
+			CASE(Q_QR, MINUS,			minus,			C)
+			CASE_NONE(PENTATE)
+			CASE(Q_QR, TETRATE,			tetrate,		I)
+			CASE(Q_QR, POWER_REAL,		power_real,		I)
 			case M_ASSIGN_MULTIPLY:
-			case M_MULTIPLY:			function.set(q_qr_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+			CASE(Q_QR, MULTIPLY,		multiply,		C)
 			case M_ASSIGN_PLUS:
-			case M_PLUS:				function.set(q_qr_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_LOGIC_AND:			function.set(r_qr_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_and_i);				return;
-			case M_LOGIC_XOR:			function.set(r_qr_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_xor_i);				return;
-			case M_LOGIC_OR:			function.set(r_qr_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_or_i);				return;
-			case M_LOGIC_CONDITION_ZERO:function.set(q_qr_logic_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_qr_logic_condition_zero_i);	return;
+			CASE(Q_QR, PLUS,			plus,			C)
+			CASE(R_QR, LOGIC_AND,		logic_and,		O)
+			CASE(R_QR, LOGIC_XOR,		logic_xor,		O)
+			CASE(R_QR, LOGIC_OR,		logic_or,		O)
+			CASE(Q_QR, CONDITION_ZERO,	condition_zero,	I)
 			case M_ASSIGN_MOD:
-			case M_MODULO_PERCENT:		function.set(q_qr_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_qr_modulo_i);				return;
+			CASE_Q_QR(MODULO_PERCENT,	modulo, MODULO,	I)
 			case M_ASSIGN_LEFT:
-			case M_BITWISE_SHIFT_LEFT:	function.set(q_qr_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_shift_left_i);	return;
+			CASE(Q_QR, BITWISE_SHIFT_LEFT, bitwise_shift_left, I)
 			case M_ASSIGN_RIGHT:
-			case M_BITWISE_SHIFT_RIGHT:	function.set(q_qr_bitwise_shift_right),	bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_shift_right_i);	return;
-			case M_LOGIC_LESS:			function.set(r_qr_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_less_i);			return;
-			case M_LOGIC_LESS_EQUAL:	function.set(r_qr_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_less_equal_i);		return;
-			case M_LOGIC_GREATER:		function.set(r_qr_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_greater_i);			return;
-			case M_LOGIC_GREATER_EQUAL:	function.set(r_qr_logic_greater_equal),	bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_greater_equal_i);	return;
-			case M_LOGIC_EQUAL:			function.set(r_qr_logic_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_equal_i);			return;
-			case M_LOGIC_NOT_EQUAL:		function.set(r_qr_logic_not_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_not_equal_i);		return;
+			CASE(Q_QR, BITWISE_SHIFT_RIGHT, bitwise_shift_right, I)
+			CASE(R_QR, LOGIC_LESS,		logic_less,		O)
+			CASE(R_QR, LOGIC_LESS_EQUAL, logic_less_equal, O)
+			CASE(R_QR, LOGIC_GREATER,	logic_greater,	O)
+			CASE(R_QR, LOGIC_GREATER_EQUAL, logic_greater_equal, O)
+			CASE(R_QR, LOGIC_EQUAL,		logic_equal,	O)
+			CASE(R_QR, LOGIC_NOT_EQUAL,	logic_not_equal, O)
 			case M_ASSIGN_AND:
-			case M_BITWISE_AND:			function.set(q_qr_bitwise_and),			bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_and_o, false);	return;
-			case M_BITWISE_NAND:		function.set(q_qr_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_nand_o, false);	return;
+			CASE(Q_QR, BITWISE_AND,		bitwise_and,	O)
+			CASE(Q_QR, BITWISE_NAND,	bitwise_nand,	O)
 			case M_ASSIGN_XOR:
-			case M_BITWISE_XOR:			function.set(q_qr_bitwise_xor),			bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_xor_o, false);	return;
-			case M_BITWISE_XNOR:		function.set(q_qr_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_xnor_o, false);	return;
+			CASE(Q_QR, BITWISE_XOR,		bitwise_xor,	O)
+			CASE(Q_QR, BITWISE_XNOR,	bitwise_xnor,	O)
 			case M_ASSIGN_OR:
-			case M_VERTICAL_BAR:		function.set(q_qr_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_or_o, false);		return;
-			case M_BITWISE_NOR:			function.set(q_qr_bitwise_nor),			bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_nor_o, false);	return;
-			case M_LOG:					function.set(q_qc_log),					bmts=returns_ccq_ccq_qqq,	d(disc_qc_log_i);					return;
-			case M_RAND:				function.set(q_qq_random),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_random, false);			return;
-		//	case M_RAND:				function.set(q_qr_random),					bmts=returns_rcq_ccq_qqq,	d(disc_qr_random, false);			return;
-			case M_ATAN:				function.set(q_qr_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_qr_atan_i);					return;
-			case M_SQWV:				function.set(r_qr_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qr_sqwv_i);					return;
-		//	case M_TRWV:				function.set(q_qr_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qr_trwv_i);					return;
-			case M_TRWV:				function.set(q_qq_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qr_trwv_i);					return;
-			case M_SAW:					function.set(q_qr_saw),					bmts=returns_rcq_ccq_qqq,	d(disc_qr_saw_i);					return;
-		//	case M_MIN:					function.set(q_qr_min),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_MIN:					function.set(q_qq_min),					bmts=returns_rcq_ccq_qqq,	d();								return;
-		//	case M_MAX:					function.set(q_qr_max),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_MAX:					function.set(q_qq_max),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_BETA:				function.set();																							return;
-			case M_GAMMA:				function.set();																							return;
-		//	case M_PERMUTATION:			function.set(q_qr_permutation),			bmts=returns_rcq_ccq_qqq,	d(disc_qr_permutation_i);			return;
-			case M_PERMUTATION:			function.set(q_qq_permutation),			bmts=returns_rcq_ccq_qqq,	d(disc_qr_permutation_i);			return;
-		//	case M_COMBINATION:			function.set(q_qr_combination),			bmts=returns_rcq_ccq_qqq,	d(disc_qr_combination_i);			return;
-			case M_COMBINATION:			function.set(q_qq_combination),			bmts=returns_rcq_ccq_qqq,	d(disc_qr_combination_i);			return;
-			case M_BESSEL:				function.set();																							return;
-			case M_NEUMANN:				function.set();																							return;
-			case M_HANKEL1:				function.set();																							return;
-			case M_ASSIGN:				function.set(r_r_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
+			CASE_Q_QR(VERTICAL_BAR,		bitwise_or, BITWISE_OR, O)
+			CASE(Q_QR, BITWISE_NOR,		bitwise_nor,	O)
+			CASE(Q_QC, LOG,				log,			I)
+			CASE_Q_QQ(RAND,				random, RANDOM,	O)
+		//	CASE_Q_QR(RAND,				random, RANDOM,	O)
+			CASE(Q_QR, ATAN,			atan,			I)
+			CASE(R_QR, SQWV,			sqwv,			O)
+			CASE(R_QR, TRWV,			trwv,			C)
+		//	CASE(R_QQ, TRWV,			trwv,			C)
+			CASE(R_QR, SAW,				saw,			I)
+		//	CASE(Q_QR, MIN,				min,			C)
+			CASE(Q_QQ, MIN,				min,			C)
+		//	CASE(Q_QR, MAX,				max,			C)
+			CASE(Q_QQ, MAX,				max,			C)
+			CASE_NONE(BETA)
+			CASE_NONE(GAMMA)
+		//	CASE(Q_QR, PERMUTATION,		permutation,	I)
+			CASE(Q_QQ, PERMUTATION,		permutation,	I)
+		//	CASE(Q_QR, COMBINATION,		combination,	I)
+			CASE(Q_QQ, COMBINATION,		combination,	I)
+			CASE_NONE(BESSEL_J)
+			CASE_NONE(BESSEL_Y)
+			CASE_NONE(HANKEL1)
+			CASE(R_R, ASSIGN,			assign,			C)
+
+//			case M_POWER:				function.set(q_qr_pow),						bmts=returns_ccq_ccq_qqq,	d(disc_qr_pow_i);					return;
+//			case M_ASSIGN_DIVIDE:
+//			case M_DIVIDE:				function.set(q_qr_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_qr_divide_i);				return;
+//			case M_LOGIC_DIVIDES:		function.set(r_qr_logic_divides),			bmts=returns_rcq_ccq_qqq,	d();	return;
+//			case M_ASSIGN_MINUS:
+//			case M_MINUS:				function.set(q_qr_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_PENTATE:				function.set();																								return;
+//			case M_TETRATE:				function.set(q_qr_tetrate),					bmts=returns_ccX_ccX_qXX,	d(disc_qr_tetrate_i);				return;
+//			case M_POWER_REAL:			function.set(q_qr_power_real),				bmts=returns_rXX_cXX_qXX,	d(disc_rr_power_real_i);			return;
+//			case M_ASSIGN_MULTIPLY:
+//			case M_MULTIPLY:			function.set(q_qr_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_ASSIGN_PLUS:
+//			case M_PLUS:				function.set(q_qr_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_LOGIC_AND:			function.set(r_qr_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_and_i);				return;
+//			case M_LOGIC_XOR:			function.set(r_qr_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_xor_i);				return;
+//			case M_LOGIC_OR:			function.set(r_qr_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_or_i);				return;
+//			case M_CONDITION_ZERO:		function.set(q_qr_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_qr_condition_zero_i);	return;
+//			case M_ASSIGN_MOD:
+//			case M_MODULO_PERCENT:		function.set(q_qr_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_qr_modulo_i);				return;
+//			case M_ASSIGN_LEFT:
+//			case M_BITWISE_SHIFT_LEFT:	function.set(q_qr_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_shift_left_i);	return;
+//			case M_ASSIGN_RIGHT:
+//			case M_BITWISE_SHIFT_RIGHT:	function.set(q_qr_bitwise_shift_right),		bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_shift_right_i);	return;
+//			case M_LOGIC_LESS:			function.set(r_qr_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_less_i);			return;
+//			case M_LOGIC_LESS_EQUAL:	function.set(r_qr_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_less_equal_i);		return;
+//			case M_LOGIC_GREATER:		function.set(r_qr_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_greater_i);			return;
+//			case M_LOGIC_GREATER_EQUAL:	function.set(r_qr_logic_greater_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_greater_equal_i);	return;
+//			case M_LOGIC_EQUAL:			function.set(r_qr_logic_equal),				bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_equal_i);			return;
+//			case M_LOGIC_NOT_EQUAL:		function.set(r_qr_logic_not_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_qr_logic_not_equal_i);		return;
+//			case M_ASSIGN_AND:
+//			case M_BITWISE_AND:			function.set(q_qr_bitwise_and),				bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_and_o, false);	return;
+//			case M_BITWISE_NAND:		function.set(q_qr_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_nand_o, false);	return;
+//			case M_ASSIGN_XOR:
+//			case M_BITWISE_XOR:			function.set(q_qr_bitwise_xor),				bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_xor_o, false);	return;
+//			case M_BITWISE_XNOR:		function.set(q_qr_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_xnor_o, false);	return;
+//			case M_ASSIGN_OR:
+//			case M_VERTICAL_BAR:		function.set(q_qr_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_or_o, false);		return;
+//			case M_BITWISE_NOR:			function.set(q_qr_bitwise_nor),				bmts=returns_rcq_ccq_qqq,	d(disc_qr_bitwise_nor_o, false);	return;
+//			case M_LOG:					function.set(q_qc_log),						bmts=returns_ccq_ccq_qqq,	d(disc_qc_log_i);					return;
+//			case M_RAND:				function.set(q_qq_random),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_random_o, false);			return;
+//		//	case M_RAND:				function.set(q_qr_random),					bmts=returns_rcq_ccq_qqq,	d(disc_qr_random_o, false);			return;
+//			case M_ATAN:				function.set(q_qr_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_qr_atan_i);					return;
+//			case M_SQWV:				function.set(r_qr_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qr_sqwv_i);					return;
+//		//	case M_TRWV:				function.set(q_qr_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qr_trwv_i);					return;
+//			case M_TRWV:				function.set(q_qq_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qr_trwv_i);					return;
+//			case M_SAW:					function.set(q_qr_saw),						bmts=returns_rcq_ccq_qqq,	d(disc_qr_saw_i);					return;
+//		//	case M_MIN:					function.set(q_qr_min),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_MIN:					function.set(q_qq_min),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//		//	case M_MAX:					function.set(q_qr_max),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_MAX:					function.set(q_qq_max),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_BETA:				function.set();																								return;
+//			case M_GAMMA:				function.set();																								return;
+//		//	case M_PERMUTATION:			function.set(q_qr_permutation),				bmts=returns_rcq_ccq_qqq,	d(disc_qr_permutation_i);			return;
+//			case M_PERMUTATION:			function.set(q_qq_permutation),				bmts=returns_rcq_ccq_qqq,	d(disc_qr_permutation_i);			return;
+//		//	case M_COMBINATION:			function.set(q_qr_combination),				bmts=returns_rcq_ccq_qqq,	d(disc_qr_combination_i);			return;
+//			case M_COMBINATION:			function.set(q_qq_combination),				bmts=returns_rcq_ccq_qqq,	d(disc_qr_combination_i);			return;
+//			case M_BESSEL_J:				function.set();																								return;
+//			case M_BESSEL_Y:				function.set();																								return;
+//			case M_HANKEL1:				function.set();																								return;
+//			case M_ASSIGN:				function.set(r_r_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
 			}
 			break;
 		case 'c':
 			switch(f)
 			{
-			case M_POWER:				function.set(q_qc_pow),					bmts=returns_ccq_ccq_qqq,	d(disc_qc_pow_i);					return;
+			CASE_Q_QC(POWER,			pow, POW,		I)
 			case M_ASSIGN_DIVIDE:
-			case M_DIVIDE:				function.set(q_qc_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_qc_divide_i);				return;
-			case M_LOGIC_DIVIDES:		function.set(r_qc_logic_divides),	bmts=returns_rcq_ccq_qqq,	d();	return;
+			CASE(Q_QC, DIVIDE,			divide,			I)
+			CASE(R_QC, LOGIC_DIVIDES,	logic_divides,	C)
 			case M_ASSIGN_MINUS:
-			case M_MINUS:				function.set(q_qc_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_PENTATE:				function.set();																							return;
-			case M_TETRATE:				function.set();																							return;
+			CASE(Q_QC, MINUS,			minus,			C)
+			CASE_NONE(PENTATE)
+			CASE_NONE(TETRATE)
 			case M_ASSIGN_MULTIPLY:
-			case M_MULTIPLY:			function.set(q_qc_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+			CASE(Q_QC, MULTIPLY,		multiply,		C)
 			case M_ASSIGN_PLUS:
-			case M_PLUS:				function.set(q_qc_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_LOGIC_AND:			function.set(r_qc_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_and_i);				return;
-			case M_LOGIC_XOR:			function.set(r_qc_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_xor_i);				return;
-			case M_LOGIC_OR:			function.set(r_qc_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_or_i);				return;
-			case M_LOGIC_CONDITION_ZERO:function.set(q_qc_logic_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_qc_logic_condition_zero_i);	return;
+			CASE(Q_QC, PLUS,			plus,			C)
+			CASE(R_QC, LOGIC_AND,		logic_and,		O)
+			CASE(R_QC, LOGIC_XOR,		logic_xor,		O)
+			CASE(R_QC, LOGIC_OR,		logic_or,		O)
+			CASE(Q_QC, CONDITION_ZERO,	condition_zero,	I)
 			case M_ASSIGN_MOD:
-			case M_MODULO_PERCENT:		function.set(q_qc_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_qc_modulo_i);				return;
+			CASE_Q_QC(MODULO_PERCENT,	modulo, MODULO,	I)
 			case M_ASSIGN_LEFT:
-			case M_BITWISE_SHIFT_LEFT:	function.set(q_qc_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_shift_left_i);	return;
+			CASE(Q_QC, BITWISE_SHIFT_LEFT, bitwise_shift_left, I)
 			case M_ASSIGN_RIGHT:
-			case M_BITWISE_SHIFT_RIGHT:	function.set(q_qc_bitwise_shift_right),	bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_shift_right_i);	return;
-			case M_LOGIC_LESS:			function.set(r_qc_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_less_i);			return;
-			case M_LOGIC_LESS_EQUAL:	function.set(r_qc_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_less_equal_i);		return;
-			case M_LOGIC_GREATER:		function.set(r_qc_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_greater_i);			return;
-			case M_LOGIC_GREATER_EQUAL:	function.set(r_qc_logic_greater_equal),	bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_greater_equal_i);	return;
-			case M_LOGIC_EQUAL:			function.set(r_qc_logic_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_equal_i);			return;
-			case M_LOGIC_NOT_EQUAL:		function.set(r_qc_logic_not_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_not_equal_i);		return;
+			CASE(Q_QC, BITWISE_SHIFT_RIGHT, bitwise_shift_right, I)
+			CASE(R_QC, LOGIC_LESS,		logic_less,		O)
+			CASE(R_QC, LOGIC_LESS_EQUAL, logic_less_equal, O)
+			CASE(R_QC, LOGIC_GREATER,	logic_greater,	O)
+			CASE(R_QC, LOGIC_GREATER_EQUAL, logic_greater_equal, O)
+			CASE(R_QC, LOGIC_EQUAL,		logic_equal,	O)
+			CASE(R_QC, LOGIC_NOT_EQUAL,	logic_not_equal, O)
 			case M_ASSIGN_AND:
-			case M_BITWISE_AND:			function.set(q_qc_bitwise_and),			bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_and_o, false);	return;
-			case M_BITWISE_NAND:		function.set(q_qc_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_nand_o, false);	return;
+			CASE(Q_QC, BITWISE_AND,		bitwise_and,	O)
+			CASE(Q_QC, BITWISE_NAND,	bitwise_nand,	O)
 			case M_ASSIGN_XOR:
-			case M_BITWISE_XOR:			function.set(q_qc_bitwise_xor),			bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_xor_o, false);	return;
-			case M_BITWISE_XNOR:		function.set(q_qc_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_xnor_o, false);	return;
+			CASE(Q_QC, BITWISE_XOR,		bitwise_xor,	O)
+			CASE(Q_QC, BITWISE_XNOR,	bitwise_xnor,	O)
 			case M_ASSIGN_OR:
-			case M_VERTICAL_BAR:		function.set(q_qc_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_or_o, false);		return;
-			case M_BITWISE_NOR:			function.set(q_qc_bitwise_nor),			bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_nor_o, false);	return;
-			case M_LOG:					function.set(q_qc_log),					bmts=returns_ccq_ccq_qqq,	d(disc_qc_log_i);					return;
-			case M_RAND:				function.set(q_qq_random),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_random, false);			return;
-		//	case M_RAND:				function.set(q_qc_random),					bmts=returns_rcq_ccq_qqq,	d(disc_qc_random, false);			return;
-			case M_ATAN:				function.set(q_qc_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_qc_atan_i);					return;
-			case M_SQWV:				function.set(r_qc_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qc_sqwv_i);					return;
-		//	case M_TRWV:				function.set(q_qc_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qc_trwv_i);					return;
-			case M_TRWV:				function.set(q_qq_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qc_trwv_i);					return;
-			case M_SAW:					function.set(q_qc_saw),					bmts=returns_rcq_ccq_qqq,	d(disc_qc_saw_i);					return;
-		//	case M_MIN:					function.set(q_qc_min),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_MIN:					function.set(q_qq_min),					bmts=returns_rcq_ccq_qqq,	d();								return;
-		//	case M_MAX:					function.set(q_qc_max),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_MAX:					function.set(q_qq_max),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_BETA:				function.set();																							return;
-			case M_GAMMA:				function.set();																							return;
-		//	case M_PERMUTATION:			function.set(q_qc_permutation),			bmts=returns_rcq_ccq_qqq,	d(disc_qc_permutation_i);			return;
-			case M_PERMUTATION:			function.set(q_qq_permutation),			bmts=returns_rcq_ccq_qqq,	d(disc_qc_permutation_i);			return;
-		//	case M_COMBINATION:			function.set(q_qc_combination),			bmts=returns_rcq_ccq_qqq,	d(disc_qc_combination_i);			return;
-			case M_COMBINATION:			function.set(q_qq_combination),			bmts=returns_rcq_ccq_qqq,	d(disc_qc_combination_i);			return;
-			case M_BESSEL:				function.set();																							return;
-			case M_NEUMANN:				function.set();																							return;
-			case M_HANKEL1:				function.set();																							return;
-			case M_ASSIGN:				function.set(c_c_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
+			CASE_Q_QC(VERTICAL_BAR,		bitwise_or, BITWISE_OR, O)
+			CASE(Q_QC, BITWISE_NOR,		bitwise_nor,	O)
+			CASE(Q_QC, LOG,				log,			I)
+			CASE_Q_QQ(RAND,				random, RANDOM,	O)
+		//	CASE_Q_QC(RAND,				random, RANDOM,	O)
+			CASE(Q_QC, ATAN,			atan,			I)
+			CASE(R_QC, SQWV,			sqwv,			O)
+		//	CASE(R_QC, TRWV,			trwv,			C)
+			CASE(R_QQ, TRWV,			trwv,			C)
+			CASE(R_QC, SAW,				saw,			I)
+		//	CASE(Q_QC, MIN,				min,			C)
+			CASE(Q_QQ, MIN,				min,			C)
+		//	CASE(Q_QC, MAX,				max,			C)
+			CASE(Q_QQ, MAX,				max,			C)
+			CASE_NONE(BETA)
+			CASE_NONE(GAMMA)
+		//	CASE(Q_QC, PERMUTATION,		permutation,	I)
+			CASE(Q_QQ, PERMUTATION,		permutation,	I)
+		//	CASE(Q_QC, COMBINATION,		combination,	I)
+			CASE(Q_QQ, COMBINATION,		combination,	I)
+			CASE_NONE(BESSEL_J)
+			CASE_NONE(BESSEL_Y)
+			CASE_NONE(HANKEL1)
+			CASE(C_C, ASSIGN,			assign,			C)
+
+//			case M_POWER:				function.set(q_qc_pow),						bmts=returns_ccq_ccq_qqq,	d(disc_qc_pow_i);					return;
+//			case M_ASSIGN_DIVIDE:
+//			case M_DIVIDE:				function.set(q_qc_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_qc_divide_i);				return;
+//			case M_LOGIC_DIVIDES:		function.set(r_qc_logic_divides),			bmts=returns_rcq_ccq_qqq,	d();	return;
+//			case M_ASSIGN_MINUS:
+//			case M_MINUS:				function.set(q_qc_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_PENTATE:				function.set();																								return;
+//			case M_TETRATE:				function.set();																								return;
+//			case M_ASSIGN_MULTIPLY:
+//			case M_MULTIPLY:			function.set(q_qc_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_ASSIGN_PLUS:
+//			case M_PLUS:				function.set(q_qc_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_LOGIC_AND:			function.set(r_qc_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_and_i);				return;
+//			case M_LOGIC_XOR:			function.set(r_qc_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_xor_i);				return;
+//			case M_LOGIC_OR:			function.set(r_qc_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_or_i);				return;
+//			case M_CONDITION_ZERO:		function.set(q_qc_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_qc_condition_zero_i);	return;
+//			case M_ASSIGN_MOD:
+//			case M_MODULO_PERCENT:		function.set(q_qc_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_qc_modulo_i);				return;
+//			case M_ASSIGN_LEFT:
+//			case M_BITWISE_SHIFT_LEFT:	function.set(q_qc_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_shift_left_i);	return;
+//			case M_ASSIGN_RIGHT:
+//			case M_BITWISE_SHIFT_RIGHT:	function.set(q_qc_bitwise_shift_right),		bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_shift_right_i);	return;
+//			case M_LOGIC_LESS:			function.set(r_qc_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_less_i);			return;
+//			case M_LOGIC_LESS_EQUAL:	function.set(r_qc_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_less_equal_i);		return;
+//			case M_LOGIC_GREATER:		function.set(r_qc_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_greater_i);			return;
+//			case M_LOGIC_GREATER_EQUAL:	function.set(r_qc_logic_greater_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_greater_equal_i);	return;
+//			case M_LOGIC_EQUAL:			function.set(r_qc_logic_equal),				bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_equal_i);			return;
+//			case M_LOGIC_NOT_EQUAL:		function.set(r_qc_logic_not_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_qc_logic_not_equal_i);		return;
+//			case M_ASSIGN_AND:
+//			case M_BITWISE_AND:			function.set(q_qc_bitwise_and),				bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_and_o, false);	return;
+//			case M_BITWISE_NAND:		function.set(q_qc_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_nand_o, false);	return;
+//			case M_ASSIGN_XOR:
+//			case M_BITWISE_XOR:			function.set(q_qc_bitwise_xor),				bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_xor_o, false);	return;
+//			case M_BITWISE_XNOR:		function.set(q_qc_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_xnor_o, false);	return;
+//			case M_ASSIGN_OR:
+//			case M_VERTICAL_BAR:		function.set(q_qc_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_or_o, false);		return;
+//			case M_BITWISE_NOR:			function.set(q_qc_bitwise_nor),				bmts=returns_rcq_ccq_qqq,	d(disc_qc_bitwise_nor_o, false);	return;
+//			case M_LOG:					function.set(q_qc_log),						bmts=returns_ccq_ccq_qqq,	d(disc_qc_log_i);					return;
+//			case M_RAND:				function.set(q_qq_random),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_random_o, false);			return;
+//		//	case M_RAND:				function.set(q_qc_random),					bmts=returns_rcq_ccq_qqq,	d(disc_qc_random_o, false);			return;
+//			case M_ATAN:				function.set(q_qc_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_qc_atan_i);					return;
+//			case M_SQWV:				function.set(r_qc_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qc_sqwv_i);					return;
+//		//	case M_TRWV:				function.set(q_qc_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qc_trwv_i);					return;
+//			case M_TRWV:				function.set(q_qq_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qc_trwv_i);					return;
+//			case M_SAW:					function.set(q_qc_saw),						bmts=returns_rcq_ccq_qqq,	d(disc_qc_saw_i);					return;
+//		//	case M_MIN:					function.set(q_qc_min),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_MIN:					function.set(q_qq_min),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//		//	case M_MAX:					function.set(q_qc_max),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_MAX:					function.set(q_qq_max),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_BETA:				function.set();																								return;
+//			case M_GAMMA:				function.set();																								return;
+//		//	case M_PERMUTATION:			function.set(q_qc_permutation),				bmts=returns_rcq_ccq_qqq,	d(disc_qc_permutation_i);			return;
+//			case M_PERMUTATION:			function.set(q_qq_permutation),				bmts=returns_rcq_ccq_qqq,	d(disc_qc_permutation_i);			return;
+//		//	case M_COMBINATION:			function.set(q_qc_combination),				bmts=returns_rcq_ccq_qqq,	d(disc_qc_combination_i);			return;
+//			case M_COMBINATION:			function.set(q_qq_combination),				bmts=returns_rcq_ccq_qqq,	d(disc_qc_combination_i);			return;
+//			case M_BESSEL_J:				function.set();																								return;
+//			case M_BESSEL_Y:				function.set();																								return;
+//			case M_HANKEL1:				function.set();																								return;
+//			case M_ASSIGN:				function.set(c_c_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
 			}
 			break;
 		case 'h':
 			switch(f)
 			{
-			case M_POWER:				function.set(q_qq_pow),					bmts=returns_ccq_ccq_qqq,	d(disc_qq_pow_i);					return;
+			CASE_Q_QQ(POWER,			pow, POW,		I)
 			case M_ASSIGN_DIVIDE:
-			case M_DIVIDE:				function.set(q_qq_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_divide_i);				return;
-			case M_LOGIC_DIVIDES:		function.set(r_qq_logic_divides),	bmts=returns_rcq_ccq_qqq,	d();	return;
+			CASE(Q_QQ, DIVIDE,			divide,			I)
+			CASE(R_QQ, LOGIC_DIVIDES,	logic_divides,	C)
 			case M_ASSIGN_MINUS:
-			case M_MINUS:				function.set(q_qq_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_PENTATE:				function.set();																							return;
-			case M_TETRATE:				function.set();																							return;
+			CASE(Q_QQ, MINUS,			minus,			C)
+			CASE_NONE(PENTATE)
+			CASE_NONE(TETRATE)
 			case M_ASSIGN_MULTIPLY:
-			case M_MULTIPLY:			function.set(q_qq_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+			CASE(Q_QQ, MULTIPLY,		multiply,		C)
 			case M_ASSIGN_PLUS:
-			case M_PLUS:				function.set(q_qq_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_LOGIC_AND:			function.set(r_qq_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_and_i);				return;
-			case M_LOGIC_XOR:			function.set(r_qq_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_xor_i);				return;
-			case M_LOGIC_OR:			function.set(r_qq_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_or_i);				return;
-			case M_LOGIC_CONDITION_ZERO:function.set(q_qq_logic_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_qq_logic_condition_zero_i);	return;
+			CASE(Q_QQ, PLUS,			plus,			C)
+			CASE(R_QQ, LOGIC_AND,		logic_and,		O)
+			CASE(R_QQ, LOGIC_XOR,		logic_xor,		O)
+			CASE(R_QQ, LOGIC_OR,		logic_or,		O)
+			CASE(Q_QQ, CONDITION_ZERO,	condition_zero,	I)
 			case M_ASSIGN_MOD:
-			case M_MODULO_PERCENT:		function.set(q_qq_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_modulo_i);				return;
+			CASE_Q_QQ(MODULO_PERCENT,	modulo, MODULO,	I)
 			case M_ASSIGN_LEFT:
-			case M_BITWISE_SHIFT_LEFT:	function.set(q_qq_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_shift_left_i);	return;
+			CASE(Q_QQ, BITWISE_SHIFT_LEFT, bitwise_shift_left, I)
 			case M_ASSIGN_RIGHT:
-			case M_BITWISE_SHIFT_RIGHT:	function.set(q_qq_bitwise_shift_right),	bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_shift_right_i);	return;
-			case M_LOGIC_LESS:			function.set(r_qq_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_less_i);			return;
-			case M_LOGIC_LESS_EQUAL:	function.set(r_qq_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_less_equal_i);		return;
-			case M_LOGIC_GREATER:		function.set(r_qq_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_greater_i);			return;
-			case M_LOGIC_GREATER_EQUAL:	function.set(r_qq_logic_greater_equal),	bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_greater_equal_i);	return;
-			case M_LOGIC_EQUAL:			function.set(r_qq_logic_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_equal_i);			return;
-			case M_LOGIC_NOT_EQUAL:		function.set(r_qq_logic_not_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_not_equal_i);		return;
+			CASE(Q_QQ, BITWISE_SHIFT_RIGHT, bitwise_shift_right, I)
+			CASE(R_QQ, LOGIC_LESS,		logic_less,		O)
+			CASE(R_QQ, LOGIC_LESS_EQUAL,logic_less_equal, O)
+			CASE(R_QQ, LOGIC_GREATER,	logic_greater,	O)
+			CASE(R_QQ, LOGIC_GREATER_EQUAL, logic_greater_equal, O)
+			CASE(R_QQ, LOGIC_EQUAL,		logic_equal,	O)
+			CASE(R_QQ, LOGIC_NOT_EQUAL,	logic_not_equal, O)
 			case M_ASSIGN_AND:
-			case M_BITWISE_AND:			function.set(q_qq_bitwise_and),			bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_and_o, false);	return;
-			case M_BITWISE_NAND:		function.set(q_qq_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_nand_o, false);	return;
+			CASE(Q_QQ, BITWISE_AND,		bitwise_and,	O)
+			CASE(Q_QQ, BITWISE_NAND,	bitwise_nand,	O)
 			case M_ASSIGN_XOR:
-			case M_BITWISE_XOR:			function.set(q_qq_bitwise_xor),			bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_xor_o, false);	return;
-			case M_BITWISE_XNOR:		function.set(q_qq_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_xnor_o, false);	return;
+			CASE(Q_QQ, BITWISE_XOR,		bitwise_xor,	O)
+			CASE(Q_QQ, BITWISE_XNOR,	bitwise_xnor,	O)
 			case M_ASSIGN_OR:
-			case M_VERTICAL_BAR:		function.set(q_qq_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_or_o, false);		return;
-			case M_BITWISE_NOR:			function.set(q_qq_bitwise_nor),			bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_nor_o, false);	return;
-			case M_LOG:					function.set(q_qq_log),					bmts=returns_ccq_ccq_qqq,	d(disc_qq_log_i);					return;
-			case M_RAND:				function.set(q_qq_random),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_random, false);			return;
-			case M_ATAN:				function.set(q_qq_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_atan_i);					return;
-			case M_SQWV:				function.set(r_qq_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_sqwv_i);					return;
-			case M_TRWV:				function.set(q_qq_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_trwv_i);					return;
-			case M_SAW:					function.set(q_qq_saw),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_saw_i);					return;
-			case M_MIN:					function.set(q_qq_min),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_MAX:					function.set(q_qq_max),					bmts=returns_rcq_ccq_qqq,	d();								return;
-			case M_BETA:				function.set();																							return;
-			case M_GAMMA:				function.set();																							return;
-			case M_PERMUTATION:			function.set(q_qq_permutation),			bmts=returns_rcq_ccq_qqq,	d(disc_qq_permutation_i);			return;
-			case M_COMBINATION:			function.set(q_qq_combination),			bmts=returns_rcq_ccq_qqq,	d(disc_qq_combination_i);			return;
-			case M_BESSEL:				function.set();																							return;
-			case M_NEUMANN:				function.set();																							return;
-			case M_HANKEL1:				function.set();																							return;
-			case M_ASSIGN:				function.set(q_q_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
+			CASE_Q_QQ(VERTICAL_BAR,		bitwise_or, BITWISE_OR, O)
+			CASE(Q_QQ, BITWISE_NOR,		bitwise_nor,	O)
+			CASE(Q_QQ, LOG,				log,			I)
+			CASE_Q_QQ(RAND,				random, RANDOM, O)
+			CASE(Q_QQ, ATAN,			atan,			I)
+			CASE(R_QQ, SQWV,			sqwv,			O)
+			CASE(R_QQ, TRWV,			trwv,			C)
+			CASE(R_QQ, SAW,				saw,			I)
+			CASE(Q_QQ, MIN,				min,			C)
+			CASE(Q_QQ, MAX,				max,			C)
+			CASE_NONE(BETA)
+			CASE_NONE(GAMMA)
+			CASE(Q_QQ, PERMUTATION,		permutation,	I)
+			CASE(Q_QQ, COMBINATION,		combination,	I)
+			CASE_NONE(BESSEL_J)
+			CASE_NONE(BESSEL_Y)
+			CASE_NONE(HANKEL1)
+			CASE(Q_Q, ASSIGN,			assign,			C)
+
+//			case M_POWER:				function.set(q_qq_pow),						bmts=returns_ccq_ccq_qqq,	d(disc_qq_pow_i);					return;
+//			case M_ASSIGN_DIVIDE:
+//			case M_DIVIDE:				function.set(q_qq_divide),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_divide_i);				return;
+//			case M_LOGIC_DIVIDES:		function.set(r_qq_logic_divides),			bmts=returns_rcq_ccq_qqq,	d();	return;
+//			case M_ASSIGN_MINUS:
+//			case M_MINUS:				function.set(q_qq_minus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_PENTATE:				function.set();																								return;
+//			case M_TETRATE:				function.set();																								return;
+//			case M_ASSIGN_MULTIPLY:
+//			case M_MULTIPLY:			function.set(q_qq_multiply),				bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_ASSIGN_PLUS:
+//			case M_PLUS:				function.set(q_qq_plus),					bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_LOGIC_AND:			function.set(r_qq_logic_and),				bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_and_i);				return;
+//			case M_LOGIC_XOR:			function.set(r_qq_logic_xor),				bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_xor_i);				return;
+//			case M_LOGIC_OR:			function.set(r_qq_logic_or),				bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_or_i);				return;
+//			case M_CONDITION_ZERO:		function.set(q_qq_condition_zero),	bmts=returns_rcq_ccq_qqq,	d(disc_qq_condition_zero_i);	return;
+//			case M_ASSIGN_MOD:
+//			case M_MODULO_PERCENT:		function.set(q_qq_modulo),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_modulo_i);				return;
+//			case M_ASSIGN_LEFT:
+//			case M_BITWISE_SHIFT_LEFT:	function.set(q_qq_bitwise_shift_left),		bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_shift_left_i);	return;
+//			case M_ASSIGN_RIGHT:
+//			case M_BITWISE_SHIFT_RIGHT:	function.set(q_qq_bitwise_shift_right),		bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_shift_right_i);	return;
+//			case M_LOGIC_LESS:			function.set(r_qq_logic_less),				bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_less_i);			return;
+//			case M_LOGIC_LESS_EQUAL:	function.set(r_qq_logic_less_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_less_equal_i);		return;
+//			case M_LOGIC_GREATER:		function.set(r_qq_logic_greater),			bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_greater_i);			return;
+//			case M_LOGIC_GREATER_EQUAL:	function.set(r_qq_logic_greater_equal),		bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_greater_equal_i);	return;
+//			case M_LOGIC_EQUAL:			function.set(r_qq_logic_equal),				bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_equal_i);			return;
+//			case M_LOGIC_NOT_EQUAL:		function.set(r_qq_logic_not_equal),			bmts=returns_rrr_rrr_rrr,	d(disc_qq_logic_not_equal_i);		return;
+//			case M_ASSIGN_AND:
+//			case M_BITWISE_AND:			function.set(q_qq_bitwise_and),				bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_and_o, false);	return;
+//			case M_BITWISE_NAND:		function.set(q_qq_bitwise_nand),			bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_nand_o, false);	return;
+//			case M_ASSIGN_XOR:
+//			case M_BITWISE_XOR:			function.set(q_qq_bitwise_xor),				bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_xor_o, false);	return;
+//			case M_BITWISE_XNOR:		function.set(q_qq_bitwise_xnor),			bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_xnor_o, false);	return;
+//			case M_ASSIGN_OR:
+//			case M_VERTICAL_BAR:		function.set(q_qq_bitwise_or),				bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_or_o, false);		return;
+//			case M_BITWISE_NOR:			function.set(q_qq_bitwise_nor),				bmts=returns_rcq_ccq_qqq,	d(disc_qq_bitwise_nor_o, false);	return;
+//			case M_LOG:					function.set(q_qq_log),						bmts=returns_ccq_ccq_qqq,	d(disc_qq_log_i);					return;
+//			case M_RAND:				function.set(q_qq_random),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_random_o, false);			return;
+//			case M_ATAN:				function.set(q_qq_atan),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_atan_i);					return;
+//			case M_SQWV:				function.set(r_qq_sqwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_sqwv_i);					return;
+//			case M_TRWV:				function.set(q_qq_trwv),					bmts=returns_rcq_ccq_qqq,	d(disc_qq_trwv_i);					return;
+//			case M_SAW:					function.set(q_qq_saw),						bmts=returns_rcq_ccq_qqq,	d(disc_qq_saw_i);					return;
+//			case M_MIN:					function.set(q_qq_min),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_MAX:					function.set(q_qq_max),						bmts=returns_rcq_ccq_qqq,	d();								return;
+//			case M_BETA:				function.set();																								return;
+//			case M_GAMMA:				function.set();																								return;
+//			case M_PERMUTATION:			function.set(q_qq_permutation),				bmts=returns_rcq_ccq_qqq,	d(disc_qq_permutation_i);			return;
+//			case M_COMBINATION:			function.set(q_qq_combination),				bmts=returns_rcq_ccq_qqq,	d(disc_qq_combination_i);			return;
+//			case M_BESSEL_J:				function.set();																								return;
+//			case M_BESSEL_Y:				function.set();																								return;
+//			case M_HANKEL1:				function.set();																								return;
+//			case M_ASSIGN:				function.set(q_q_assign),					bmts=returns_rcq_rcq_rcq,	d();								return;
 			}
 			break;
 		}
@@ -5806,12 +6471,16 @@ void			Compile::compile_instruction_u			(int f, char side, int a1, bool assign)
 		result=op;
 	char op_ms=term[op].mathSet;
 	FunctionPointer function;
-	char (*umts)(char);
+	int signature=0;
+//	char (*umts)(char);
 	DiscontinuityFunction d;
-	compile_instruction_select_u(f, side, term[op].mathSet, function, umts, d);
+	int cl_idx=0, cl_disc_idx=0;
+	compile_instruction_select_u(f, side, term[op].mathSet, function, signature, d, cl_idx, cl_disc_idx);
+//	compile_instruction_select_u(f, side, term[op].mathSet, function, umts, d);
 	if(function.r_r)
 	{
-		char resultMathSet=umts(term[op].mathSet);
+		char resultMathSet=returnMathSet_from_signature(signature, term[op].mathSet);
+	//	char resultMathSet=umts(term[op].mathSet);
 		if(!procedural||!term[result].fresh||(!term[result].constant&&term[result].mathSet>resultMathSet))//'R' < 'c'
 			term[result].mathSet=resultMathSet;
 		if(term[op].constant||function.type==-1)
@@ -5844,7 +6513,7 @@ void			Compile::compile_instruction_u			(int f, char side, int a1, bool assign)
 		}
 		else
 		{
-			expr->i.push_back(Instruction(function, op, op_ms, result, resultMathSet, d));
+			expr->i.push_back(Instruction(function, op, op_ms, result, resultMathSet, d, cl_idx, cl_disc_idx));
 		//	expr->i.push_back(Instruction(function, umts, op, result, d));
 		}
 		auto &ms=expr->n[result].mathSet;
@@ -5862,9 +6531,12 @@ void			Compile::compile_instruction_b			(int f, int a1, int a2, bool assign)
 	int op1=expr->m[a1]._1, op2=expr->m[a2]._1, result;
 	char op1_ms=term[op1].mathSet, op2_ms=term[op2].mathSet;
 	FunctionPointer function;
-	char (*bmts)(char, char);
+	int signature=0;
+//	char (*bmts)(char, char);
 	DiscontinuityFunction d;
-	compile_instruction_select_b(f, op1_ms, op2_ms, function, bmts, d);
+	int cl_idx=0, cl_disc_idx=0;
+	compile_instruction_select_b(f, op1_ms, op2_ms, function, signature, d, cl_idx, cl_disc_idx);
+//	compile_instruction_select_b(f, op1_ms, op2_ms, function, bmts, d);
 	if(function.r_rr)
 	{
 		if(procedural)
@@ -5890,7 +6562,8 @@ void			Compile::compile_instruction_b			(int f, int a1, int a2, bool assign)
 			result=(function.type==5)|(function.type==6)|(function.type==9)?op2:op1;
 	//	expr->m[a2]._1=result;
 
-		char resultMathSet=bmts(op1_ms, op2_ms);
+		char resultMathSet=returnMathSet_from_signature(signature, op1_ms, op2_ms);
+	//	char resultMathSet=bmts(op1_ms, op2_ms);
 		if(!procedural||!term[result].fresh||(!term[result].constant&&term[result].mathSet>resultMathSet))//'R' < 'c'
 			term[result].mathSet=resultMathSet;
 	//	term[result].mathSet=bmts(term[op1].mathSet, term[op2].mathSet);
@@ -5935,7 +6608,7 @@ void			Compile::compile_instruction_b			(int f, int a1, int a2, bool assign)
 		}
 		else
 		{
-			expr->i.push_back(Instruction(function, op1, op1_ms, op2, op2_ms, result, resultMathSet, d));
+			expr->i.push_back(Instruction(function, op1, op1_ms, op2, op2_ms, result, resultMathSet, d, cl_idx, cl_disc_idx));
 			term[result].constant=false;
 		//	expr->i.push_back(Instruction(function, bmts, op1, op2, result, d)), term[result].constant=false;
 		}
@@ -5950,13 +6623,17 @@ void			Compile::compile_instruction_b2			(int f, int op1, int _op2)
 	int op2=expr->m[_op2]._1;
 	int result=op1;//assign only
 	FunctionPointer function;
-	char (*bmts)(char, char);
+	int signature=0;
+//	char (*bmts)(char, char);
 	DiscontinuityFunction d;
+	int cl_idx=0, cl_disc_idx=0;
 	char op1_ms=term[op1].mathSet, op2_ms=term[op2].mathSet, resultMathSet=op2_ms;
-	compile_instruction_select_b(f, op1_ms, op2_ms, function, bmts, d);
+	compile_instruction_select_b(f, op1_ms, op2_ms, function, signature, d, cl_idx, cl_disc_idx);
+//	compile_instruction_select_b(f, op1_ms, op2_ms, function, bmts, d);
 	if(function.r_rr)
 	{
-		term[result].mathSet=bmts(term[op1].mathSet, term[op2].mathSet);
+		term[result].mathSet=returnMathSet_from_signature(signature, op1_ms, op2_ms);
+	//	term[result].mathSet=bmts(term[op1].mathSet, term[op2].mathSet);
 		if(term[op1].constant&&term[op2].constant)
 		{
 			Quat1d x=expr->data[op1], y=expr->data[op2];
@@ -5995,7 +6672,7 @@ void			Compile::compile_instruction_b2			(int f, int op1, int _op2)
 			//if(function.type==5||function.type==6||function.type==9)
 			//	std::swap(expr->m[a1]._1, expr->m[a2]._1);
 			if(op2!=result)
-				expr->i.push_back(Instruction(function, op2, op2_ms, result, resultMathSet, d));
+				expr->i.push_back(Instruction(function, op2, op2_ms, result, resultMathSet, d, cl_idx, cl_disc_idx));
 		//	expr->i.push_back(Instruction(function, op1, op1_ms, op2, op2_ms, result, resultMathSet, d));
 			term[result].constant=false;
 		//	expr->i.push_back(Instruction(function, bmts, op1, op2, result, d)), term[result].constant=false;
@@ -6028,7 +6705,7 @@ void			Compile::compile_instruction_condition_111	(int op1, int op2, int op3)
 //		};
 //		expr->i.push_back(in);
 		DiscontinuityFunction d;
-		expr->i.push_back(Instruction(op1, op1_ms, op2, op2_ms, op3, op3_ms, result, resultMathSet, d));
+		expr->i.push_back(Instruction(op1, op1_ms, op2, op2_ms, op3, op3_ms, result, resultMathSet, d, CONDITIONAL_111, DISC_CONDITIONAL_111_I));
 		term[op1].constant=false;
 	//	expr->i.push_back(Instruction(conditional_111, returns_conditional, op1, op2, op3, result, DiscontinuityFunction(disc_conditional_111_i))), term[result].constant=false;
 	}
@@ -6048,17 +6725,18 @@ void			Compile::compile_instruction_condition_110	(int op1, int op2)
 	else
 	{
 		FunctionPointer fp;
-			 if(op1_ms=='R'){	 if(op2_ms=='R')fp.set(r_rr_conditional_110);
-							else if(op2_ms=='c')fp.set(c_rc_conditional_110);
-							else				fp.set(q_rq_conditional_110);}
-		else if(op1_ms=='c'){	 if(op2_ms=='R')fp.set(r_cr_conditional_110);
-							else if(op2_ms=='c')fp.set(c_cc_conditional_110);
-							else				fp.set(q_cq_conditional_110);}
-		else if(op1_ms=='h'){	 if(op2_ms=='R')fp.set(r_qr_conditional_110);
-							else if(op2_ms=='c')fp.set(c_qc_conditional_110);
-							else				fp.set(q_qq_conditional_110);}
+		int cl_idx=0;
+			 if(op1_ms=='R'){	 if(op2_ms=='R')fp.set(r_rr_conditional_110), cl_idx=R_RR_CONDITIONAL_110;
+							else if(op2_ms=='c')fp.set(c_rc_conditional_110), cl_idx=C_RC_CONDITIONAL_110;
+							else				fp.set(q_rq_conditional_110), cl_idx=Q_RQ_CONDITIONAL_110;}
+		else if(op1_ms=='c'){	 if(op2_ms=='R')fp.set(r_cr_conditional_110), cl_idx=R_CR_CONDITIONAL_110;
+							else if(op2_ms=='c')fp.set(c_cc_conditional_110), cl_idx=C_CC_CONDITIONAL_110;
+							else				fp.set(q_cq_conditional_110), cl_idx=Q_CQ_CONDITIONAL_110;}
+		else if(op1_ms=='h'){	 if(op2_ms=='R')fp.set(r_qr_conditional_110), cl_idx=R_QR_CONDITIONAL_110;
+							else if(op2_ms=='c')fp.set(c_qc_conditional_110), cl_idx=C_QC_CONDITIONAL_110;
+							else				fp.set(q_qq_conditional_110), cl_idx=Q_QQ_CONDITIONAL_110;}
 		DiscontinuityFunction d(disc_conditional_110_i);
-		expr->i.push_back(Instruction(fp, op1, op1_ms, op2, op2_ms, result, resultMathSet, d));
+		expr->i.push_back(Instruction(fp, op1, op1_ms, op2, op2_ms, result, resultMathSet, d, cl_idx, DISC_CONDITIONAL_110_I));
 		term[op1].constant=false;
 	//	expr->i.push_back(Instruction(conditional_110, returns_rrr_ccc_qqq, op1, op2, result, DiscontinuityFunction(disc_conditional_110_i))), term[result].constant=false;
 	}
@@ -6078,17 +6756,18 @@ void			Compile::compile_instruction_condition_101	(int op1, int op3)
 	else
 	{
 		FunctionPointer fp;
-			 if(op1_ms=='R'){	 if(op3_ms=='R')fp.set(r_rr_conditional_101);
-							else if(op3_ms=='c')fp.set(c_rc_conditional_101);
-							else				fp.set(q_rq_conditional_101);}
-		else if(op1_ms=='c'){	 if(op3_ms=='R')fp.set(r_cr_conditional_101);
-							else if(op3_ms=='c')fp.set(c_cc_conditional_101);
-							else				fp.set(q_cq_conditional_101);}
-		else if(op1_ms=='h'){	 if(op3_ms=='R')fp.set(r_qr_conditional_101);
-							else if(op3_ms=='c')fp.set(c_qc_conditional_101);
-							else				fp.set(q_qq_conditional_101);}
+		int cl_idx=0;
+			 if(op1_ms=='R'){	 if(op3_ms=='R')fp.set(r_rr_conditional_101), cl_idx=R_RR_CONDITIONAL_101;
+							else if(op3_ms=='c')fp.set(c_rc_conditional_101), cl_idx=C_RC_CONDITIONAL_101;
+							else				fp.set(q_rq_conditional_101), cl_idx=Q_RQ_CONDITIONAL_101;}
+		else if(op1_ms=='c'){	 if(op3_ms=='R')fp.set(r_cr_conditional_101), cl_idx=R_CR_CONDITIONAL_101;
+							else if(op3_ms=='c')fp.set(c_cc_conditional_101), cl_idx=C_CC_CONDITIONAL_101;
+							else				fp.set(q_cq_conditional_101), cl_idx=Q_CQ_CONDITIONAL_101;}
+		else if(op1_ms=='h'){	 if(op3_ms=='R')fp.set(r_qr_conditional_101), cl_idx=R_QR_CONDITIONAL_101;
+							else if(op3_ms=='c')fp.set(c_qc_conditional_101), cl_idx=C_QC_CONDITIONAL_101;
+							else				fp.set(q_qq_conditional_101), cl_idx=Q_QQ_CONDITIONAL_101;}
 		DiscontinuityFunction d(disc_conditional_101_i);
-		expr->i.push_back(Instruction(fp, op1, op1_ms, op3, op3_ms, result, resultMathSet, d));
+		expr->i.push_back(Instruction(fp, op1, op1_ms, op3, op3_ms, result, resultMathSet, d, cl_idx, DISC_CONDITIONAL_101_I));
 		term[op1].constant=false;
 	//	expr->i.push_back(Instruction(conditional_101, G2::returns_rrr_ccc_qqq, op1, op2, result, DiscontinuityFunction(disc_conditional_101_i))), term[result].constant=false;
 	}
@@ -6115,7 +6794,7 @@ void			Compile::compile_instruction_condition_011	(int op2, int op3)
 		else if(op3_ms=='c')fp.set(c_c_assign);
 		else				fp.set(q_q_assign);
 		DiscontinuityFunction d;
-		expr->i.push_back(Instruction(fp, op2, op2_ms, op3, op3_ms, result, resultMathSet, d));
+		expr->i.push_back(Instruction(fp, op2, op2_ms, op3, op3_ms, result, resultMathSet, d, 0, 0));
 		term[op2].constant=false;
 	//	expr->i.push_back(Instruction(conditional_011, G2::returns_rrr_ccc_qqq, op1, op2, result, DiscontinuityFunction())), term[result].constant=false;
 	}
@@ -6152,7 +6831,7 @@ char			Compile::compile_instruction			(int f, char side, int a1, int a2, int a3)
 	case M_LOGIC_AND:
 	case M_LOGIC_XOR:
 	case M_LOGIC_OR:
-	case M_LOGIC_CONDITION_ZERO:
+	case M_CONDITION_ZERO:
 		if(ub[f]=='b')
 		{
 			compile_instruction_b(expr->m[f]._0, a1, a2);
@@ -6285,10 +6964,10 @@ char			Compile::compile_instruction			(int f, char side, int a1, int a2, int a3)
 	return 0;
 }
 
-int				Compile::compile_instruction_userFunctionCall(int function, std::vector<int> const &args, bool recursiveCall)
 //int				Compile::compile_instruction_userFunctionCall(int function, std::vector<int> const &args)
 //void			Compile::compile_instruction_userFunctionCall(int function, std::vector<int> const &args)
 //void			Compile::compile_instruction_userFunctionCall(int function, std::vector<int> const &args, int n_result)
+int				Compile::compile_instruction_userFunctionCall(int function, std::vector<int> const &args, bool recursiveCall)
 {
 	int result;
 //	bool new_repositry=false;
@@ -7637,7 +8316,7 @@ int				Compile::expressionResultLogicType()
 	case M_LOGIC_AND:																						return 1;
 	case M_LOGIC_XOR:																						return 1;
 	case M_LOGIC_OR:																						return 1;
-	case M_LOGIC_CONDITION_ZERO:																			return 0;
+	case M_CONDITION_ZERO:																					return 0;
 	case M_S_EQUAL_ASSIGN:																					return 2;
 	case M_S_NOT_EQUAL:																						return 3;
 	case M_S_LESS:case M_S_LESS_EQUAL:case M_S_GREATER:case M_S_GREATER_EQUAL:								return 1;
@@ -7670,7 +8349,7 @@ int Compile::default_overload(int S)//each bit marks correponding overload
 	case M_ATAN:
 	case M_LOG:
 	case M_BETA:case M_GAMMA:case M_PERMUTATION:case M_COMBINATION:
-	case M_BESSEL:case M_NEUMANN:case M_HANKEL1:
+	case M_BESSEL_J:case M_BESSEL_Y:case M_HANKEL1:
 	case M_SQWV:case M_TRWV:case M_SAW:case M_MIN:case M_MAX:
 		return 0x06;//B0110		1 arg & 2 arg overloads
 	}//*/
@@ -9175,7 +9854,7 @@ void debug_check()
 }
 namespace	modes
 {
-	bool active=0, ready=0;
+	bool active=false, ready=false;
 	unsigned const _2dCheckColor=0xFFE0E0E0,//0xFFD0D0D0	0xFFEFEFEF
 		_3dGridColor=0xFFD0D0D0;
 	int const N_MODES=13;
@@ -10119,7 +10798,7 @@ namespace	modes
 		}
 	};
 	void		choose_fill_fn_2di	(Variable &var, F_fn &f, int component, bool &LOL_1_const)
-	{
+	{//2di: inverted y
 		switch((&var.varTypeR)[component])
 		{
 		case 'x':f=&fx, LOL_1_const=0;break;
@@ -10239,7 +10918,7 @@ namespace	modes
 				else if(n.i.size())
 					memset(&n.i[0], 0, n.i.size()*sizeof(double));
 			}
-			else
+			else//the term is a variable
 			{
 				auto &var=ex.variables[n.varNo];
 				initialize_component(ex, kn, choose_fn, 0, offset, x1, x2, y1, y2, z1, z2, Xplaces, Yplaces, kzStep);
@@ -21129,7 +21808,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_step(JNIEn
 		CHECK();
 		pen_color=c1, brush_color=c2;
 	}
-	cl_step();
+//	cl_step();
 	print_if_error();
 //	glUseProgram(Text::program);// Use the program object
 //	CHECK();
@@ -21806,11 +22485,11 @@ extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_changeText
 																		else if(text[k+2]=='f'||text[k+2]=='F'){																																																																																									if(exprBound||!isAlphanumeric[text[k+3]]){	it->insertMapData	(k, 3, 'R', _HUGE				);	k+=2;	continue;}		 }
 																		else if((text[k+2]=='v'||text[k+2]=='V')			&&(text[k+3]=='s'||text[k+3]=='S')			&&(text[k+4]=='q'||text[k+4]=='Q')			&&(text[k+5]=='r'||text[k+5]=='R')			&&(text[k+6]=='t'||text[k+6]=='T')){																																												if(exprBound||!isAlphanumeric[text[k+7]]){	it->insertMap		(k, 7, M_INVSQRT				);	k+=6;	continue;}		 }}	break;
 			case 'j':																																																																																																																if(exprBound||!isAlphanumeric[text[k+1]]){	it->insertMapData	(k, 1, 'h', 0, 0, 1				);			continue;}			break;
-					 case 'J':																																																																																																														if(exprBound||!isAlphanumeric[text[k+1]]){	it->insertMap		(k, 1, M_BESSEL					);			continue;}			break;
+					 case 'J':																																																																																																														if(exprBound||!isAlphanumeric[text[k+1]]){	it->insertMap		(k, 1, M_BESSEL_J					);			continue;}			break;
 			case 'k':																																																																																																																if(exprBound||!isAlphanumeric[text[k+1]]){	it->insertMapData	(k, 1, 'h', 0, 0, 0, 1			);			continue;}
 			case 'x':			 if(exprBound)						{																																																																																																															it->insertRVar		(k, 1, &text[k], 's'			);			continue;		  }	break;
 			case 'y':			 if(exprBound)						{																																																																																																															it->insertRVar		(k, 1, &text[k], 's'			);			continue;		  }	break;
-			case 'Y':																																																																																																																if(exprBound||!isAlphanumeric[text[k+1]]){	it->insertMap		(k, 1, M_NEUMANN				);}			continue;
+			case 'Y':																																																																																																																if(exprBound||!isAlphanumeric[text[k+1]]){	it->insertMap		(k, 1, M_BESSEL_Y				);}			continue;
 			case 'z':			 if((text[k+1]=='e'||text[k+1]=='E')		&&(text[k+2]=='t'||text[k+2]=='T')			&&(text[k+3]=='a'||text[k+3]=='A')){																																																																														if(exprBound||!isAlphanumeric[text[k+4]]){	it->insertMap		(k, 4, M_ZETA					);	k+=3;	continue;}		  }
 							else if(exprBound)					   {																																																																																																															it->insertRVar		(k, 1, &text[k], 's'			);			continue;		  }	break;
 			case 'Z':			 if((text[k+1]=='e'||text[k+1]=='E')		&&(text[k+2]=='t'||text[k+2]=='T')			&&(text[k+3]=='a'||text[k+3]=='A')){																																																																														if(exprBound||!isAlphanumeric[text[k+4]]){	it->insertMap		(k, 4, M_ZETA					);	k+=3;	continue;}		  }
@@ -21881,7 +22560,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_changeText
 							else								   {																																																																																																															it->insertMap		(k, 1, M_LOGIC_GREATER			);			continue;	     }	break;
 			case '=':			 if(text[k+1]=='='				  ){																																																																																																															it->insertMap		(k, 2, M_LOGIC_EQUAL			);	++k;	continue;	     }
 							else if(!exprBound					  ){																																																																																																															it->insertMap		(k, 1, M_ASSIGN					);			continue;		 }	break;
-			case '?':			 if(text[k+1]=='?'				  ){																																																																																																															it->insertMap		(k, 2, M_LOGIC_CONDITION_ZERO	);	++k;	continue;		 }
+			case '?':			 if(text[k+1]=='?'				  ){																																																																																																															it->insertMap		(k, 2, M_CONDITION_ZERO		);	++k;	continue;		 }
 							else																																																																																																																								it->insertMap		(k, 1, M_QUESTION_MARK			);			continue;			break;
 			case ':':																																																																																																																											it->insertMap		(k, 1, M_COLON					);			continue;
 			case 'a':case 'A':	 if(text[k+1]=='b'||text[k+1]=='B'){		 if(text[k+2]=='s'||text[k+2]=='S'){																																																																																									if(exprBound||!isAlphanumeric[text[k+3]]){	it->insertMap		(k, 3, M_ABS					);	k+=2;	continue;}		}}
@@ -21903,7 +22582,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_changeText
 							else if(text[k+1]=='t'||text[k+1]=='T'){		 if(text[k+2]=='a'||text[k+2]=='A'){		 if(text[k+3]=='n'||text[k+3]=='N'){		 if(text[k+4]=='h'||text[k+4]=='H'){																																																																			if(exprBound||!isAlphanumeric[text[k+5]]){	it->insertMap		(k, 5, M_ATANH					);	k+=4;	continue;}	  }
 																																								else								   {																																																																			if(exprBound||!isAlphanumeric[text[k+4]]){	it->insertMap		(k, 4, M_ATAN					);	k+=3;	continue;}	  }}}
 																		else if(text[k+2]=='h'||text[k+2]=='H'){																																																																																									if(exprBound||!isAlphanumeric[text[k+3]]){	it->insertMap		(k, 3, M_ATANH					);	k+=2;	continue;}	    }}	break;
-			case 'b':			 if(text[k+1]=='e'||text[k+1]=='E'){		 if(text[k+2]=='s'||text[k+2]=='S'){		 if(text[k+3]=='s'||text[k+3]=='S'){		 if(text[k+4]=='e'||text[k+4]=='E'){		 if(text[k+5]=='l'||text[k+5]=='L'){																																																								if(exprBound||!isAlphanumeric[text[k+6]]){	it->insertMap		(k, 6, M_BESSEL					);	k+=5;	continue;}	 }}}}
+			case 'b':			 if(text[k+1]=='e'||text[k+1]=='E'){		 if(text[k+2]=='s'||text[k+2]=='S'){		 if(text[k+3]=='s'||text[k+3]=='S'){		 if(text[k+4]=='e'||text[k+4]=='E'){		 if(text[k+5]=='l'||text[k+5]=='L'){																																																								if(exprBound||!isAlphanumeric[text[k+6]]){	it->insertMap		(k, 6, M_BESSEL_J					);	k+=5;	continue;}	 }}}}
 																			 if(text[k+2]=='t'||text[k+2]=='T'){		 if(text[k+3]=='a'||text[k+3]=='A'){																																																																														if(exprBound||!isAlphanumeric[text[k+4]]){	it->insertMap		(k, 4, M_BETA					);	k+=3;	continue;}	   }}}
 							else if(text[k+1]=='r'				  ){		 if(text[k+2]=='e'				  ){		 if(text[k+3]=='a'				  ){		 if(text[k+4]=='k'&&!exprBound	  ){																																																																														it->insertMap		(k, 5, M_BREAK					);	k+=4;	continue;	  }}}}
 				else if(text[k+1]=='0'||text[k+1]=='1'||text[k+1]=='.')//binary
@@ -21985,7 +22664,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_changeText
 					continue;
 				}
 				break;
-			case 'B':			 if(text[k+1]=='e'||text[k+1]=='E'){		 if(text[k+2]=='s'||text[k+2]=='S'){		 if(text[k+3]=='s'||text[k+3]=='S'){		 if(text[k+4]=='e'||text[k+4]=='E'){		 if(text[k+5]=='l'||text[k+5]=='L'){																																																								if(exprBound||!isAlphanumeric[text[k+6]]){	it->insertMap		(k, 6, M_BESSEL					);	k+=5;	continue;}	 }}}}
+			case 'B':			 if(text[k+1]=='e'||text[k+1]=='E'){		 if(text[k+2]=='s'||text[k+2]=='S'){		 if(text[k+3]=='s'||text[k+3]=='S'){		 if(text[k+4]=='e'||text[k+4]=='E'){		 if(text[k+5]=='l'||text[k+5]=='L'){																																																								if(exprBound||!isAlphanumeric[text[k+6]]){	it->insertMap		(k, 6, M_BESSEL_J					);	k+=5;	continue;}	 }}}}
 																			 if(text[k+2]=='t'||text[k+2]=='T'){		 if(text[k+3]=='a'||text[k+3]=='A'){																																																																														if(exprBound||!isAlphanumeric[text[k+4]]){	it->insertMap		(k, 4, M_BETA					);	k+=3;	continue;}	   }}}
 				else if(text[k+1]=='0'||text[k+1]=='1'||text[k+1]=='.')//binary
 				{
@@ -22144,7 +22823,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_changeText
 																		else if(text[k+2]=='x'||text[k+2]=='X'){																																																																																									if(exprBound||!isAlphanumeric[text[k+3]]){	it->insertMap		(k, 3, M_MAX					);	k+=2;	continue;}	    }}
 							else if((text[k+1]=='i'||text[k+1]=='I')		 &&(text[k+2]=='n'||text[k+2]=='N')){																																																																																									if(exprBound||!isAlphanumeric[text[k+3]]){	it->insertMap		(k, 3, M_MIN					);	k+=2;	continue;}	     }	break;
 			case 'n':case 'N':	 if(text[k+1]=='a'||text[k+1]=='A'){		 if(text[k+2]=='n'||text[k+2]=='N'){																																																																																									if(exprBound||!isAlphanumeric[text[k+3]]){	it->insertMapData	(k, 3, 'R', _qnan				);	k+=2;	continue;}	    }}
-							else if(text[k+1]=='e'||text[k+1]=='E'){		 if(text[k+2]=='u'||text[k+2]=='U'){		 if(text[k+3]=='m'||text[k+3]=='M'){		 if(text[k+4]=='a'||text[k+4]=='A'){		 if(text[k+5]=='n'||text[k+5]=='N'){		 if(text[k+6]=='n'||text[k+6]=='N'){																																													if(exprBound||!isAlphanumeric[text[k+7]]){	it->insertMap		(k, 7, M_NEUMANN				);	k+=6;	continue;}	}}}}}}	break;
+							else if(text[k+1]=='e'||text[k+1]=='E'){		 if(text[k+2]=='u'||text[k+2]=='U'){		 if(text[k+3]=='m'||text[k+3]=='M'){		 if(text[k+4]=='a'||text[k+4]=='A'){		 if(text[k+5]=='n'||text[k+5]=='N'){		 if(text[k+6]=='n'||text[k+6]=='N'){																																													if(exprBound||!isAlphanumeric[text[k+7]]){	it->insertMap		(k, 7, M_BESSEL_Y				);	k+=6;	continue;}	}}}}}}	break;
 			case 'p':case 'P':	 if(text[k+1]=='e'||text[k+1]=='E'){		 if((text[k+2]=='r'||text[k+2]=='R')		 &&(text[k+3]=='m'||text[k+3]=='M')			 &&(text[k+4]=='u'||text[k+4]=='U')			 &&(text[k+5]=='t'||text[k+5]=='T')			 &&(text[k+6]=='a'||text[k+6]=='A')			 &&(text[k+7]=='t'||text[k+7]=='T')			 &&(text[k+8]=='i'||text[k+8]=='I')			 &&(text[k+9]=='o'||text[k+9]=='O')			 &&(text[k+10]=='n'||text[k+10]=='N')){	if(exprBound||!isAlphanumeric[text[k+11]]){	it->insertMap		(k, 11, M_PERMUTATION			);	k+=10;	continue;}		}}
 							else if(text[k+1]=='i'||text[k+1]=='I'){																																																																																																				if(exprBound||!isAlphanumeric[text[k+2]]){	it->insertMapData	(k, 2, 'R', G2::_pi				);	++k;	continue;}		 }
 							else if(text[k+1]=='o'||text[k+1]=='O'){		 if(text[k+2]=='l'||text[k+2]=='L'){		 if(text[k+3]=='a'||text[k+3]=='A'){		 if(text[k+4]=='r'||text[k+4]=='R'){																																																																			if(exprBound||!isAlphanumeric[text[k+5]]){	it->insertMap		(k, 5, M_POLAR					);	k+=4;	continue;}	  }}}}	break;
@@ -22194,9 +22873,9 @@ extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_changeText
 							else if(text[k+1]=='r'||text[k+1]=='R'){		 if(text[k+2]=='g'||text[k+2]=='G'){		 if(text[k+3]=='l'||text[k+3]=='L'){																																																																														if(exprBound||!isAlphanumeric[text[k+4]]){	it->insertMap		(k, 4, M_TENT					);	k+=3;	continue;}	   }}
 																		else if(text[k+2]=='w'||text[k+2]=='W'){		 if(text[k+3]=='v'||text[k+3]=='V'){																																																																														if(exprBound||!isAlphanumeric[text[k+4]]){	it->insertMap		(k, 4, M_TRWV					);	k+=3;	continue;}	   }}}
 							else if(exprBound)					   {																																																																																																															it->insertRVar		(k, 1, &text[k], 't'			);			continue;		 }	break;
-			case 'w':			 if(text[k+1]=='e'||text[k+1]=='E'){		 if(text[k+2]=='b'||text[k+2]=='B'){		 if(text[k+3]=='e'||text[k+3]=='E'){		 if(text[k+4]=='r'||text[k+4]=='R'){																																																																			if(exprBound||!isAlphanumeric[text[k+5]]){	it->insertMap		(k, 5, M_NEUMANN				);	k+=4;	continue;}	  }}}}
+			case 'w':			 if(text[k+1]=='e'||text[k+1]=='E'){		 if(text[k+2]=='b'||text[k+2]=='B'){		 if(text[k+3]=='e'||text[k+3]=='E'){		 if(text[k+4]=='r'||text[k+4]=='R'){																																																																			if(exprBound||!isAlphanumeric[text[k+5]]){	it->insertMap		(k, 5, M_BESSEL_Y				);	k+=4;	continue;}	  }}}}
 							else if(text[k+1]=='h'				  ){		 if(text[k+2]=='i'				  ){		 if(text[k+3]=='l'				  ){		 if(text[k+4]=='e'&&!exprBound	  ){																																																																														it->insertMap		(k, 5, M_WHILE					);	k+=4;	continue;	  }}}}	break;
-			case 'W':			 if((text[k+1]=='e'||text[k+1]=='E')		&&(text[k+2]=='b'||text[k+2]=='B')			&&(text[k+3]=='e'||text[k+3]=='E')			&&(text[k+4]=='r'||text[k+4]=='R')){																																																																			if(exprBound||!isAlphanumeric[text[k+5]]){	it->insertMap		(k, 5, M_NEUMANN				);	k+=4;	continue;}	     }
+			case 'W':			 if((text[k+1]=='e'||text[k+1]=='E')		&&(text[k+2]=='b'||text[k+2]=='B')			&&(text[k+3]=='e'||text[k+3]=='E')			&&(text[k+4]=='r'||text[k+4]=='R')){																																																																			if(exprBound||!isAlphanumeric[text[k+5]]){	it->insertMap		(k, 5, M_BESSEL_Y				);	k+=4;	continue;}	     }
 							else if(exprBound)					   {																																																																																																															it->insertCVar		(k, 5, &text[k]					);			continue;		 }	break;
 			case '\r':
 				k+=text[k+1]=='\n';

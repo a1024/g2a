@@ -533,6 +533,8 @@ struct		Font
 	}
 	void revert(){change(txtColor, bkColor, pixel_x, pixel_y);}
 };
+void 			generate_gl_texture();
+void 			display_gl_texture();
 void			display_texture(int x1, int x2, int y1, int y2, int *rgb, int txw, int txh, unsigned char alpha=0xFF);
 inline void 	print_if_error()//ill state API
 {

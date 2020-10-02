@@ -81,7 +81,7 @@ namespace		G2
 		M_LOGIC_AND,																//&&
 		M_LOGIC_XOR,																//##
 		M_LOGIC_OR,																	//||
-		M_LOGIC_CONDITION_ZERO,														//??
+		M_CONDITION_ZERO,														//??
 
 		M_S_EQUAL_ASSIGN, M_S_NOT_EQUAL,											//= _!=				not supported
 		M_S_LESS, M_S_LESS_EQUAL, M_S_GREATER, M_S_GREATER_EQUAL,					//= _< =< _> =>		not supported
@@ -106,7 +106,7 @@ namespace		G2
 		M_ATAN,
 		M_LOG,
 		M_BETA, M_GAMMA, M_PERMUTATION, M_COMBINATION,
-		M_BESSEL, M_NEUMANN, M_HANKEL1,
+		M_BESSEL_J, M_BESSEL_Y, M_HANKEL1,
 		M_SQWV, M_TRWV, M_SAW, M_MIN, M_MAX, M_HYPOT, M_MANDELBROT,
 
 		M_USER_FUNCTION
@@ -125,6 +125,78 @@ namespace		G2
 					_ln2	=::log(2.),			_ln8=::log(8.),		_ln10	=::log(10.),	_sqrt2=::sqrt(2.),	_sqrt3=::sqrt(3.),	_sqrt5=::sqrt(5.),
 					_pi_2=_pi*0.5,	_2pi=2*_pi,	_sqrt_2pi=::sqrt(_2pi), _ln_pi=::log(_pi),	_ln_sqrt_2pi=::log(_sqrt_2pi),	_1_2pi=1/_2pi, _1_pi=1/_pi,
 					_third=1./3;
+}
+enum			InstructionSignature
+{
+	SIG_NOOP,
+
+	SIG_R_R,	SIG_C_C,	SIG_Q_Q,
+
+	SIG_R_RR,	SIG_C_RC,	SIG_Q_RQ,
+	SIG_C_CR,	SIG_C_CC,	SIG_Q_CQ,
+	SIG_Q_QR,	SIG_Q_QC,	SIG_Q_QQ,
+
+	SIG_C_R,	SIG_C_Q,
+	SIG_R_C,	SIG_R_Q,
+
+	SIG_C_RR,
+
+				SIG_R_RC,	SIG_R_RQ,
+	SIG_R_CR,	SIG_R_CC,	SIG_R_CQ,
+	SIG_R_QR,	SIG_R_QC,	SIG_R_QQ,
+
+	SIG_C_QC,
+
+	SIG_INLINE_IF,
+
+	SIG_CALL='c',
+	SIG_BIF='b',
+	SIG_BIN='B',
+	SIG_JUMP='j',
+	SIG_RETURN='r',
+};
+int 			maximum(int a, int b, int c)
+{
+	int c2=c<<1, temp=a+b+abs(a-b);
+	return (temp+c+abs(temp+c))>>2;
+}
+char 			returnMathSet_from_signature(int signature, char op1_ms, char op2_ms=0, char op3_ms=0)
+{
+	switch(signature)
+	{
+	case SIG_R_R:
+	case SIG_R_RR:
+	case SIG_R_C:
+	case SIG_R_Q:
+	case SIG_R_RC:
+	case SIG_R_RQ:
+	case SIG_R_CR:
+	case SIG_R_CC:
+	case SIG_R_CQ:
+	case SIG_R_QR:
+	case SIG_R_QC:
+	case SIG_R_QQ:
+		return 'R';
+	case SIG_C_C:
+	case SIG_C_RC:
+	case SIG_C_CR:
+	case SIG_C_CC:
+	case SIG_C_R:
+	case SIG_C_Q:
+	case SIG_C_RR:
+	case SIG_C_QC:
+		return 'c';
+	case SIG_Q_Q:
+	case SIG_Q_RQ:
+	case SIG_Q_CQ:
+	case SIG_Q_QR:
+	case SIG_Q_QC:
+	case SIG_Q_QQ:
+		return 'q';
+	case SIG_INLINE_IF:
+		return maximum(op1_ms, op2_ms, op3_ms);
+	}
+	return 0;
 }
 struct			Map
 {
@@ -1028,7 +1100,7 @@ struct			DiscontinuityFunction
 	{disc_out=disc_in=false;}
 
 	//discontinuity takes unary function argument or any function's output
-	void operator()(bool (*d)(Value const&, Value const&), bool disc_in)
+	void operator()(bool (*d)(Value const&, Value const&), bool disc_in=true)
 	{disc_out=!(this->disc_in=disc_in), ud_i=d;}
 
 	//discontinuity takes binary function arguments
@@ -1153,6 +1225,7 @@ struct			Instruction
 	//'j' jump						i=result
 	//'r' return					data[result]
 	char type;
+	int cl_idx, cl_disc_idx;
 
 	int result, op1, op2, op3;
 	char r_ms, op1_ms, op2_ms, op3_ms;
@@ -1196,23 +1269,27 @@ struct			Instruction
 	std::vector<int> args;//arg positions
 
 	//call
-	Instruction(int function, std::vector<int> const &args, int n_result){type='c', op1=function, this->args=args, result=n_result;}
+	Instruction(int function, std::vector<int> const &args, int n_result):type('c'), op1(function), args(std::move(args)), result(n_result),
+		cl_idx(0), cl_disc_idx(0), op2(-1), op3(-1), r_ms(0), op1_ms(0), op2_ms(0), op3_ms(0), r_r(nullptr){}
 
-	Instruction(char type, int n_condition){this->type=type, op1=n_condition;}//branch:		'b' branch if		'B' branch if not		op1 condition, result dest
-	Instruction(){type='j';}//jump		result dest
-	Instruction(int n_result){type='r', result=n_result;}//return		result result
+	Instruction(char type, int n_condition):type(type), op1(n_condition),//branch:		'b' branch if		'B' branch if not		op1 condition, result dest
+		cl_idx(0), cl_disc_idx(0), result(0), op2(-1), op3(-1), r_ms(0), op1_ms(0), op2_ms(0), op3_ms(0), r_r(nullptr){}
+	Instruction():type('j'),//jump		result dest
+		cl_idx(0), cl_disc_idx(0), result(0), op1(-1), op2(-1), op3(-1), r_ms(0), op1_ms(0), op2_ms(0), op3_ms(0), r_r(nullptr){}
+	Instruction(int n_result):type('r'), result(n_result),//return		result result
+		cl_idx(0), cl_disc_idx(0), op1(-1), op2(-1), op3(-1), r_ms(0), op1_ms(0), op2_ms(0), op3_ms(0), r_r(nullptr){}
 
 	//unary function
-	Instruction(FunctionPointer &fp, int op1, char op1_ms, int result, char r_ms, DiscontinuityFunction &d):
-			r_r(fp.r_r), d(d), type(fp.type), op1(op1), op1_ms(op1_ms), op2(0), op2_ms(0), op3(0), op3_ms(0), result(result), r_ms(r_ms){}
+	Instruction(FunctionPointer &fp, int op1, char op1_ms, int result, char r_ms, DiscontinuityFunction &d, int cl_idx, int cl_disc_idx):
+		r_r(fp.r_r), d(d), type(fp.type), op1(op1), op1_ms(op1_ms), op2(-1), op2_ms(0), op3(-1), op3_ms(0), result(result), r_ms(r_ms), cl_idx(cl_idx), cl_disc_idx(cl_disc_idx){}
 
 	//binary function
-	Instruction(FunctionPointer &fp, int op1, char op1_ms, int op2, char op2_ms, int result, char r_ms, DiscontinuityFunction &d):
-			r_r(fp.r_r), d(d), type(fp.type), op1(op1), op1_ms(op1_ms), op2(op2), op2_ms(op2_ms), op3(0), op3_ms(0), result(result), r_ms(r_ms){}
+	Instruction(FunctionPointer &fp, int op1, char op1_ms, int op2, char op2_ms, int result, char r_ms, DiscontinuityFunction &d, int cl_idx, int cl_disc_idx):
+		r_r(fp.r_r), d(d), type(fp.type), op1(op1), op1_ms(op1_ms), op2(op2), op2_ms(op2_ms), op3(-1), op3_ms(0), result(result), r_ms(r_ms), cl_idx(cl_idx), cl_disc_idx(cl_disc_idx){}
 
 	//inline if
-	Instruction(int op1, char op1_ms, int op2, char op2_ms, int op3, char op3_ms, int result, char r_ms, DiscontinuityFunction &d):
-			r_r(0), d(d), type(27), op1(op1), op1_ms(op1_ms), op2(op2), op2_ms(op2_ms), op3(op3), op3_ms(op3_ms), result(result), r_ms(r_ms){}
+	Instruction(int op1, char op1_ms, int op2, char op2_ms, int op3, char op3_ms, int result, char r_ms, DiscontinuityFunction &d, int cl_idx, int cl_disc_idx):
+		r_r(0), d(d), type(27), op1(op1), op1_ms(op1_ms), op2(op2), op2_ms(op2_ms), op3(op3), op3_ms(op3_ms), result(result), r_ms(r_ms), cl_idx(cl_idx), cl_disc_idx(cl_disc_idx){}
 };
 struct			Variable
 {
