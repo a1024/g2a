@@ -202,6 +202,8 @@ enum 			CLKernelIdx
 	N_KERNELS,
 };
 void 			cl_initiate();
-void 			solve_c2d(Expression const &ex, double VX, double DX, double VY, double DY, int Xplaces, int Yplaces, double time);
-void 			show_c2d();
+extern int 		*rgb;
+void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, double DY, int Xplaces, int Yplaces, double time, unsigned gl_texture);
+void			cl_finish();
+//void 			show_c2d();
 #endif //GRAPHER_2_G2_CL_H

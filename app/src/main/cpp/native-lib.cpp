@@ -35,9 +35,9 @@ int			w, h, X0, Y0;
 int			nthreads=0;//
 static const int	g_buf_size=1024;//maximum line length
 static char			g_buf[g_buf_size]={0};
+#include	"g2_common.h"
 #include	"GLESAPI.h"
 #include	"g2_cl.h"
-#include	"g2_common.h"
 
 	#define		DEBUG
 //	#define		SELECTION_FOLLOW_CURSOR_EXACT
@@ -47,16 +47,6 @@ double inv_sqrt(double x)
 	double t0;
 	(long long&)t0=0x5FE6EC85E7DE30DA-((long long&)x>>1);
 	return t0*(1.5-.5*x*t0*t0);
-}
-int floor_log2(unsigned n)
-{
-	int logn=0;
-	int sh=(n>=1<<16)<<4;	logn+=sh, n>>=sh;
-		sh=(n>=1<< 8)<<3;	logn+=sh, n>>=sh;
-		sh=(n>=1<< 4)<<2;	logn+=sh, n>>=sh;
-		sh=(n>=1<< 2)<<1;	logn+=sh, n>>=sh;
-		sh= n>=1<< 1;		logn+=sh;
-	return logn;
 }
 int floor_log10(double x)
 {
@@ -161,46 +151,6 @@ bool		_2d_drag_graph_not_window=false, _dangerous_code=false, _3d_stretch_move_c
 			commasInNumbers=false, commentIncompleteScope=true, nestedComments=false,
 			showBenchmark=true, showLastModeOnIdle=true, function_timeout=true, contextHelp=false;
 int			cursorB, cursorEx, prevCursorEx=0;
-double		now_seconds()
-{//https://stackoverflow.com/questions/3832097/how-to-get-the-current-time-in-native-android-code/14311780
-	static timespec ts;
-	clock_gettime(CLOCK_REALTIME, &ts);
-	return ts.tv_sec+1e-9*ts.tv_nsec;
-}
-typedef std::pair<std::string, double> ProfInfo;
-//ProfInfo	longest;
-std::vector<ProfInfo> prof;
-double prof_t1=0;
-void prof_start(){prof_t1=now_seconds();}
-void prof_add(const char *label, int divisor=1)
-{
-	double t2=now_seconds();
-	prof.push_back(ProfInfo(std::string(label), 1000.*(t2-prof_t1)));
-	prof_t1=now_seconds();
-}
-void prof_print(int y=0)
-{
-	Font font;
-	Font::change(0xFF000000, 0xFFFFFFFF, preferred_fontH);
-//	Font::change(0xFF000000, 0xFFFFFFFF, fontH);
-	int xpos=w-400, xpos2=w-200;
-	int k=0;
-	for(int kEnd=prof.size();k<kEnd;++k)
-	{
-		auto &p=prof[k];
-		//if(longest.second<p.second)
-		//	longest=p;
-		int ypos=y+int(k*fontH);
-		GUIPrint(xpos, ypos, p.first.c_str());
-		GUIPrint(xpos2, ypos, "%lf", p.second);
-	//	GUIPrint(xpos2, ypos, "%g", p.second);
-	}
-	//GUIPrint(xpos, y+int(k*fontH), longest.first.c_str());
-	//GUIPrint(xpos2, y+int(k*fontH), "%lf", longest.second);
-	font.revert();
-	//copy to clipboard?
-	prof.clear();
-}
 
 std::vector<Expression> expr(1), userFunctionDefinitions(1);
 
@@ -18605,6 +18555,7 @@ namespace	modes
 
 		void draw()
 		{
+			static unsigned gl_texture=0;
 			int full_solve=0;
 			double DY=DX*h/(w*AR_Y);
 			if(DY<=0)
@@ -18614,7 +18565,12 @@ namespace	modes
 				bool changed=false;
 				if(toSolve)
 				{
-#if 1
+					if(!paused)
+						solver.synchronize();
+					Xplaces=w, Yplaces=h;
+					generate_glcl_texture(gl_texture, Xplaces, Yplaces);
+					cl_solve_c2d(ex, VX, DX, VY, DY, Xplaces, Yplaces, solver.T, gl_texture);//TODO: partial solve
+#if 0
 					if(!operations.size()&&shiftOnly==1&&abs(Xoffset)<Xplaces&&abs(Yoffset)<Yplaces)//C2D DRAG IS BROKEN
 					{
 						if(Xoffset||Yoffset)
@@ -18726,7 +18682,10 @@ namespace	modes
 					doContour(cursorEx, Xs, -DZ/2, +DZ/2, Zstep, 10);
 				}
 			}
-			display_texture(0, w, 0, h, solver.rgb, w, h);//draw the solution
+			cl_finish();
+		//	display_texture(0, w, 0, h, rgb, w, h);//DEBUG
+			display_gl_texture(gl_texture);//draw the solution
+		//	display_texture(0, w, 0, h, solver.rgb, w, h);
 		//	if(!contourOnly)
 //			for(int ky=0;ky<h;++ky)//Xplaces=w+(w&1)
 //				std::copy(solver.rgb+Xplaces*ky, solver.rgb+Xplaces*ky+w, rgb+w*ky);

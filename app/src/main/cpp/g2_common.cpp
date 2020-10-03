@@ -18,6 +18,7 @@
 // Created by MSI on 10/1/2020.
 //
 #include"g2_common.h"
+#include"GLESAPI.h"
 
 char			first_error_msg[e_msg_size]={0}, latest_error_msg[e_msg_size]={0};
 static char 	g_buf[e_msg_size]={0};
@@ -28,10 +29,49 @@ void 			log_error(const char *file, int line, const char *format, ...)
 	va_start(args, format);
 	vsnprintf(g_buf, e_msg_size, format, args);
 	va_end(args);
-	int length=snprintf(buf, e_msg_size, "%s(%d): %s", file, line, g_buf);
+	int size=strlen(file);
+	int start=size-1;
+	for(;start>=0&&file[start]!='/'&&file[start]!='\\';--start);
+	++start;
+//	int length=snprintf(buf, e_msg_size, "%s (%d)%s", g_buf, line, file+start);//TODO: implement 'drawtext'
+//	int length=snprintf(buf, e_msg_size, "%s\n%s(%d)", g_buf, file, line);
+//	int length=snprintf(buf, e_msg_size, "%s(%d):\n\t%s", file, line, g_buf);
+	int length=snprintf(buf, e_msg_size, "%s(%d): %s", file+start, line, g_buf);
 	if(buf!=latest_error_msg)
 		memcpy(latest_error_msg, first_error_msg, length);
 	LOGE("%s", latest_error_msg);
+}
+std::vector<ProfInfo> prof;
+double prof_t1=0;
+void prof_start(){prof_t1=now_seconds();}
+void prof_add(const char *label, int divisor)
+{
+	double t2=now_seconds();
+	prof.push_back(ProfInfo(std::string(label), 1000.*(t2-prof_t1)));
+	prof_t1=now_seconds();
+}
+void prof_print(int y)
+{
+	Font font;
+	Font::change(0xFF000000, 0xFFFFFFFF, preferred_fontH);
+//	Font::change(0xFF000000, 0xFFFFFFFF, fontH);
+	int xpos=w-400, xpos2=w-200;
+	int k=0;
+	for(int kEnd=prof.size();k<kEnd;++k)
+	{
+		auto &p=prof[k];
+		//if(longest.second<p.second)
+		//	longest=p;
+		int ypos=y+int(k*fontH);
+		GUIPrint(xpos, ypos, p.first.c_str());
+		GUIPrint(xpos2, ypos, "%lf", p.second);
+	//	GUIPrint(xpos2, ypos, "%g", p.second);
+	}
+	//GUIPrint(xpos, y+int(k*fontH), longest.first.c_str());
+	//GUIPrint(xpos2, y+int(k*fontH), "%lf", longest.second);
+	font.revert();
+	//copy to clipboard?
+	prof.clear();
 }
 const double	_HUGE=1./0;
 void			utf16ToAscii(unsigned short const *utf16, int len, std::string &ascii)

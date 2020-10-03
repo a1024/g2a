@@ -35,7 +35,30 @@ extern char		first_error_msg[e_msg_size], latest_error_msg[e_msg_size];
 void 			log_error(const char *file, int line, const char *format, ...);
 #define 		LOGERROR(...)				log_error(__FILE__, __LINE__, __VA_ARGS__)
 #define 		LOGERROR_LINE(LINE, ...)	log_error(__FILE__, LINE, __VA_ARGS__)
+inline double	now_seconds()
+{//https://stackoverflow.com/questions/3832097/how-to-get-the-current-time-in-native-android-code/14311780
+	static timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	return ts.tv_sec+1e-9*ts.tv_nsec;
+}
+typedef std::pair<std::string, double> ProfInfo;
+//ProfInfo	longest;
+extern std::vector<ProfInfo> prof;
+extern double prof_t1;
+void prof_start();
+void prof_add(const char *label, int divisor=1);
+void prof_print(int y=0);
 extern const double _HUGE;
+inline int		floor_log2(unsigned n)
+{
+	int logn=0;
+	int sh=(n>=1<<16)<<4;	logn+=sh, n>>=sh;
+		sh=(n>=1<< 8)<<3;	logn+=sh, n>>=sh;
+		sh=(n>=1<< 4)<<2;	logn+=sh, n>>=sh;
+		sh=(n>=1<< 2)<<1;	logn+=sh, n>>=sh;
+		sh= n>=1<< 1;		logn+=sh;
+	return logn;
+}
 void			utf16ToAscii(unsigned short const *utf16, int len, std::string &ascii);
 namespace		G2
 {
@@ -155,12 +178,12 @@ enum			InstructionSignature
 	SIG_JUMP='j',
 	SIG_RETURN='r',
 };
-int 			maximum(int a, int b, int c)
+inline int 		maximum(int a, int b, int c)
 {
 	int c2=c<<1, temp=a+b+abs(a-b);
 	return (temp+c+abs(temp+c))>>2;
 }
-char 			returnMathSet_from_signature(int signature, char op1_ms, char op2_ms=0, char op3_ms=0)
+inline char 	returnMathSet_from_signature(int signature, char op1_ms, char op2_ms=0, char op3_ms=0)
 {
 	switch(signature)
 	{
