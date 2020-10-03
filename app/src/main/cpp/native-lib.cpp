@@ -376,17 +376,15 @@ std::vector<std::pair<int, int>> allComments;
 struct		Performance
 {
 //	static int nCalls, odd;
-	static timespec t1;
 	static double d_t1;
 //	static double best;
-	Performance(){clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);}
+	Performance(){d_t1=now_seconds();}
 	Performance(int x, int y)
 	{
 	//	++nCalls;
 
 		double d_t0=d_t1;
-		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
-		d_t1=t1.tv_sec+1e-9*t1.tv_nsec;
+		d_t1=now_seconds();
 	//	double current=1000.*(d_t1-d_t0);
 	//
 	//	if(nCalls==200)
@@ -397,12 +395,12 @@ struct		Performance
 		Font::change(0xFF000000, 0xFFFFFFFF, preferred_fontH);
 
 		double diff=d_t1-d_t0;
-		print(x, y-preferred_fontH, "fps=%f, T=%f", 1/diff, diff);
+		print(x, y-preferred_fontH, "fps=%.2f, T=%fms", 1/diff, 1000*diff);
+	//	print(x, y-preferred_fontH, "fps=%f, T=%f", 1/diff, diff);
 		//print(x, y-preferred_fontH, odd?"[%.10fms], %.10fms, %d":"%.10fms, %.10fms, %d", best, current, nCalls);
 	}
 };
 //int				Performance::nCalls=0, Performance::odd=0;
-timespec		Performance::t1={0, 0};
 double			Performance::d_t1=0;
 //double			Performance::best=_HUGE;
 
@@ -10896,12 +10894,12 @@ namespace	modes
 		//	ndr_to_clipboard_2d((double*)ex.n[kn].r.p, Xplaces, Yplaces);//
 	}
 
-	inline double current_time()
-	{
-		static timespec t1={0, 0};
-		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
-		return t1.tv_sec+1e-9*t1.tv_nsec;
-	}
+	//inline double current_time()
+	//{
+	//	static timespec t1={0, 0};
+	//	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
+	//	return t1.tv_sec+1e-9*t1.tv_nsec;
+	//}
 	class		Solve
 	{
 	public:
@@ -10909,32 +10907,10 @@ namespace	modes
 			Tstart,//current time
 			T_elapsed,//time from previous call to sync
 			T;//time from count start
-		void reset()
-		{
-			Tstart=current_time();
-			T_elapsed=0;
-//			LARGE_INTEGER li;
-//			QueryPerformanceCounter(&li);
-//			Tstart=li.QuadPart;
-//			T_elapsed=0;
-		}
-		void synchronize()
-		{
-			T=T_elapsed+current_time()-Tstart;
-//			LARGE_INTEGER li;
-//			QueryPerformanceFrequency(&li);
-//			long long freq=li.QuadPart;
-//			QueryPerformanceCounter(&li);
-//			T=T_elapsed+double(li.QuadPart-Tstart)/freq;
-		}
+		void reset(){Tstart=now_seconds(), T_elapsed=0;}
+		void synchronize(){T=T_elapsed+now_seconds()-Tstart;}
 		void pause(){T_elapsed=T;}
-		void resume()
-		{
-			Tstart=current_time();
-//			LARGE_INTEGER li;
-//			QueryPerformanceCounter(&li);
-//			Tstart=li.QuadPart;
-		}
+		void resume(){Tstart=now_seconds();}
 	};
 	class		Solve_0D:public Solve
 	{
@@ -18687,7 +18663,10 @@ namespace	modes
 		//	read_gl_texture(gl_texture, w, h, rgb);//DEBUG correct
 		//	debug_printrgb(rgb, w, h, 512);
 		//	display_texture(0, w, 0, h, rgb, w, h);//DEBUG correct
-			display_gl_texture(gl_texture);//draw the solution		GREYSCALE
+			if(cl_gl_interop)
+				display_gl_texture(gl_texture);//draw the solution
+			else
+				display_texture(0, w, 0, h, rgb, w, h);
 		//	display_texture(0, w, 0, h, solver.rgb, w, h);
 		//	if(!contourOnly)
 //			for(int ky=0;ky<h;++ky)//Xplaces=w+(w&1)
@@ -21700,20 +21679,15 @@ void render()
 //	BitBlt(ghDC, 0, 0, w, h, ghMemDC, 0, 0, SRCCOPY);
 //#endif
 }
-extern "C" JNIEXPORT jstring JNICALL Java_com_example_grapher2_GL2JNILib_init(JNIEnv *env, jclass obj,  jint w, jint h, jint hard_reset)
-{//called on start & resume, hard_reset: w=h=0
+extern "C" JNIEXPORT jstring JNICALL Java_com_example_grapher2_GL2JNILib_init(JNIEnv *env, jclass obj,  jint w, jint h, jint extra_info)
+{//called on start & resume
 	++init_counter;
-	if(hard_reset)
-		::hard_reset=1;
-	else
-	{
-		::w=w, ::h=h, X0=w>>1, Y0=h>>1, landscape=w>h;
-		env->GetJavaVM(&jvm);
-	//	reset_button.set(w>>1, 0, w>>1, h/10, "Reset", 38);
-		//ButtonReset::set(w>>1, 0, w>>1, h/10);
-		set_font_size(10);
-		gl_initiate();
-	}
+	::w=w, ::h=h, X0=w>>1, Y0=h>>1, landscape=w>h;
+	env->GetJavaVM(&jvm);
+//	reset_button.set(w>>1, 0, w>>1, h/10, "Reset", 38);
+	//ButtonReset::set(w>>1, 0, w>>1, h/10);
+	set_font_size(10);
+	gl_initiate();
 	cl_initiate();
 	//printGLString("Version", GL_VERSION);
 	//printGLString("Vendor", GL_VENDOR);
@@ -21740,7 +21714,6 @@ extern "C" JNIEXPORT jstring JNICALL Java_com_example_grapher2_GL2JNILib_init(JN
 	//}
 	//glViewport(0, 0, w, h);
 	//checkGlError("glViewport");
-	::hard_reset=0;
 	return env->NewString((const unsigned short*)L"", 0);
 }
 extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_step(JNIEnv *env, jclass obj, jint cursor)

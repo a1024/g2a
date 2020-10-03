@@ -20,7 +20,7 @@
 #include"g2_common.h"
 #include"GLESAPI.h"
 
-int 			hard_reset=0;
+//int 			hard_reset=0;
 char			first_error_msg[e_msg_size]={0}, latest_error_msg[e_msg_size]={0};
 static char 	g_buf[e_msg_size]={0};
 void 			log_error(const char *file, int line, const char *format, ...)

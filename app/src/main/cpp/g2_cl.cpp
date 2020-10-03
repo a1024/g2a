@@ -29,24 +29,13 @@
 #include		"GLESAPI.h"
 const int		g_buf_size=1048576;
 static char		g_buf[g_buf_size]={0};//
-enum			OpenCL_state{CL_NOTHING, CL_API_LOADED, CL_CONTEXT_CREATED, CL_PROGRAMS_COMPILED};
+enum			OpenCL_state{CL_NOTHING, CL_API_LOADED, CL_CONTEXT_CREATED, CL_PROGRAMS_COMPILED, CL_KERNELS_LOADED};
 int				OCL_state=CL_NOTHING;
-//bool			OCL_API_not_loaded=true, context_valid=false, programs_compiled=false;
-void 			p_check(void *p, int line, const char *func_name)
-{
-	if(!p)
-	{
-		LOGERROR_LINE(line, "Error: %s is 0x%08llx", func_name, (long long)p);
-	//	LOGE("Line %d error: %s is %lld.", line, func_name, (long long)p);
-		OCL_state=CL_NOTHING;
-	//	OCL_API_not_loaded=true;
-	//	abort();
-	}
-}
-#define 		P_CHECK(pointer)	p_check(pointer, __LINE__, #pointer)
+bool			cl_gl_interop=false;
 const char*		clerr2str(int error)
 {
-#define 			EC(x)	case x:a=(const char*)#x;break
+#define 			EC(x)		case x:a=(const char*)#x;break
+#define 			EC2(n, x)	case n:a=(const char*)#x;break
 	const char *a=nullptr;
 	switch(error)
 	{
@@ -63,17 +52,17 @@ const char*		clerr2str(int error)
 	EC(CL_IMAGE_FORMAT_NOT_SUPPORTED);
 	EC(CL_BUILD_PROGRAM_FAILURE);
 	EC(CL_MAP_FAILURE);
-#ifdef CL_VERSION_1_1
+//#ifdef CL_VERSION_1_1
 	EC(CL_MISALIGNED_SUB_BUFFER_OFFSET);
 	EC(CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST);
-#endif
-#ifdef CL_VERSION_1_2
+//#endif
+//#ifdef CL_VERSION_1_2
 	EC(CL_COMPILE_PROGRAM_FAILURE);
 	EC(CL_LINKER_NOT_AVAILABLE);
 	EC(CL_LINK_PROGRAM_FAILURE);
 	EC(CL_DEVICE_PARTITION_FAILED);
 	EC(CL_KERNEL_ARG_INFO_NOT_AVAILABLE);
-#endif
+//#endif
 	EC(CL_INVALID_VALUE);
 	EC(CL_INVALID_DEVICE_TYPE);
 	EC(CL_INVALID_PLATFORM);
@@ -108,48 +97,69 @@ const char*		clerr2str(int error)
 	EC(CL_INVALID_BUFFER_SIZE);
 	EC(CL_INVALID_MIP_LEVEL);
 	EC(CL_INVALID_GLOBAL_WORK_SIZE);
-#ifdef CL_VERSION_1_1
+//#ifdef CL_VERSION_1_1
 	EC(CL_INVALID_PROPERTY);
-#endif
-#ifdef CL_VERSION_1_2
+//#endif
+//#ifdef CL_VERSION_1_2
 	EC(CL_INVALID_IMAGE_DESCRIPTOR);
 	EC(CL_INVALID_COMPILER_OPTIONS);
 	EC(CL_INVALID_LINKER_OPTIONS);
 	EC(CL_INVALID_DEVICE_PARTITION_COUNT);
-#endif
-#ifdef CL_VERSION_2_0
-	EC(CL_INVALID_PIPE_SIZE);
-	EC(CL_INVALID_DEVICE_QUEUE);
-#endif
-#ifdef CL_VERSION_2_2
-	EC(CL_INVALID_SPEC_ID);
-	EC(CL_MAX_SIZE_RESTRICTION_EXCEEDED);
-#endif
+//#endif
+//#ifdef CL_VERSION_2_0
+	EC2(-69, CL_INVALID_PIPE_SIZE);
+	EC2(-70, CL_INVALID_DEVICE_QUEUE);
+//#endif
+//#ifdef CL_VERSION_2_2
+	EC2(-71, CL_INVALID_SPEC_ID);
+	EC2(-72, CL_MAX_SIZE_RESTRICTION_EXCEEDED);
+//#endif
+	EC(CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR);
+	EC(CL_PLATFORM_NOT_FOUND_KHR);
+	EC2(-1002, CL_INVALID_D3D10_DEVICE_KHR);
+	EC2(-1003, CL_INVALID_D3D10_RESOURCE_KHR);
+	EC2(-1004, CL_D3D10_RESOURCE_ALREADY_ACQUIRED_KHR);
+	EC2(-1005, CL_D3D10_RESOURCE_NOT_ACQUIRED_KHR);
+	EC2(-1006, CL_INVALID_D3D11_DEVICE_KHR);
+	EC2(-1007, CL_INVALID_D3D11_RESOURCE_KHR);
+	EC2(-1008, CL_D3D11_RESOURCE_ALREADY_ACQUIRED_KHR);
+	EC2(-1009, CL_D3D11_RESOURCE_NOT_ACQUIRED_KHR);
+	EC2(-1010, CL_INVALID_D3D9_DEVICE_NV_or_CL_INVALID_DX9_DEVICE_INTEL);
+	EC2(-1011, CL_INVALID_D3D9_RESOURCE_NV_or_CL_INVALID_DX9_RESOURCE_INTEL);
+	EC2(-1012, CL_D3D9_RESOURCE_ALREADY_ACQUIRED_NV_or_CL_DX9_RESOURCE_ALREADY_ACQUIRED_INTEL);
+	EC2(-1013, CL_D3D9_RESOURCE_NOT_ACQUIRED_NV_or_CL_DX9_RESOURCE_NOT_ACQUIRED_INTEL);
+	EC2(-1092, CL_EGL_RESOURCE_NOT_ACQUIRED_KHR);
+	EC2(-1093, CL_INVALID_EGL_OBJECT_KHR);
+	EC2(-1094, CL_INVALID_ACCELERATOR_INTEL);
+	EC2(-1095, CL_INVALID_ACCELERATOR_TYPE_INTEL);
+	EC2(-1096, CL_INVALID_ACCELERATOR_DESCRIPTOR_INTEL);
+	EC2(-1097, CL_ACCELERATOR_TYPE_NOT_SUPPORTED_INTEL);
+	EC2(-1098, CL_INVALID_VA_API_MEDIA_ADAPTER_INTEL);
+	EC2(-1099, CL_INVALID_VA_API_MEDIA_SURFACE_INTEL);
+	EC2(-1101, CL_VA_API_MEDIA_SURFACE_NOT_ACQUIRED_INTEL);
+	default:
+		a="???";
+		break;
 	}
 	return a;
 #undef				EC
 }
-//void			cl_error(const char *msg, int line)
-//{
-//	if(!cl_error_msg[0])
-//		snprintf(cl_error_msg, cl_e_size, "Line %d: %s", line, msg);
-//}
-//#define 		CL_ERROR(msg)	cl_error(msg, __LINE__)
 void			cl_check(int err, int line)
 {
 	if(err)
 		LOGERROR_LINE(line, "CL Error %d: %s", err, clerr2str(err));
 }
 #define 		CL_CHECK(error)	cl_check(error, __LINE__)
-//void 			cl_check2(int error, int line)
-//{//check2 overwrites error every time
-//	if(error)
-//	{
-//		snprintf(cl_error_msg, cl_e_size, "Line %d error %d: %s", line, error, clerr2str(error));
-//		LOGE("%s", cl_error_msg);
-//	}
-//}
-//#define 		CL_CHECK2(error)	cl_check2(error, __LINE__)
+void 			p_check(void *p, int line, const char *func_name)
+{
+	if(!p)
+	{
+		LOGERROR_LINE(line, "Error: %s is 0x%08llx", func_name, (long long)p);
+	//	LOGE("Line %d error: %s is %lld.", line, func_name, (long long)p);
+		OCL_state=CL_NOTHING;
+	}
+}
+//#define 		P_CHECK(pointer)	p_check(pointer, __LINE__, #pointer)
 void			LOGE_long(const char *msg, int length)
 {
 	const int quota=1000;
@@ -167,6 +177,8 @@ DECL_CL_FUNC(clCreateCommandQueue);
 DECL_CL_FUNC(clCreateProgramWithSource);
 DECL_CL_FUNC(clBuildProgram);
 DECL_CL_FUNC(clGetProgramBuildInfo);
+DECL_CL_FUNC(clGetProgramInfo);
+DECL_CL_FUNC(clCreateProgramWithBinary);
 DECL_CL_FUNC(clCreateBuffer);
 DECL_CL_FUNC(clCreateKernel);
 DECL_CL_FUNC(clSetKernelArg);
@@ -184,7 +196,6 @@ void			*hOpenCL=nullptr;
 void 			load_OpenCL_API()
 {
 	if(OCL_state==CL_NOTHING)
-//	if(OCL_API_not_loaded)
 	{
 		static const char *opencl_so_paths[]=//https://stackoverflow.com/questions/31611790/using-opencl-in-the-new-android-studio
 		{
@@ -211,12 +222,7 @@ void 			load_OpenCL_API()
 		else
 		{
 			OCL_state=CL_API_LOADED;
-		//	OCL_API_not_loaded=false;
-#ifdef RELEASE
-#define		GET_CL_FUNC(handle, clFunc)		p_##clFunc=(decltype(p_##clFunc))dlsym(handle, #clFunc)
-#else
 #define		GET_CL_FUNC(handle, clFunc)		p_##clFunc=(decltype(p_##clFunc))dlsym(handle, #clFunc), p_check((void*)p_##clFunc, __LINE__, #clFunc)
-#endif
 			const int cl_api_init_start=__LINE__;
 			GET_CL_FUNC(hOpenCL, clGetPlatformIDs);
 			GET_CL_FUNC(hOpenCL, clGetDeviceIDs);
@@ -227,6 +233,8 @@ void 			load_OpenCL_API()
 			GET_CL_FUNC(hOpenCL, clCreateProgramWithSource);
 			GET_CL_FUNC(hOpenCL, clBuildProgram);
 			GET_CL_FUNC(hOpenCL, clGetProgramBuildInfo);
+			GET_CL_FUNC(hOpenCL, clGetProgramInfo);
+			GET_CL_FUNC(hOpenCL, clCreateProgramWithBinary);
 			GET_CL_FUNC(hOpenCL, clCreateBuffer);
 			GET_CL_FUNC(hOpenCL, clCreateKernel);
 			GET_CL_FUNC(hOpenCL, clSetKernelArg);
@@ -251,7 +259,6 @@ void 			unload_OpenCL_API()
 	{
 		dlclose(hOpenCL), hOpenCL=nullptr;
 		OCL_state=CL_NOTHING;
-	//	OCL_API_not_loaded=true;
 	}
 }
 
@@ -3166,10 +3173,12 @@ G2_Q_Q(assign){IDX; float4 ret=VEC4(x); RET_Q;}
 __kernel void initialize_parameter(__global const int *size, __global float *buffer, __global const float *args)
 {
 	IDX;
+//	uint idx=size[0]*(size[1]*get_global_id(2)+get_global_id(1))+get_global_id(0);
 	//args[0]: start
 	//args[1]: ratio
-	//args[2]: dimension (int) 0:x, 1:y, 2:z
-	buffer[idx]=args[0]+args[1]*get_global_id(((int*)args)[2]);
+	//args[2]: dimension 0:x, 1:y, 2:z
+	buffer[idx]=args[0]+args[1]*get_global_id((int)args[2]);
+//	buffer[idx]=args[0]+args[1]*get_global_id(((int*)args)[2]);
 }
 
 #define		COS_PI_6		0.866025403784439f
@@ -3178,23 +3187,15 @@ __kernel void initialize_parameter(__global const int *size, __global float *buf
 #define		INV_THRESHOLD	0.1f
 #define		COMP_MUL		0.00392156862745098f
 __kernel void c2d_rgb(__global const int *size, __global const float *xr, __global const float *xi, __write_only image2d_t rgb)
-//__kernel void c2d_rgb(__global const int *size, __global const float *xr, __global const float *xi, __write_only image2d_t rgb,//
-//	__global float *debug_red, __global float *debug_green, __global float *debug_blue)//DEBUG
 {//size{Xplaces, Yplaces}
 	const int2 coords=(int2)(get_global_id(0), get_global_id(1));
 	const uint idx=size[0]*coords.y+coords.x;
 	float r=xr[idx], i=xi[idx];
 	float4 color;
 	if(r!=r||i!=i)
-	{
 		color=(float4)(1, 0.5f, 0.5f, 0.5f);
-	//	debug_red[idx]=127.5, debug_green[idx]=127.5, debug_blue[idx]=127.5;
-	}
 	else if(fabs(r)==INFINITY||fabs(i)==INFINITY)
-	{
 		color=(float4)(1, 1, 1, 1);
-	//	debug_red[idx]=255, debug_green[idx]=255, debug_blue[idx]=255;
-	}
 	else
 	{
 		float hyp=sqrt(r*r+i*i), cosx=r/hyp, sinx=i/hyp,
@@ -3204,9 +3205,6 @@ __kernel void c2d_rgb(__global const int *size, __global const float *xr, __glob
 			mag=255-mag, red*=mag, green*=mag, blue*=mag;
 		else
 			red=255-mag*(2-red), green=255-mag*(2-green), blue=255-mag*(2-blue);
-
-	//	debug_red[idx]=red, debug_green[idx]=green, debug_blue[idx]=blue;//DEBUG
-
 		color=(float4)(red, green, blue, 255)*COMP_MUL;
 	//	color.x=red*COMP_MUL, color.y=green*COMP_MUL, color.z=blue*COMP_MUL, color.w=1;
 	//	color=(float4)(1, blue*COMP_MUL, green*COMP_MUL, red*COMP_MUL);
@@ -3214,6 +3212,28 @@ __kernel void c2d_rgb(__global const int *size, __global const float *xr, __glob
 	}
 //	color=(float4)(1, 1, coords.x/size[0], coords.y/size[1]);//
 	write_imagef(rgb, coords, color);
+}
+
+__kernel void c2d_rgb2(__global const int *size, __global const float *xr, __global const float *xi, __global int *rgb)
+{//size{Xplaces, Yplaces}
+	const int2 coords=(int2)(get_global_id(0), get_global_id(1));
+	const uint idx=size[0]*coords.y+coords.x;
+	float r=xr[idx], i=xi[idx];
+	if(r!=r||i!=i)
+		rgb[idx]=0xFF7F7F7F;
+	else if(fabs(r)==INFINITY||fabs(i)==INFINITY)
+		rgb[idx]=0xFFFFFFFF;
+	else
+	{
+		float hyp=sqrt(r*r+i*i), cosx=r/hyp, sinx=i/hyp,
+			mag=255*exp(-hyp*_ln2*INV_THRESHOLD);
+		float red=1+cosx*COS_PI_6-sinx*SIN_PI_6, green=1+sinx, blue=1+cosx*-COS_PI_6-sinx*SIN_PI_6;
+		if(hyp<THRESHOLD)
+			mag=255-mag, red*=mag, green*=mag, blue*=mag;
+		else
+			red=255-mag*(2-red), green=255-mag*(2-green), blue=255-mag*(2-blue);
+		rgb[idx]=0xFF000000|(uchar)blue<<16|(uchar)green<<8|(uchar)red;
+	}
 }
 )CLSRC";
 
@@ -3242,8 +3262,17 @@ __kernel void c2d_rgb(__global const int *size, __global const float *xr, __glob
 	};
 }//end CLSource
 const int		nprograms=sizeof(CLSource::programs)/sizeof(const char*);
-cl_context		context=nullptr;
-cl_command_queue commandqueue=nullptr;
+struct 			ProgramBinary
+{
+	unsigned char *bin;
+	size_t size;
+};
+ProgramBinary	binaries[nprograms]={};
+bool			binaries_valid=false;
+cl_platform_id	platform=nullptr;//0x00000000de763ed3
+cl_device_id	device=nullptr;//changes when app is launched
+cl_context		context=nullptr;//changes when resuming
+cl_command_queue commandqueue=nullptr;//changes when resuming
 cl_kernel		kernels[N_KERNELS]={nullptr};//all kernels
 namespace 		G2_CL
 {
@@ -4035,6 +4064,7 @@ namespace 		G2_CL
 		//special kernels
 		{V_INITIALIZE_PARAMETER, 0, 0, "initialize_parameter", nullptr},
 		{V_C2D_RGB, 0, 0, "c2d_rgb", nullptr},
+		{V_C2D_RGB2, 0, 0, "c2d_rgb2", nullptr},
 		//{V_INITIALIZE_CONSTANTS, 0, 0, "initialize_constants", nullptr},
 	};
 	KernelDB kernel_db[]=
@@ -4067,6 +4097,19 @@ const size_t	worksize=100;
 float			in1[worksize]={0}, in2[worksize]={0}, out[worksize]={0};
 #endif
 size_t 			g_maxlocalsize=0, g_maxlocaldim=0;
+unsigned		blocking=CL_FALSE;//bad performance when set to true
+//#define		CL_BLOCKING
+void			checkforbuildfailure(int error, cl_program *programs, int prog_idx, cl_device_id device, std::string &err_msg)
+{
+	if(error)
+	{
+		size_t length=0;
+		error=p_clGetProgramBuildInfo(programs[prog_idx], device, CL_PROGRAM_BUILD_LOG, g_buf_size, g_buf, &length);	CL_CHECK(error);
+		err_msg+="\n\n\tPROGRAM "+std::to_string(prog_idx)+"\n\n"+g_buf;
+	}
+}
+inline bool 	newpointer(void *p0, void *p1){return p0&&p1!=p0;}
+#define 		NEWPOINTER(pointer)		newpointer(pointer##0, pointer)
 void 			cl_initiate()
 {
 	load_OpenCL_API();
@@ -4074,46 +4117,58 @@ void 			cl_initiate()
 	static_assert(sizeof(kernel_db)/sizeof(KernelDB)==nprograms, "kernel_db size is wrong");
 
 	if(OCL_state<CL_API_LOADED)
-//	if(OCL_API_not_loaded)
 		LOGERROR("Can't create context without OpenCL API");
 	else
 	{
 		cl_int error=0;
-		cl_platform_id platform=nullptr;
-		cl_device_id device=nullptr;
-		unsigned platforms=0, devices=0;
-		bool context_was_invalid=false;
-		if(OCL_state>=CL_CONTEXT_CREATED)
+		size_t retlen=0;
+		//static bool firsttime=true;
+		//if(firsttime)
+		//{
+		//	firsttime=false;
+		unsigned n_platforms=0, n_devices=0;
+		// Fetch the Platform and Device IDs; we only want one.		//https://donkey.vernier.se/~yann/hellocl.c
+		error=p_clGetPlatformIDs(1, &platform, &n_platforms);							CL_CHECK(error);
+		error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, &n_devices);	CL_CHECK(error);//was CL_DEVICE_TYPE_ALL
+
+		error=p_clGetDeviceInfo(device, CL_DEVICE_NAME, g_buf_size, g_buf, &retlen);	CL_CHECK(error);	//query device info
+		LOGI("\n\n\t%*s\n\n", (int)retlen, g_buf);
+		error=p_clGetDeviceInfo(device, CL_DEVICE_VENDOR, g_buf_size, g_buf, &retlen);	CL_CHECK(error);
+		LOGI("\n\n\t%*s\n\n", (int)retlen, g_buf);
+		error=p_clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &g_maxlocalsize, &retlen);	CL_CHECK(error);
+		LOGI("\n\n\tCL_DEVICE_MAX_WORK_GROUP_SIZE = %d\n\n", (int)g_maxlocalsize);
+		g_maxlocaldim=(size_t)sqrt(g_maxlocalsize);
+		g_maxlocaldim=1<<floor_log2(g_maxlocaldim);
+		error=p_clGetDeviceInfo(device, CL_DEVICE_EXTENSIONS, g_buf_size, g_buf, &retlen);	CL_CHECK(error);
+		LOGI("\n\n\t%*s\n\n", (int)retlen, g_buf);
+		std::string extensions=g_buf;
+		auto extpos=extensions.find("cl_khr_gl_sharing");
+		cl_gl_interop=extpos!=std::string::npos;
+		if(!cl_gl_interop)
+			LOGI("cl_khr_gl_sharing not supported");
+		//}
+
+		cl_context_properties properties[8]={};
+		if(cl_gl_interop)
 		{
-			cl_uint refcount=0;
-			size_t retlen=0;
-			error=p_clGetContextInfo(context, CL_CONTEXT_REFERENCE_COUNT, sizeof(cl_uint), &refcount, &retlen);
-			if(error==CL_INVALID_CONTEXT||hard_reset)
-				OCL_state=CL_API_LOADED, context_was_invalid=true;
+			auto gl_context=eglGetCurrentContext();//changes when resuming
+			auto egl_display=eglGetCurrentDisplay();
+			properties[0]=CL_GL_CONTEXT_KHR, properties[1]=(cl_context_properties)gl_context;//https://stackoverflow.com/questions/26802905/getting-opengl-buffers-using-opencl
+			properties[2]=CL_EGL_DISPLAY_KHR, properties[3]=(cl_context_properties)egl_display;
+			properties[4]=CL_CONTEXT_PLATFORM, properties[5]=(cl_context_properties)platform;
+			properties[6]=0, properties[7]=0;
 		}
-		if(OCL_state<CL_CONTEXT_CREATED)
-	//	if(!context_valid)
+		else
 		{
-			// Fetch the Platform and Device IDs; we only want one.
-			error=p_clGetPlatformIDs(1, &platform, &platforms);							CL_CHECK(error);
-			error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &devices);	CL_CHECK(error);
-
-			size_t retlen=0;
-			error=p_clGetDeviceInfo(device, CL_DEVICE_NAME, g_buf_size, g_buf, &retlen);	CL_CHECK(error);	//query device info
-			LOGI("\n\n\t%*s\n\n", (int)retlen, g_buf);
-			error=p_clGetDeviceInfo(device, CL_DEVICE_VENDOR, g_buf_size, g_buf, &retlen);	CL_CHECK(error);
-			LOGI("\n\n\t%*s\n\n", (int)retlen, g_buf);
-			error=p_clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &g_maxlocalsize, &retlen);	CL_CHECK(error);
-			LOGI("\n\n\tCL_DEVICE_MAX_WORK_GROUP_SIZE = %d\n\n", (int)g_maxlocalsize);
-			g_maxlocaldim=(size_t)sqrt(g_maxlocalsize);
-			g_maxlocaldim=1<<floor_log2(g_maxlocaldim);
-			error=p_clGetDeviceInfo(device, CL_DEVICE_EXTENSIONS, g_buf_size, g_buf, &retlen);	CL_CHECK(error);
-			LOGI("\n\n\t%*s\n\n", (int)retlen, g_buf);
-			std::string extensions=g_buf;
-			auto extpos=extensions.find("cl_khr_gl_sharing");
-			if(extpos==std::string::npos)
-				LOGERROR("cl_khr_gl_sharing not supported");
-
+			properties[0]=CL_CONTEXT_PLATFORM, properties[1]=(cl_context_properties)platform;
+			properties[2]=0, properties[3]=0;
+		}
+		context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);
+		commandqueue=p_clCreateCommandQueue(context, device, 0, &error);				CL_CHECK(error);
+#if 0
+		{
+			error=p_clGetPlatformIDs(1, &platform, &n_platforms);							CL_CHECK(error);//
+			error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &n_devices);	CL_CHECK(error);//
 			cl_context_properties properties[]=//https://stackoverflow.com/questions/26802905/getting-opengl-buffers-using-opencl
 			{
 				CL_GL_CONTEXT_KHR,   (cl_context_properties)eglGetCurrentContext(),
@@ -4121,37 +4176,39 @@ void 			cl_initiate()
 				CL_CONTEXT_PLATFORM, (cl_context_properties)platform, // OpenCL platform object
 				0, 0,
 			};
-			//cl_context_properties properties[]=
-			//{
-			//	CL_CONTEXT_PLATFORM, (cl_context_properties)platform,
-			//	0
-			//};
-			context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);
-			commandqueue=p_clCreateCommandQueue(context, device, 0, &error);				CL_CHECK(error);
-			if(!error)
-				OCL_state=CL_API_LOADED;
-			//	context_valid=true;
+			context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);//
+			commandqueue=p_clCreateCommandQueue(context, device, 0, &error);				CL_CHECK(error);//
 		}
+#endif
+		if(!error)
+			OCL_state=CL_CONTEXT_CREATED;
+#if 0
+		float testvalue=42;//DEBUG		always succeeds
+		cl_mem mem_in1=p_clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float), nullptr, &error);	CL_CHECK(error);
+		error=p_clEnqueueWriteBuffer(commandqueue, mem_in1, CL_FALSE, 0, sizeof(float), &testvalue, 0, nullptr, nullptr);	CL_CHECK(error);
+		testvalue=0;
+		error=p_clEnqueueReadBuffer(commandqueue, mem_in1, CL_FALSE, 0, sizeof(float), &testvalue, 0, nullptr, nullptr);	CL_CHECK(error);
+		error=p_clFinish(commandqueue);		CL_CHECK(error);//END DEBUG
+		//if(NEWPOINTER(platform)||NEWPOINTER(device)||NEWPOINTER(context)||NEWPOINTER(commandqueue))
+		//	int LOL_1=0;
+#endif
 
-		if(OCL_state>=CL_PROGRAMS_COMPILED)
+		std::string err_msg;
+		if(binaries_valid)
 		{
-			bool kernels_valid=false;
-			for(int k=0;k<N_KERNELS;++k)
+			for(int kp=0;kp<nprograms;++kp)
 			{
-				if(kernels[k])
-				{
-					kernels_valid=true;
-					break;
-				}
+				auto &bin=binaries[kp];
+				int status=0;
+				programs[kp]=p_clCreateProgramWithBinary(context, 1, &device, &bin.size, (const unsigned char**)&bin.bin, &status, &error);	CL_CHECK(error);
+				error=p_clBuildProgram(programs[kp], 0, nullptr, "", nullptr, nullptr);		CL_CHECK(error);
+				checkforbuildfailure(error, programs, kp, device, err_msg);
 			}
-			if(!kernels_valid||context_was_invalid)
-				OCL_state=CL_CONTEXT_CREATED;
+			OCL_state=CL_PROGRAMS_COMPILED;
 		}
-		if(OCL_state<CL_PROGRAMS_COMPILED)
-	//	if(!programs_compiled)
+		else//compile from source first
 		{
 			std::string src_common=CLSource::program_common, src[nprograms];
-			std::string err_msg;
 			for(int kp=0;kp<nprograms;++kp)
 			{
 				src[kp]=src_common+CLSource::programs[kp];
@@ -4165,46 +4222,84 @@ void 			cl_initiate()
 				};
 				G2_CL::programs[kp]=p_clCreateProgramWithSource(context, 1, sources, srclen, &error);	CL_CHECK(error);
 				error=p_clBuildProgram(programs[kp], 0, nullptr, "", nullptr, nullptr);					CL_CHECK(error);
-				if(error)
-				{
-					size_t length=0;
-					error=p_clGetProgramBuildInfo(programs[kp], device, CL_PROGRAM_BUILD_LOG, g_buf_size, g_buf, &length);	CL_CHECK(error);
-					err_msg+="\n\n\tPROGRAM "+std::to_string(kp)+"\n\n"+g_buf;
-				//	LOGE_long(g_buf, length);
-				//	LOGE("%*s", length, g_buf);
-				//	LOGE("%s", g_buf);
-				}
-				else//build successful: extract kernel handles
-				{
-					auto &kernel_batch=kernel_db[kp];
-					for(int kk=0;kk<kernel_batch.nkernels;++kk)
-					{
-						auto &kernel=kernel_batch.kernels[kk];
-						if(!kernels[kernel.idx]&&kernel.name)
-						{
-							kernels[kernel.idx]=p_clCreateKernel(programs[kp], kernel.name, &error);		CL_CHECK(error);
-							if(error)
-								LOGE("Error line %d:\n\n\tFailed to retrieve kernel %d from program %d:\t%s\n\n", __LINE__, kk, kp, kernel.name);
-						}
-						//TODO: disc_idx
-					}
-				}
+				checkforbuildfailure(error, programs, kp, device, err_msg);
 			}
 			if(!err_msg.empty())
 				LOGE_long(err_msg.c_str(), err_msg.size());
-			else
+			else//build successful, retrieve binaries
+			{
 				OCL_state=CL_PROGRAMS_COMPILED;
-			//	programs_compiled=true;
+				for(int kp=0;kp<nprograms;++kp)
+				{
+					auto &bin=binaries[kp];
+					error=p_clGetProgramInfo(programs[kp], CL_PROGRAM_BINARY_SIZES, sizeof(size_t), &bin.size, &retlen);	CL_CHECK(error);
+					bin.bin=(unsigned char*)malloc(bin.size);
+					error=p_clGetProgramInfo(programs[kp], CL_PROGRAM_BINARIES, sizeof(unsigned char*), &bin.bin, &retlen);	CL_CHECK(error);
+				}
+				if(!error)
+					binaries_valid=true;
+			}
 		}
+		if(!error)//build successful: extract kernel handles
+		{
+			for(int kp=0;kp<nprograms;++kp)
+			{
+				auto &kernel_batch=kernel_db[kp];
+				for(int kk=0;kk<kernel_batch.nkernels;++kk)
+				{
+					auto &kernel=kernel_batch.kernels[kk];
+					if(!kernels[kernel.idx]&&kernel.name)
+					{
+						kernels[kernel.idx]=p_clCreateKernel(programs[kp], kernel.name, &error);		CL_CHECK(error);
+						if(error)
+							LOGE("Error line %d:\n\n\tFailed to retrieve kernel %d from program %d:\t%s\n\n", __LINE__, kk, kp, kernel.name);
+					}
+					//TODO: disc_idx
+				}
+			}
+		}
+		if(!error)
+			OCL_state=CL_KERNELS_LOADED;
+#if 1
+		//static cl_platform_id platform0=nullptr;
+		//static cl_device_id device0=nullptr;
+		//static cl_context context0=nullptr;
+		//static cl_command_queue commandqueue0=nullptr;
+		//platform0=platform;
+		//device0=device;
+		//context0=context;
+		//commandqueue0=commandqueue;
+		size_t host_sizes[3]={1, 1, 1}, host_sizes_local[3]={1, 1, 1};//DEBUG		fails after lock
+		float host_args[3]={42, 1, 0};
+		float testvalue=0;
+
+		cl_mem size_buf=p_clCreateBuffer(context, CL_MEM_READ_WRITE, 2*sizeof(int), nullptr, &error);	CL_CHECK(error);
+		error=p_clEnqueueWriteBuffer(commandqueue, size_buf, blocking, 0, 2*sizeof(int), host_sizes, 0, nullptr, nullptr);	CL_CHECK(error);
+		//error=p_clFinish(commandqueue), CL_CHECK(error);//succeeds second time
+		cl_mem args_buf=p_clCreateBuffer(context, CL_MEM_READ_WRITE, 2*sizeof(float)+sizeof(int), nullptr, &error);	CL_CHECK(error);
+		error=p_clEnqueueWriteBuffer(commandqueue, args_buf, blocking, 0, 2*sizeof(float)+sizeof(int), host_args, 0, nullptr, nullptr);	CL_CHECK(error);
+		//error=p_clFinish(commandqueue), CL_CHECK(error);//
+
+		cl_mem buffer=p_clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float), nullptr, &error);	CL_CHECK(error);
+
+		cl_kernel k_fill=kernels[V_INITIALIZE_PARAMETER];
+		error=p_clSetKernelArg(k_fill, 0, sizeof(cl_mem), &size_buf);	CL_CHECK(error);
+		error=p_clSetKernelArg(k_fill, 1, sizeof(cl_mem), &buffer);		CL_CHECK(error);
+		error=p_clSetKernelArg(k_fill, 2, sizeof(cl_mem), &args_buf);	CL_CHECK(error);
+		error=p_clEnqueueNDRangeKernel(commandqueue, k_fill, 3, nullptr, host_sizes, host_sizes_local, 0, nullptr, nullptr);	CL_CHECK(error);
+		error=p_clEnqueueReadBuffer(commandqueue, buffer, CL_FALSE, 0, sizeof(float), &testvalue, 0, nullptr, nullptr);	CL_CHECK(error);
+		error=p_clFinish(commandqueue);		CL_CHECK(error);
+		float testvalue2=testvalue;//END DEBUG
+#endif
 #if 0
 		//hellocl.c		//https://donkey.vernier.se/~yann/hellocl.c
 		cl_int error=0;
 		cl_platform_id platform;
 		cl_device_id device;
-		unsigned platforms, devices;
+		unsigned n_platforms, n_devices;
 		// Fetch the Platform and Device IDs; we only want one.
-		error=p_clGetPlatformIDs(1, &platform, &platforms);							CL_CHECK(error);//get available OpenCL platforms & devices
-		error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &devices);	CL_CHECK(error);
+		error=p_clGetPlatformIDs(1, &platform, &n_platforms);						CL_CHECK(error);//get available OpenCL platforms & devices
+		error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &n_devices);	CL_CHECK(error);
 		cl_context_properties properties[]=
 		{
 			CL_CONTEXT_PLATFORM,
@@ -4212,7 +4307,7 @@ void 			cl_initiate()
 			0
 		};
 		cl_context context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);//create OpenCL context
-		cl_command_queue cq=p_clCreateCommandQueue(context, device, 0, &error);				CL_CHECK(error);
+		cl_command_queue cq=p_clCreateCommandQueue(context, device, 0, &error);					CL_CHECK(error);
 
 		//compile program & extract kernels
 		const char src[]=R"CLSRC(
@@ -4316,7 +4411,7 @@ void			initialize_const_comp(cl_mem &buffer, int nfloats, float value)
 	error=p_clEnqueueFillBuffer(commandqueue, buffer, &value, sizeof(float), 0, nfloats*sizeof(float), 0, nullptr, nullptr);
 	CL_CHECK(error);
 }
-static size_t	host_sizes[3]={0}, host_sizes_local[3]={0};
+static size_t	host_sizes[3]={}, host_sizes_local[3]={};
 static float 	Xstart=0, Xsample=0,
 				Yend=0, mYsample=0;//negative Ysample for C2D
 unsigned		dimension_work_size(unsigned places){return places&~(g_maxlocaldim-1);}
@@ -4346,12 +4441,14 @@ void 			initialize_component(cl_mem &buffer, int nfloats, char varType, float va
 		else
 			host_args[0]=Yend, host_args[1]=mYsample;
 		host_args[2]=(float&)dimension;
-		error=p_clEnqueueWriteBuffer(commandqueue, args_buf, CL_FALSE, 0, 3*sizeof(float), host_args, 0, nullptr, nullptr);	CL_CHECK(error);
+		error=p_clEnqueueWriteBuffer(commandqueue, args_buf, blocking, 0, 2*sizeof(float)+sizeof(int), host_args, 0, nullptr, nullptr);	CL_CHECK(error);
 		cl_kernel k_fill=kernels[V_INITIALIZE_PARAMETER];
 		error=p_clSetKernelArg(k_fill, 0, sizeof(cl_mem), &size_buf);	CL_CHECK(error);
 		error=p_clSetKernelArg(k_fill, 1, sizeof(cl_mem), &buffer);		CL_CHECK(error);
 		error=p_clSetKernelArg(k_fill, 2, sizeof(cl_mem), &args_buf);	CL_CHECK(error);
 		error=p_clEnqueueNDRangeKernel(commandqueue, k_fill, 3, nullptr, host_sizes, host_sizes_local, 0, nullptr, nullptr);	CL_CHECK(error);
+		if(blocking)
+			{error=p_clFinish(commandqueue);		CL_CHECK(error);}
 	}
 }
 void			cl_free_buffer(cl_mem &buffer)
@@ -4365,13 +4462,13 @@ void			cl_free_buffer(cl_mem &buffer)
 	}
 }
 int				*rgb=nullptr;
-void			colorFunction_bcw(Comp1d const &v, int *rgb)
+void			colorFunction_bcw(Comp1d const &v, int *color)
 {
 	const double &r=v.r, &i=v.i;
 	if(r!=r||i!=i)
-		*rgb=0x7F7F7F;
+		*color=0x7F7F7F;
 	else if(abs(r)==_HUGE||abs(i)==_HUGE)
-		*rgb=0xFFFFFF;
+		*color=0xFFFFFF;
 	else
 	{
 		double threshold=10, inv_th=1/threshold;//1			//black->color->white		81.98 cycles/px
@@ -4383,13 +4480,13 @@ void			colorFunction_bcw(Comp1d const &v, int *rgb)
 			mag=255-mag, red*=mag, green*=mag, blue*=mag;
 		else
 			red=255-mag*(2-red), green=255-mag*(2-green), blue=255-mag*(2-blue);
-		auto p=(unsigned char*)rgb;
+		auto p=(unsigned char*)color;
 		p[0]=(unsigned char)red, p[1]=(unsigned char)green, p[2]=(unsigned char)blue, p[3]=0xFF;//0xAABBGGRR	//argb
 	}
 }
 void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, double DY, int Xplaces, int Yplaces, double time, unsigned gl_texture)
 {//expression -> OpenGL texture
-	if(OCL_state<CL_PROGRAMS_COMPILED)
+	if(OCL_state<CL_KERNELS_LOADED)
 //	if(OCL_API_not_loaded)
 		LOGERROR("Solve: OCL_state = %d", OCL_state);
 	else
@@ -4417,10 +4514,10 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 		auto ftime=(float)time;
 		int error=0;
 		cl_mem size_buf=p_clCreateBuffer(context, CL_MEM_READ_ONLY, 2*sizeof(int), nullptr, &error);	CL_CHECK(error);
-		cl_mem args_buf=p_clCreateBuffer(context, CL_MEM_READ_ONLY, 3*sizeof(float), nullptr, &error);	CL_CHECK(error);
+		cl_mem args_buf=p_clCreateBuffer(context, CL_MEM_READ_ONLY, 2*sizeof(float)+sizeof(int), nullptr, &error);	CL_CHECK(error);
 		host_sizes[0]=dimension_work_size(Xplaces), host_sizes[1]=dimension_work_size(Yplaces), host_sizes[2]=1;
 		host_sizes_local[0]=g_maxlocaldim, host_sizes_local[1]=g_maxlocaldim, host_sizes_local[2]=1;
-		error=p_clEnqueueWriteBuffer(commandqueue, size_buf, CL_FALSE, 0, 2*sizeof(float), host_sizes, 0, nullptr, nullptr);	CL_CHECK(error);//send size buffer
+		error=p_clEnqueueWriteBuffer(commandqueue, size_buf, blocking, 0, 2*sizeof(int), host_sizes, 0, nullptr, nullptr);	CL_CHECK(error);//send size buffer
 		int nterms=ex.n.size();
 		std::vector<CLTerm> terms(nterms);
 		prof_add("preparations");
@@ -4516,6 +4613,8 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 					}
 				}
 				error=p_clEnqueueNDRangeKernel(commandqueue, kernel, 3, nullptr, host_sizes, host_sizes_local, 0, nullptr, nullptr);	CL_CHECK(error);
+				if(blocking)
+					{error=p_clFinish(commandqueue);		CL_CHECK(error);}
 			}
 		}
 #if 0
@@ -4530,41 +4629,41 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 			debug_printbuffers(buffers, sizeof(buffers)/sizeof(DebugBuffer), ndrSize, 512);
 		}
 #endif
-#if 0
-		cl_mem debug_buf_red	=p_clCreateBuffer(context, CL_MEM_READ_WRITE, ndrSize*sizeof(float), nullptr, &error);	CL_CHECK(error);
-		cl_mem debug_buf_green	=p_clCreateBuffer(context, CL_MEM_READ_WRITE, ndrSize*sizeof(float), nullptr, &error);	CL_CHECK(error);
-		cl_mem debug_buf_blue	=p_clCreateBuffer(context, CL_MEM_READ_WRITE, ndrSize*sizeof(float), nullptr, &error);	CL_CHECK(error);
-#endif
 		prof_add("solve");
+		static cl_context context0=nullptr;
 		static cl_mem image=nullptr;
 		auto &result=terms[ex.resultTerm];					//result -> rgb
 		if(result.mathSet=='c')//always true for C2D
 		{
-			auto kernel=kernels[V_C2D_RGB];
-			if(!image)
-			//	image=p_clCreateFromGLTexture(context, CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, gl_texture, &error);	CL_CHECK(error);//
-				image=p_clCreateFromGLTexture(context, CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, gl_texture, &error);	CL_CHECK(error);
+			cl_kernel kernel=nullptr;
+			if(cl_gl_interop)
+			{
+				kernel=kernels[V_C2D_RGB];
+				if(context0!=context)
+				{
+					context0=context;
+				//	image=p_clCreateFromGLTexture(context, CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, gl_texture, &error);	CL_CHECK(error);//
+					image=p_clCreateFromGLTexture(context, CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, gl_texture, &error);	CL_CHECK(error);
+				}
+			}
+			else
+			{
+				kernel=kernels[V_C2D_RGB2];
+				image=p_clCreateBuffer(context, CL_MEM_WRITE_ONLY, ndrSize*sizeof(int), nullptr, &error);	CL_CHECK(error);
+			}
 			error=p_clSetKernelArg(kernel, 0, sizeof(cl_mem), &size_buf);	CL_CHECK(error);
 			error=p_clSetKernelArg(kernel, 1, sizeof(cl_mem), &result.r);	CL_CHECK(error);
 			error=p_clSetKernelArg(kernel, 2, sizeof(cl_mem), &result.i);	CL_CHECK(error);
 			error=p_clSetKernelArg(kernel, 3, sizeof(cl_mem), &image);		CL_CHECK(error);
-#if 0
-			error=p_clSetKernelArg(kernel, 4, sizeof(cl_mem), &debug_buf_red);		CL_CHECK(error);
-			error=p_clSetKernelArg(kernel, 5, sizeof(cl_mem), &debug_buf_green);	CL_CHECK(error);
-			error=p_clSetKernelArg(kernel, 6, sizeof(cl_mem), &debug_buf_blue);		CL_CHECK(error);
-#endif
 			error=p_clEnqueueNDRangeKernel(commandqueue, kernel, 2, nullptr, host_sizes, host_sizes_local, 0, nullptr, nullptr);	CL_CHECK(error);
-#if 0
-		{
-			DebugBuffer buffers[]=
+			if(!cl_gl_interop)
 			{
-				{debug_buf_red, "red"},
-				{debug_buf_green, "green"},
-				{debug_buf_blue, "blue"},
-			};
-			debug_printbuffers(buffers, sizeof(buffers)/sizeof(DebugBuffer), ndrSize, 512);
-		}
-#endif
+				rgb=(int*)realloc(rgb, ndrSize*sizeof(int));
+				error=p_clEnqueueReadBuffer(commandqueue, image, CL_FALSE, 0, ndrSize*sizeof(int), rgb, 0, nullptr, nullptr);	CL_CHECK(error);
+				cl_free_buffer(image);
+			}
+			if(blocking)
+				{error=p_clFinish(commandqueue);		CL_CHECK(error);}
 		}
 		prof_add("rgb");
 #if 0
@@ -4577,7 +4676,7 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 		}
 #endif
 #if 0
-		error=p_clFinish(commandqueue);	CL_CHECK(error);//DEBUG
+		error=p_clFinish(commandqueue);	CL_CHECK(error);	//DEBUG
 		prof_add("clFinish");
 		auto
 			ndr_r=(float*)malloc(ndrSize*sizeof(float)),
@@ -4620,7 +4719,7 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 }
 void			cl_finish()
 {
-	if(OCL_state<CL_PROGRAMS_COMPILED)
+	if(OCL_state<CL_KERNELS_LOADED)
 		LOGERROR("cl_finish: OCL_state = %d", OCL_state);
 //	if(OCL_API_not_loaded)
 //		LOGERROR("OpenCL API not loaded.");

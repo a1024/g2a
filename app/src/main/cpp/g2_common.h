@@ -30,7 +30,7 @@
 //#define		LOG_TAG		"libgl2jni"
 #define			LOGI(...)	__android_log_print(ANDROID_LOG_INFO, __FILE__, __VA_ARGS__)
 #define			LOGE(...)	__android_log_print(ANDROID_LOG_ERROR, __FILE__, __VA_ARGS__)
-extern int 		hard_reset;
+//extern int 	hard_reset;
 static const int e_msg_size=2048;
 extern char		first_error_msg[e_msg_size], latest_error_msg[e_msg_size];
 void 			log_error(const char *file, int line, const char *format, ...);
@@ -38,8 +38,8 @@ void 			log_error(const char *file, int line, const char *format, ...);
 #define 		LOGERROR_LINE(LINE, ...)	log_error(__FILE__, LINE, __VA_ARGS__)
 inline double	now_seconds()
 {//https://stackoverflow.com/questions/3832097/how-to-get-the-current-time-in-native-android-code/14311780
-	static timespec ts;
-	clock_gettime(CLOCK_REALTIME, &ts);
+	static timespec ts={0, 0};
+	clock_gettime(CLOCK_REALTIME, &ts);//Performance & modes::Solve used CLOCK_PROCESS_CPUTIME_ID, showed less elapsed time
 	return ts.tv_sec+1e-9*ts.tv_nsec;
 }
 typedef std::pair<std::string, double> ProfInfo;

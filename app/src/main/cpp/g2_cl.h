@@ -26,7 +26,7 @@ enum 			CLKernelIdx
 	CL_NOOP,
 //	V_INITIALIZE_CONSTANTS,
 	V_INITIALIZE_PARAMETER,
-	V_C2D_RGB,
+	V_C2D_RGB, V_C2D_RGB2,//second version for devices without gl-cl inter-operation
 
 	R_R_SETZERO, C_C_SETZERO, Q_Q_SETZERO,
 	R_R_CEIL, C_C_CEIL, Q_Q_CEIL,		DISC_R_CEIL_O, DISC_C_CEIL_O, DISC_Q_CEIL_O,
@@ -201,8 +201,9 @@ enum 			CLKernelIdx
 
 	N_KERNELS,
 };
+extern bool		cl_gl_interop;
 void 			cl_initiate();
-extern int 		*rgb;//DEBUG
+extern int 		*rgb;//for devices not supporting gl-cl inter-operation
 void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, double DY, int Xplaces, int Yplaces, double time, unsigned gl_texture);
 void			cl_finish();
 //void 			show_c2d();
