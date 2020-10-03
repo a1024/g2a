@@ -26,10 +26,10 @@ public class GL2JNILib
 	{
 		System.loadLibrary("native-lib");
 	}
-	public static native String init(int width, int height);
+	public static native String init(int width, int height, int hard_reset);
 	public static native void step(int cursor);
 	public static native boolean touch(float x, float y, int msg, int idx);
-	public static native void changeText(String text, int start, int before, int count);
+	public static native int changeText(String text, int start, int before, int count);
 	public static native void toggleInputBox();
 	public static native void inputKeyDown(int keyCode);
 	public static native void inputKeyUp(int keyCode);

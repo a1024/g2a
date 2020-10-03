@@ -18683,8 +18683,11 @@ namespace	modes
 				}
 			}
 			cl_finish();
-		//	display_texture(0, w, 0, h, rgb, w, h);//DEBUG
-			display_gl_texture(gl_texture);//draw the solution
+
+		//	read_gl_texture(gl_texture, w, h, rgb);//DEBUG correct
+		//	debug_printrgb(rgb, w, h, 512);
+		//	display_texture(0, w, 0, h, rgb, w, h);//DEBUG correct
+			display_gl_texture(gl_texture);//draw the solution		GREYSCALE
 		//	display_texture(0, w, 0, h, solver.rgb, w, h);
 		//	if(!contourOnly)
 //			for(int ky=0;ky<h;++ky)//Xplaces=w+(w&1)
@@ -21697,15 +21700,20 @@ void render()
 //	BitBlt(ghDC, 0, 0, w, h, ghMemDC, 0, 0, SRCCOPY);
 //#endif
 }
-extern "C" JNIEXPORT jstring JNICALL Java_com_example_grapher2_GL2JNILib_init(JNIEnv *env, jclass obj,  jint w, jint h)
-{//called on start & resume
+extern "C" JNIEXPORT jstring JNICALL Java_com_example_grapher2_GL2JNILib_init(JNIEnv *env, jclass obj,  jint w, jint h, jint hard_reset)
+{//called on start & resume, hard_reset: w=h=0
 	++init_counter;
-	::w=w, ::h=h, X0=w>>1, Y0=h>>1, landscape=w>h;
-	env->GetJavaVM(&jvm);
-//	reset_button.set(w>>1, 0, w>>1, h/10, "Reset", 38);
-	//ButtonReset::set(w>>1, 0, w>>1, h/10);
-	set_font_size(10);
-	gl_initiate();
+	if(hard_reset)
+		::hard_reset=1;
+	else
+	{
+		::w=w, ::h=h, X0=w>>1, Y0=h>>1, landscape=w>h;
+		env->GetJavaVM(&jvm);
+	//	reset_button.set(w>>1, 0, w>>1, h/10, "Reset", 38);
+		//ButtonReset::set(w>>1, 0, w>>1, h/10);
+		set_font_size(10);
+		gl_initiate();
+	}
 	cl_initiate();
 	//printGLString("Version", GL_VERSION);
 	//printGLString("Vendor", GL_VENDOR);
@@ -21732,6 +21740,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_com_example_grapher2_GL2JNILib_init(JN
 	//}
 	//glViewport(0, 0, w, h);
 	//checkGlError("glViewport");
+	::hard_reset=0;
 	return env->NewString((const unsigned short*)L"", 0);
 }
 extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_step(JNIEnv *env, jclass obj, jint cursor)
@@ -21835,8 +21844,9 @@ extern "C" JNIEXPORT unsigned char JNICALL Java_com_example_grapher2_GL2JNILib_t
 	return false;
 }
 //extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_changeText(JNIEnv *env, jclass obj, jstring jstr, jint start, jint before, jint count, jint cursor)
-extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_changeText(JNIEnv *env, jclass obj, jstring jstr, jint start, jint before, jint count)
+extern "C" JNIEXPORT int JNICALL Java_com_example_grapher2_GL2JNILib_changeText(JNIEnv *env, jclass obj, jstring jstr, jint start, jint before, jint count)
 {
+	int quit=0;
 	++nthreads;
 	auto a=env->GetStringChars(jstr, nullptr);//utf16
 	if(before)
@@ -22748,7 +22758,8 @@ extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_changeText
 			case 'd':			 if(text[k+1]=='o'&&!exprBound	  ){																																																																																																															it->insertMap		(k, 2, M_DO						);	++k;	continue;		 }	break;
 			case 'e':			 if(text[k+1]=='l'				  ){		 if(text[k+2]=='s'							 &&text[k+3]=='e'&&!exprBound){																																																																																											it->insertMap		(k, 4, M_ELSE					);	k+=3;	continue;	    }}
 							else if(text[k+1]=='r'||text[k+1]=='R'){		 if(text[k+2]=='f'||text[k+2]=='F'){																																																																																									if(exprBound||!isAlphanumeric[text[k+3]]){	it->insertMap		(k, 3, M_ERF					);	k+=2;	continue;}	    }}
-							else if((text[k+1]=='x'||text[k+1]=='X')		 &&(text[k+2]=='p'||text[k+2]=='P')){																																																																																									if(exprBound||!isAlphanumeric[text[k+3]]){	it->insertMap		(k, 3, M_EXP					);	k+=2;	continue;}	     }
+							else if(text[k+1]=='x'||text[k+1]=='X'){	 	 if((text[k+2]=='i'||text[k+2]=='I')		 &&(text[k+3]=='t'||text[k+3]=='T'))		quit=42, abort();
+																		else if(text[k+2]=='p'||text[k+2]=='P'){																																																																																									if(exprBound||!isAlphanumeric[text[k+3]]){	it->insertMap		(k, 3, M_EXP					);	k+=2;	continue;}	     }}
 							else								   {																																																																																																				if(exprBound||!isAlphanumeric[text[k+1]]){	it->insertMapData	(k, 1, 'R', _e					);			continue;}		 }	break;
 			case 'E':			 if(text[k+1]=='r'||text[k+1]=='R'){		 if(text[k+2]=='f'||text[k+2]=='F'){																																																																																									if(exprBound||!isAlphanumeric[text[k+3]]){	it->insertMap		(k, 3, M_ERF					);	k+=2;	continue;}	    }}
 							else if((text[k+1]=='x'||text[k+1]=='X')		 &&(text[k+2]=='p'||text[k+2]=='P')){																																																																																									if(exprBound||!isAlphanumeric[text[k+3]]){	it->insertMap		(k, 3, M_EXP					);	k+=2;	continue;}	     }
@@ -23121,6 +23132,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_changeText
 
 	render();
 	--nthreads;
+	return quit;
 }
 extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_toggleInputBox(JNIEnv *env, jclass obj)
 {

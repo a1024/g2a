@@ -102,7 +102,11 @@ public class MainActivity extends Activity
 			public void onTextChanged(CharSequence charSequence, int start, int before, int count)
 			{
 				if(oldLandscape==landscape)
-					GL2JNILib.changeText(charSequence.toString(), start, before, count);
+				{
+					int quit=GL2JNILib.changeText(charSequence.toString(), start, before, count);
+					if(quit==42)
+						System.exit(0);
+				}
 				oldLandscape=landscape;
 				//resultBox.setText(editBox.getText());
 			}

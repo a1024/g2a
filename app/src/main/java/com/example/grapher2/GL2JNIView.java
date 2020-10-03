@@ -311,6 +311,7 @@ public class GL2JNIView extends GLSurfaceView
 	static EditText editBox;
 	//static Boolean eBoxVisible;
 	private static class Renderer implements GLSurfaceView.Renderer {
+		int initiated=0;
 		public void onDrawFrame(GL10 gl) {
 			int cursor=0;
 			if(editBox!=null)
@@ -322,12 +323,15 @@ public class GL2JNIView extends GLSurfaceView
 		}
 
 		public void onSurfaceChanged(GL10 gl, int width, int height) {
-			err=GL2JNILib.init(width, height);
+			err=GL2JNILib.init(width, height, 0);
+			initiated=1;
 			//if(err!=null&&!err.isEmpty())
 			//	editBox.setText(err);
 		}
 
 		public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+			if(initiated==0)
+				err=GL2JNILib.init(0, 0, 1);
 			// Do nothing.
 		}
 	}

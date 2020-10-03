@@ -202,7 +202,7 @@ enum 			CLKernelIdx
 	N_KERNELS,
 };
 void 			cl_initiate();
-extern int 		*rgb;
+extern int 		*rgb;//DEBUG
 void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, double DY, int Xplaces, int Yplaces, double time, unsigned gl_texture);
 void			cl_finish();
 //void 			show_c2d();

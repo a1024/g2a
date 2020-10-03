@@ -994,11 +994,40 @@ int				gl_vprint(int tab_origin, int x, int y, const char *format, va_list args)
 	int msg_length=vsnprintf(g_buf, g_buf_size, format, args);
 	return print_array(x, y, g_buf, msg_length, tab_origin);
 }
+void 			read_gl_texture(unsigned tx_id, int width, int height, int *&rgb_ret)
+{
+	static unsigned fbo=0;
+	if(!fbo)
+		{glGenFramebuffers(1, &fbo);CHECK();}
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);		CHECK();
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tx_id, 0);	CHECK();
+
+	int size=width*height;
+	rgb_ret=(int*)realloc(rgb_ret, size*sizeof(int));
+	memset(rgb_ret, 0, size*sizeof(int));
+	glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, rgb_ret);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+void 			debug_printrgb(int *rgb, int width, int height, int stride)
+{
+	int size=width*height;
+	for(int k=0;k<size;k+=stride)
+	{
+		std::stringstream LOL_1;
+		int kx=k%width, ky=k/width;
+		LOL_1<<"G2_CL: rgb["<<k<<"]";
+		snprintf(g_buf, g_buf_size, " XY(%d, %d) 0x%08X", kx, ky, rgb[k]);
+		LOL_1<<g_buf;
+		LOGI("%s", LOL_1.str().c_str());
+	}
+}
 void 			generate_glcl_texture(unsigned &tx_id, int Xplaces, int Yplaces)
 {
 	if(!tx_id)
 		{glGenTextures(1, &tx_id);										CHECK();}//generate texture id once
 	glBindTexture(GL_TEXTURE_2D, tx_id);									CHECK();
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);			CHECK();
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);			CHECK();
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);		CHECK();
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);		CHECK();
 	//static int dx=0, dy=0, *rgb=nullptr;
@@ -1030,9 +1059,10 @@ void 			display_gl_texture(unsigned &tx_id)
 		rect[0], rect[1],		0, 0,//top left
 	};
 	gl_setProgram(GL2_Text::program);
+	glUniform2f(GL2_Text::u_isTexture, 1, 0);		CHECK();
 	select_texture(tx_id, GL2_Text::u_mytexture);
-	glBindBuffer(GL_ARRAY_BUFFER, GL2_Text::buffer);										CHECK();
-	glBufferData(GL_ARRAY_BUFFER, 24<<2, vrtx, GL_STATIC_DRAW);						CHECK();//send vertices & texcoords
+	glBindBuffer(GL_ARRAY_BUFFER, GL2_Text::buffer);					CHECK();
+	glBufferData(GL_ARRAY_BUFFER, 24<<2, vrtx, GL_STATIC_DRAW);	CHECK();//send vertices & texcoords
 	glVertexAttribPointer(GL2_Text::a_coord2d, 4, GL_FLOAT, GL_FALSE, 4<<2, nullptr);	CHECK();//select vertices & texcoord
 
 	glEnableVertexAttribArray(GL2_Text::a_coord2d);		CHECK();

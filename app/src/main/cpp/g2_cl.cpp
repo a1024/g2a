@@ -157,10 +157,12 @@ void			LOGE_long(const char *msg, int length)
 		LOGE("%*s", quota, msg+k);
 }
 #define 		DECL_CL_FUNC(clFunc)	decltype(clFunc) *p_##clFunc __attribute__((weak))=nullptr
+const int 		cl_api_decl_start=__LINE__;
 DECL_CL_FUNC(clGetPlatformIDs);
 DECL_CL_FUNC(clGetDeviceIDs);
 DECL_CL_FUNC(clGetDeviceInfo);
 DECL_CL_FUNC(clCreateContext);
+DECL_CL_FUNC(clGetContextInfo);
 DECL_CL_FUNC(clCreateCommandQueue);
 DECL_CL_FUNC(clCreateProgramWithSource);
 DECL_CL_FUNC(clBuildProgram);
@@ -176,6 +178,7 @@ DECL_CL_FUNC(clFinish);
 DECL_CL_FUNC(clCreateFromGLBuffer);
 DECL_CL_FUNC(clCreateFromGLTexture);
 DECL_CL_FUNC(clReleaseMemObject);
+const int 		cl_api_decl_end=__LINE__;
 #undef			DECL_CL_FUNC
 void			*hOpenCL=nullptr;
 void 			load_OpenCL_API()
@@ -210,14 +213,16 @@ void 			load_OpenCL_API()
 			OCL_state=CL_API_LOADED;
 		//	OCL_API_not_loaded=false;
 #ifdef RELEASE
-#define		GET_CL_FUNC(h, clFunc)		p_##clFunc=(decltype(p_##clFunc))dlsym(h, #clFunc)
+#define		GET_CL_FUNC(handle, clFunc)		p_##clFunc=(decltype(p_##clFunc))dlsym(handle, #clFunc)
 #else
-#define		GET_CL_FUNC(h, clFunc)		p_##clFunc=(decltype(p_##clFunc))dlsym(h, #clFunc), p_check((void*)p_##clFunc, __LINE__, #clFunc)
+#define		GET_CL_FUNC(handle, clFunc)		p_##clFunc=(decltype(p_##clFunc))dlsym(handle, #clFunc), p_check((void*)p_##clFunc, __LINE__, #clFunc)
 #endif
+			const int cl_api_init_start=__LINE__;
 			GET_CL_FUNC(hOpenCL, clGetPlatformIDs);
 			GET_CL_FUNC(hOpenCL, clGetDeviceIDs);
 			GET_CL_FUNC(hOpenCL, clGetDeviceInfo);
 			GET_CL_FUNC(hOpenCL, clCreateContext);
+			GET_CL_FUNC(hOpenCL, clGetContextInfo);
 			GET_CL_FUNC(hOpenCL, clCreateCommandQueue);
 			GET_CL_FUNC(hOpenCL, clCreateProgramWithSource);
 			GET_CL_FUNC(hOpenCL, clBuildProgram);
@@ -233,7 +238,10 @@ void 			load_OpenCL_API()
 			GET_CL_FUNC(hOpenCL, clCreateFromGLBuffer);
 			GET_CL_FUNC(hOpenCL, clCreateFromGLTexture);
 			GET_CL_FUNC(hOpenCL, clReleaseMemObject);
+			const int cl_api_init_end=__LINE__;
 #undef		GET_CL_FUNC
+			const int n_functions=cl_api_decl_end-(cl_api_decl_start+1), n_initialized=cl_api_init_end-(cl_api_init_start+1);
+			static_assert(n_functions==n_initialized, "number of declared functions not equal to number of initialized functions");
 		}
 	}
 }
@@ -3170,15 +3178,23 @@ __kernel void initialize_parameter(__global const int *size, __global float *buf
 #define		INV_THRESHOLD	0.1f
 #define		COMP_MUL		0.00392156862745098f
 __kernel void c2d_rgb(__global const int *size, __global const float *xr, __global const float *xi, __write_only image2d_t rgb)
+//__kernel void c2d_rgb(__global const int *size, __global const float *xr, __global const float *xi, __write_only image2d_t rgb,//
+//	__global float *debug_red, __global float *debug_green, __global float *debug_blue)//DEBUG
 {//size{Xplaces, Yplaces}
 	const int2 coords=(int2)(get_global_id(0), get_global_id(1));
 	const uint idx=size[0]*coords.y+coords.x;
 	float r=xr[idx], i=xi[idx];
 	float4 color;
 	if(r!=r||i!=i)
+	{
 		color=(float4)(1, 0.5f, 0.5f, 0.5f);
+	//	debug_red[idx]=127.5, debug_green[idx]=127.5, debug_blue[idx]=127.5;
+	}
 	else if(fabs(r)==INFINITY||fabs(i)==INFINITY)
+	{
 		color=(float4)(1, 1, 1, 1);
+	//	debug_red[idx]=255, debug_green[idx]=255, debug_blue[idx]=255;
+	}
 	else
 	{
 		float hyp=sqrt(r*r+i*i), cosx=r/hyp, sinx=i/hyp,
@@ -3188,6 +3204,9 @@ __kernel void c2d_rgb(__global const int *size, __global const float *xr, __glob
 			mag=255-mag, red*=mag, green*=mag, blue*=mag;
 		else
 			red=255-mag*(2-red), green=255-mag*(2-green), blue=255-mag*(2-blue);
+
+	//	debug_red[idx]=red, debug_green[idx]=green, debug_blue[idx]=blue;//DEBUG
+
 		color=(float4)(red, green, blue, 255)*COMP_MUL;
 	//	color.x=red*COMP_MUL, color.y=green*COMP_MUL, color.z=blue*COMP_MUL, color.w=1;
 	//	color=(float4)(1, blue*COMP_MUL, green*COMP_MUL, red*COMP_MUL);
@@ -4059,10 +4078,19 @@ void 			cl_initiate()
 		LOGERROR("Can't create context without OpenCL API");
 	else
 	{
-		cl_int error;
-		cl_platform_id platform;
-		cl_device_id device;
-		unsigned platforms, devices;
+		cl_int error=0;
+		cl_platform_id platform=nullptr;
+		cl_device_id device=nullptr;
+		unsigned platforms=0, devices=0;
+		bool context_was_invalid=false;
+		if(OCL_state>=CL_CONTEXT_CREATED)
+		{
+			cl_uint refcount=0;
+			size_t retlen=0;
+			error=p_clGetContextInfo(context, CL_CONTEXT_REFERENCE_COUNT, sizeof(cl_uint), &refcount, &retlen);
+			if(error==CL_INVALID_CONTEXT||hard_reset)
+				OCL_state=CL_API_LOADED, context_was_invalid=true;
+		}
 		if(OCL_state<CL_CONTEXT_CREATED)
 	//	if(!context_valid)
 		{
@@ -4105,6 +4133,20 @@ void 			cl_initiate()
 			//	context_valid=true;
 		}
 
+		if(OCL_state>=CL_PROGRAMS_COMPILED)
+		{
+			bool kernels_valid=false;
+			for(int k=0;k<N_KERNELS;++k)
+			{
+				if(kernels[k])
+				{
+					kernels_valid=true;
+					break;
+				}
+			}
+			if(!kernels_valid||context_was_invalid)
+				OCL_state=CL_CONTEXT_CREATED;
+		}
 		if(OCL_state<CL_PROGRAMS_COMPILED)
 	//	if(!programs_compiled)
 		{
@@ -4156,7 +4198,7 @@ void 			cl_initiate()
 		}
 #if 0
 		//hellocl.c		//https://donkey.vernier.se/~yann/hellocl.c
-		cl_int error;
+		cl_int error=0;
 		cl_platform_id platform;
 		cl_device_id device;
 		unsigned platforms, devices;
@@ -4262,13 +4304,13 @@ void			debug_printbuffers(DebugBuffer *buffers, int nbuffers, int nfloats, int s
 }
 void 			create_resize_buffer(cl_mem &buffer, int nfloats)
 {
-	int error;
+	int error=0;
 	buffer=p_clCreateBuffer(context, CL_MEM_READ_WRITE, nfloats*sizeof(float), nullptr, &error);
 	CL_CHECK(error);
 }
 void			initialize_const_comp(cl_mem &buffer, int nfloats, float value)
 {
-	int error;
+	int error=0;
 	if(!buffer)
 		create_resize_buffer(buffer, nfloats);
 	error=p_clEnqueueFillBuffer(commandqueue, buffer, &value, sizeof(float), 0, nfloats*sizeof(float), 0, nullptr, nullptr);
@@ -4297,7 +4339,7 @@ void 			initialize_component(cl_mem &buffer, int nfloats, char varType, float va
 	{
 		if(!buffer)
 			create_resize_buffer(buffer, nfloats);
-		int error;
+		int error=0;
 		float host_args[3];
 		if(dimension==0)
 			host_args[0]=Xstart, host_args[1]=Xsample;
@@ -4373,7 +4415,7 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 		Xstart	=float(VX-DX*0.5), Xsample	=float(DX/Xplaces);
 		Yend	=float(VY+DY*0.5), mYsample	=float(-DY/Yplaces);
 		auto ftime=(float)time;
-		int error;
+		int error=0;
 		cl_mem size_buf=p_clCreateBuffer(context, CL_MEM_READ_ONLY, 2*sizeof(int), nullptr, &error);	CL_CHECK(error);
 		cl_mem args_buf=p_clCreateBuffer(context, CL_MEM_READ_ONLY, 3*sizeof(float), nullptr, &error);	CL_CHECK(error);
 		host_sizes[0]=dimension_work_size(Xplaces), host_sizes[1]=dimension_work_size(Yplaces), host_sizes[2]=1;
@@ -4488,6 +4530,11 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 			debug_printbuffers(buffers, sizeof(buffers)/sizeof(DebugBuffer), ndrSize, 512);
 		}
 #endif
+#if 0
+		cl_mem debug_buf_red	=p_clCreateBuffer(context, CL_MEM_READ_WRITE, ndrSize*sizeof(float), nullptr, &error);	CL_CHECK(error);
+		cl_mem debug_buf_green	=p_clCreateBuffer(context, CL_MEM_READ_WRITE, ndrSize*sizeof(float), nullptr, &error);	CL_CHECK(error);
+		cl_mem debug_buf_blue	=p_clCreateBuffer(context, CL_MEM_READ_WRITE, ndrSize*sizeof(float), nullptr, &error);	CL_CHECK(error);
+#endif
 		prof_add("solve");
 		static cl_mem image=nullptr;
 		auto &result=terms[ex.resultTerm];					//result -> rgb
@@ -4501,7 +4548,23 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 			error=p_clSetKernelArg(kernel, 1, sizeof(cl_mem), &result.r);	CL_CHECK(error);
 			error=p_clSetKernelArg(kernel, 2, sizeof(cl_mem), &result.i);	CL_CHECK(error);
 			error=p_clSetKernelArg(kernel, 3, sizeof(cl_mem), &image);		CL_CHECK(error);
+#if 0
+			error=p_clSetKernelArg(kernel, 4, sizeof(cl_mem), &debug_buf_red);		CL_CHECK(error);
+			error=p_clSetKernelArg(kernel, 5, sizeof(cl_mem), &debug_buf_green);	CL_CHECK(error);
+			error=p_clSetKernelArg(kernel, 6, sizeof(cl_mem), &debug_buf_blue);		CL_CHECK(error);
+#endif
 			error=p_clEnqueueNDRangeKernel(commandqueue, kernel, 2, nullptr, host_sizes, host_sizes_local, 0, nullptr, nullptr);	CL_CHECK(error);
+#if 0
+		{
+			DebugBuffer buffers[]=
+			{
+				{debug_buf_red, "red"},
+				{debug_buf_green, "green"},
+				{debug_buf_blue, "blue"},
+			};
+			debug_printbuffers(buffers, sizeof(buffers)/sizeof(DebugBuffer), ndrSize, 512);
+		}
+#endif
 		}
 		prof_add("rgb");
 #if 0
@@ -4545,6 +4608,14 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 			cl_free_buffer(term.k);
 		}
 		prof_add("free");
+#if 0//DEBUG
+		error=p_clFinish(commandqueue);	CL_CHECK(error);//DEBUG
+		prof_add("clFinish");
+		rgb=(int*)realloc(rgb, ndrSize*sizeof(int));
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, gl_texture);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgb);
+#endif
 	}
 }
 void			cl_finish()

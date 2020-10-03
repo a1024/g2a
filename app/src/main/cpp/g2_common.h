@@ -30,6 +30,7 @@
 //#define		LOG_TAG		"libgl2jni"
 #define			LOGI(...)	__android_log_print(ANDROID_LOG_INFO, __FILE__, __VA_ARGS__)
 #define			LOGE(...)	__android_log_print(ANDROID_LOG_ERROR, __FILE__, __VA_ARGS__)
+extern int 		hard_reset;
 static const int e_msg_size=2048;
 extern char		first_error_msg[e_msg_size], latest_error_msg[e_msg_size];
 void 			log_error(const char *file, int line, const char *format, ...);

@@ -533,6 +533,8 @@ struct		Font
 	}
 	void revert(){change(txtColor, bkColor, pixel_x, pixel_y);}
 };
+void 			read_gl_texture(unsigned tx_id, int width, int height, int *&rgb_ret);
+void 			debug_printrgb(int *rgb, int width, int height, int stride);
 void 			generate_glcl_texture(unsigned &tx_id, int Xplaces, int Yplaces);
 void 			display_gl_texture(unsigned &tx_id);
 void			display_texture(int x1, int x2, int y1, int y2, int *rgb, int txw, int txh, unsigned char alpha=0xFF);
