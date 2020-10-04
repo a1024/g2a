@@ -18545,7 +18545,7 @@ namespace	modes
 						solver.synchronize();
 					Xplaces=w, Yplaces=h;
 					generate_glcl_texture(gl_texture, Xplaces, Yplaces);
-					cl_solve_c2d(ex, VX, DX, VY, DY, Xplaces, Yplaces, solver.T, gl_texture);//TODO: partial solve
+					cl_solve_c2d(ex, VX, DX, VY, DY, (unsigned)Xplaces, (unsigned)Yplaces, solver.T, gl_texture);//TODO: partial solve
 #if 0
 					if(!operations.size()&&shiftOnly==1&&abs(Xoffset)<Xplaces&&abs(Yoffset)<Yplaces)//C2D DRAG IS BROKEN
 					{
@@ -18666,7 +18666,10 @@ namespace	modes
 			if(cl_gl_interop)
 				display_gl_texture(gl_texture);//draw the solution
 			else
+			{
+			//	debug_printrgb(rgb, w, h, 512);
 				display_texture(0, w, 0, h, rgb, w, h);
+			}
 		//	display_texture(0, w, 0, h, solver.rgb, w, h);
 		//	if(!contourOnly)
 //			for(int ky=0;ky<h;++ky)//Xplaces=w+(w&1)
@@ -21688,7 +21691,9 @@ extern "C" JNIEXPORT jstring JNICALL Java_com_example_grapher2_GL2JNILib_init(JN
 	//ButtonReset::set(w>>1, 0, w>>1, h/10);
 	set_font_size(10);
 	gl_initiate();
-	cl_initiate();
+	std::thread thr_cl_init(cl_initiate);
+	thr_cl_init.detach();
+	//cl_initiate();
 	//printGLString("Version", GL_VERSION);
 	//printGLString("Vendor", GL_VENDOR);
 	//printGLString("Renderer", GL_RENDERER);
@@ -21741,12 +21746,21 @@ extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_step(JNIEn
 		else
 			modes::mode->a_draw();
 	}
+	if(OCL_state<CL_READY)//OpenCL init progress bar
+	{
+		std::string str;
+		double p=cl_progress(str);
+		int c1=pen_color, c2=brush_color;
+		set_color(0x400000FF);
+		GL2_2D::draw_rectangle(0, p*w, 5*fontH, 6*fontH);
+		pen_color=c1, brush_color=c2;
+		GUIPrint(0, 4*fontH, str.c_str());
+	}
 	if(inputBoxOn)//apply bluish tint
 	{
 		int c1=pen_color, c2=brush_color;
 		set_color(0x40FF4040);//0x20FF8080
-		GL2_2D::draw_rectangle(0, w, 0, h);
-		CHECK();
+		GL2_2D::draw_rectangle(0, w, 0, h);	CHECK();
 		pen_color=c1, brush_color=c2;
 	}
 //	cl_step();
@@ -21766,10 +21780,7 @@ void push_buttons(TouchInfo &ti)
 //		_3d.reset_cam();
 //	}
 }
-enum TouchType
-{
-	ACTION_DOWN, ACTION_UP, ACTION_MOVE, ACTION_CANCEL, ACTION_OUTSIDE, ACTION_POINTER_DOWN, ACTION_POINTER_UP
-};
+enum TouchType{ACTION_DOWN, ACTION_UP, ACTION_MOVE, ACTION_CANCEL, ACTION_OUTSIDE, ACTION_POINTER_DOWN, ACTION_POINTER_UP};
 extern "C" JNIEXPORT unsigned char JNICALL Java_com_example_grapher2_GL2JNILib_touch(JNIEnv *env, jclass obj, jfloat x, jfloat y, jint msg, jint idx)
 {
 	switch(msg)

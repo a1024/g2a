@@ -27,9 +27,11 @@
 #include		"g2_common.h"
 #include		"g2_cl.h"
 #include		"GLESAPI.h"
+
+	#define		DEBUG2
+
 const int		g_buf_size=1048576;
 static char		g_buf[g_buf_size]={0};//
-enum			OpenCL_state{CL_NOTHING, CL_API_LOADED, CL_CONTEXT_CREATED, CL_PROGRAMS_COMPILED, CL_KERNELS_LOADED};
 int				OCL_state=CL_NOTHING;
 bool			cl_gl_interop=false;
 const char*		clerr2str(int error)
@@ -164,7 +166,8 @@ void			LOGE_long(const char *msg, int length)
 {
 	const int quota=1000;
 	for(int k=0;k+quota-1<length;k+=quota)
-		LOGE("%*s", quota, msg+k);
+		LOGE("G2_CL: %*s", quota, msg+k);
+	//	LOGE("%*s", quota, msg+k);
 }
 #define 		DECL_CL_FUNC(clFunc)	decltype(clFunc) *p_##clFunc __attribute__((weak))=nullptr
 const int 		cl_api_decl_start=__LINE__;
@@ -195,7 +198,7 @@ const int 		cl_api_decl_end=__LINE__;
 void			*hOpenCL=nullptr;
 void 			load_OpenCL_API()
 {
-	if(OCL_state==CL_NOTHING)
+	if(OCL_state<CL_API_LOADED)
 	{
 		static const char *opencl_so_paths[]=//https://stackoverflow.com/questions/31611790/using-opencl-in-the-new-android-studio
 		{
@@ -218,10 +221,13 @@ void 			load_OpenCL_API()
 		for(int k=0;k<npaths&&!hOpenCL;++k)
 			hOpenCL=dlopen(opencl_so_paths[k], RTLD_LAZY);
 		if(!hOpenCL)
-			ERROR("Cannot find OpenCL library");
+		{
+			OCL_state=CL_NOTHING;
+			LOGERROR("Cannot find OpenCL library");
+		}
 		else
 		{
-			OCL_state=CL_API_LOADED;
+			OCL_state=CL_LOADING_API;
 #define		GET_CL_FUNC(handle, clFunc)		p_##clFunc=(decltype(p_##clFunc))dlsym(handle, #clFunc), p_check((void*)p_##clFunc, __LINE__, #clFunc)
 			const int cl_api_init_start=__LINE__;
 			GET_CL_FUNC(hOpenCL, clGetPlatformIDs);
@@ -250,6 +256,8 @@ void 			load_OpenCL_API()
 #undef		GET_CL_FUNC
 			const int n_functions=cl_api_decl_end-(cl_api_decl_start+1), n_initialized=cl_api_init_end-(cl_api_init_start+1);
 			static_assert(n_functions==n_initialized, "number of declared functions not equal to number of initialized functions");
+			if(OCL_state!=CL_NOTHING)
+				OCL_state=CL_API_LOADED;
 		}
 	}
 }
@@ -1712,13 +1720,13 @@ G2_R_R(percent){IDX; ASSIGN_R(xr[idx]*0.01);}
 G2_C_C(percent)
 {
 	IDX;
-	float2 ret=VEC2(x)*0.01;
+	float2 ret=VEC2(x)*0.01f;
 	RET_C;
 }
 G2_Q_Q(percent)
 {
 	IDX;
-	float4 ret=VEC4(x)*0.01;
+	float4 ret=VEC4(x)*0.01f;
 	RET_Q;
 }
 
@@ -3215,14 +3223,14 @@ __kernel void c2d_rgb(__global const int *size, __global const float *xr, __glob
 }
 
 __kernel void c2d_rgb2(__global const int *size, __global const float *xr, __global const float *xi, __global int *rgb)
-{//size{Xplaces, Yplaces}
+{//size{Xplaces, Yplaces, 1, appwidth, appheight}
 	const int2 coords=(int2)(get_global_id(0), get_global_id(1));
-	const uint idx=size[0]*coords.y+coords.x;
+	const uint idx=size[0]*coords.y+coords.x, idx2=size[3]*coords.y+coords.x;
 	float r=xr[idx], i=xi[idx];
 	if(r!=r||i!=i)
-		rgb[idx]=0xFF7F7F7F;
+		rgb[idx2]=0xFF7F7F7F;
 	else if(fabs(r)==INFINITY||fabs(i)==INFINITY)
-		rgb[idx]=0xFFFFFFFF;
+		rgb[idx2]=0xFFFFFFFF;
 	else
 	{
 		float hyp=sqrt(r*r+i*i), cosx=r/hyp, sinx=i/hyp,
@@ -3232,7 +3240,7 @@ __kernel void c2d_rgb2(__global const int *size, __global const float *xr, __glo
 			mag=255-mag, red*=mag, green*=mag, blue*=mag;
 		else
 			red=255-mag*(2-red), green=255-mag*(2-green), blue=255-mag*(2-blue);
-		rgb[idx]=0xFF000000|(uchar)blue<<16|(uchar)green<<8|(uchar)red;
+		rgb[idx2]=0xFF000000|(uchar)blue<<16|(uchar)green<<8|(uchar)red;
 	}
 }
 )CLSRC";
@@ -4106,10 +4114,92 @@ void			checkforbuildfailure(int error, cl_program *programs, int prog_idx, cl_de
 		size_t length=0;
 		error=p_clGetProgramBuildInfo(programs[prog_idx], device, CL_PROGRAM_BUILD_LOG, g_buf_size, g_buf, &length);	CL_CHECK(error);
 		err_msg+="\n\n\tPROGRAM "+std::to_string(prog_idx)+"\n\n"+g_buf;
+		LOGE("PROGRAM %d: %s", prog_idx, g_buf);
 	}
 }
 inline bool 	newpointer(void *p0, void *p1){return p0&&p1!=p0;}
 #define 		NEWPOINTER(pointer)		newpointer(pointer##0, pointer)
+//void			update_cl_state(int state)
+//{
+//	OCL_state=state;
+//}
+double			cl_progress(std::string &ret)
+{
+	switch(OCL_state)
+	{
+	case CL_NOTHING:			ret="OpenCL API not loaded.";		break;
+	case CL_LOADING_API:		ret="Loading OpenCL API...";		break;
+	case CL_API_LOADED:			ret="OpenCL API loaded.";			break;
+	case CL_CREATING_CONTEXT:	ret="Creating OpenCL context...";	break;
+	case CL_CONTEXT_CREATED:	ret="OpenCL context created.";		break;
+
+	case CL_COMPILING_PROGRAM00:
+	case CL_COMPILING_PROGRAM01:
+	case CL_COMPILING_PROGRAM02:
+	case CL_COMPILING_PROGRAM03:
+	case CL_COMPILING_PROGRAM04:
+	case CL_COMPILING_PROGRAM05:
+	case CL_COMPILING_PROGRAM06:
+	case CL_COMPILING_PROGRAM07:
+	case CL_COMPILING_PROGRAM08:
+	case CL_COMPILING_PROGRAM09:
+	case CL_COMPILING_PROGRAM10:
+	case CL_COMPILING_PROGRAM11:
+	case CL_COMPILING_PROGRAM12:
+	case CL_COMPILING_PROGRAM13:
+	case CL_COMPILING_PROGRAM14:
+	case CL_COMPILING_PROGRAM15:
+	case CL_COMPILING_PROGRAM16:
+	case CL_COMPILING_PROGRAM17:
+	case CL_COMPILING_PROGRAM18:
+	case CL_COMPILING_PROGRAM19:
+		ret="Compiling OpenCL program "+std::to_string(OCL_state+1-CL_COMPILING_PROGRAM00)
+				+" of "+std::to_string(nprograms)+"...";
+		break;
+	case CL_PROGRAMS_COMPILED:
+		ret="OpenCL programs compiled.";
+		break;
+	case CL_RETRIEVING_BINARIES:
+		ret="Retrieving OpenCL binaries.";
+		break;
+	case CL_LOADING_PROGRAM00:
+	case CL_LOADING_PROGRAM01:
+	case CL_LOADING_PROGRAM02:
+	case CL_LOADING_PROGRAM03:
+	case CL_LOADING_PROGRAM04:
+	case CL_LOADING_PROGRAM05:
+	case CL_LOADING_PROGRAM06:
+	case CL_LOADING_PROGRAM07:
+	case CL_LOADING_PROGRAM08:
+	case CL_LOADING_PROGRAM09:
+	case CL_LOADING_PROGRAM10:
+	case CL_LOADING_PROGRAM11:
+	case CL_LOADING_PROGRAM12:
+	case CL_LOADING_PROGRAM13:
+	case CL_LOADING_PROGRAM14:
+	case CL_LOADING_PROGRAM15:
+	case CL_LOADING_PROGRAM16:
+	case CL_LOADING_PROGRAM17:
+	case CL_LOADING_PROGRAM18:
+	case CL_LOADING_PROGRAM19:
+		ret="Loading OpenCL program "+std::to_string(OCL_state+1-CL_LOADING_PROGRAM00)
+				+" of "+std::to_string(nprograms)+"...";
+		break;
+	case CL_PROGRAMS_LOADED:
+		ret="OpenCL programs loaded.";
+		break;
+	case CL_TESTING:
+		ret="Testing OpenCL";
+		break;
+	case CL_READY:
+		ret="OpenCL is ready.";
+		break;
+	default:
+		ret="Unknown state";
+		return 0.5;
+	}
+	return (double)OCL_state/CL_READY;
+}
 void 			cl_initiate()
 {
 	load_OpenCL_API();
@@ -4120,6 +4210,7 @@ void 			cl_initiate()
 		LOGERROR("Can't create context without OpenCL API");
 	else
 	{
+		OCL_state=CL_CREATING_CONTEXT;
 		cl_int error=0;
 		size_t retlen=0;
 		//static bool firsttime=true;
@@ -4136,9 +4227,8 @@ void 			cl_initiate()
 		error=p_clGetDeviceInfo(device, CL_DEVICE_VENDOR, g_buf_size, g_buf, &retlen);	CL_CHECK(error);
 		LOGI("\n\n\t%*s\n\n", (int)retlen, g_buf);
 		error=p_clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &g_maxlocalsize, &retlen);	CL_CHECK(error);
+		LOGI("\n\n\tApp resolution: w=%d, h=%d\n\n", w, h);
 		LOGI("\n\n\tCL_DEVICE_MAX_WORK_GROUP_SIZE = %d\n\n", (int)g_maxlocalsize);
-		g_maxlocaldim=(size_t)sqrt(g_maxlocalsize);
-		g_maxlocaldim=1<<floor_log2(g_maxlocaldim);
 		error=p_clGetDeviceInfo(device, CL_DEVICE_EXTENSIONS, g_buf_size, g_buf, &retlen);	CL_CHECK(error);
 		LOGI("\n\n\t%*s\n\n", (int)retlen, g_buf);
 		std::string extensions=g_buf;
@@ -4165,6 +4255,7 @@ void 			cl_initiate()
 		}
 		context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);
 		commandqueue=p_clCreateCommandQueue(context, device, 0, &error);				CL_CHECK(error);
+		OCL_state=CL_CONTEXT_CREATED;
 #if 0
 		{
 			error=p_clGetPlatformIDs(1, &platform, &n_platforms);							CL_CHECK(error);//
@@ -4180,8 +4271,8 @@ void 			cl_initiate()
 			commandqueue=p_clCreateCommandQueue(context, device, 0, &error);				CL_CHECK(error);//
 		}
 #endif
-		if(!error)
-			OCL_state=CL_CONTEXT_CREATED;
+		//if(!error)
+		//	OCL_state=CL_CONTEXT_CREATED;
 #if 0
 		float testvalue=42;//DEBUG		always succeeds
 		cl_mem mem_in1=p_clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float), nullptr, &error);	CL_CHECK(error);
@@ -4198,6 +4289,7 @@ void 			cl_initiate()
 		{
 			for(int kp=0;kp<nprograms;++kp)
 			{
+				OCL_state=CL_COMPILING_PROGRAM00+kp;
 				auto &bin=binaries[kp];
 				int status=0;
 				programs[kp]=p_clCreateProgramWithBinary(context, 1, &device, &bin.size, (const unsigned char**)&bin.bin, &status, &error);	CL_CHECK(error);
@@ -4211,6 +4303,7 @@ void 			cl_initiate()
 			std::string src_common=CLSource::program_common, src[nprograms];
 			for(int kp=0;kp<nprograms;++kp)
 			{
+				OCL_state=CL_COMPILING_PROGRAM00+kp;
 				src[kp]=src_common+CLSource::programs[kp];
 				const char *sources[]=
 				{
@@ -4224,11 +4317,12 @@ void 			cl_initiate()
 				error=p_clBuildProgram(programs[kp], 0, nullptr, "", nullptr, nullptr);					CL_CHECK(error);
 				checkforbuildfailure(error, programs, kp, device, err_msg);
 			}
+			OCL_state=CL_PROGRAMS_COMPILED;
 			if(!err_msg.empty())
 				LOGE_long(err_msg.c_str(), err_msg.size());
 			else//build successful, retrieve binaries
 			{
-				OCL_state=CL_PROGRAMS_COMPILED;
+				OCL_state=CL_RETRIEVING_BINARIES;
 				for(int kp=0;kp<nprograms;++kp)
 				{
 					auto &bin=binaries[kp];
@@ -4244,6 +4338,7 @@ void 			cl_initiate()
 		{
 			for(int kp=0;kp<nprograms;++kp)
 			{
+				OCL_state=CL_LOADING_PROGRAM00+kp;
 				auto &kernel_batch=kernel_db[kp];
 				for(int kk=0;kk<kernel_batch.nkernels;++kk)
 				{
@@ -4257,9 +4352,9 @@ void 			cl_initiate()
 					//TODO: disc_idx
 				}
 			}
+			OCL_state=CL_PROGRAMS_LOADED;
 		}
-		if(!error)
-			OCL_state=CL_KERNELS_LOADED;
+		OCL_state=CL_TESTING;
 #if 1
 		//static cl_platform_id platform0=nullptr;
 		//static cl_device_id device0=nullptr;
@@ -4289,6 +4384,7 @@ void 			cl_initiate()
 		error=p_clEnqueueNDRangeKernel(commandqueue, k_fill, 3, nullptr, host_sizes, host_sizes_local, 0, nullptr, nullptr);	CL_CHECK(error);
 		error=p_clEnqueueReadBuffer(commandqueue, buffer, CL_FALSE, 0, sizeof(float), &testvalue, 0, nullptr, nullptr);	CL_CHECK(error);
 		error=p_clFinish(commandqueue);		CL_CHECK(error);
+		LOGI("G2_CL: TESTVALUE = %f", testvalue);//
 		float testvalue2=testvalue;//END DEBUG
 #endif
 #if 0
@@ -4356,6 +4452,9 @@ __kernel void myfunc(__global const float *in1, __global const float *in2, __glo
 		error=p_clFinish(commandqueue);	CL_CHECK(error);
 		unload_OpenCL_API();//
 #endif
+		if(!error)
+			OCL_state=CL_READY;
+		//	OCL_state=CL_KERNELS_LOADED;
 	}
 }
 struct			CLTerm
@@ -4397,21 +4496,26 @@ void			debug_printbuffers(DebugBuffer *buffers, int nbuffers, int nfloats, int s
 	}
 	free(result);
 }
-void 			create_resize_buffer(cl_mem &buffer, int nfloats)
+void 			create_resize_buffer(cl_mem &buffer, unsigned nfloats)
 {
 	int error=0;
 	buffer=p_clCreateBuffer(context, CL_MEM_READ_WRITE, nfloats*sizeof(float), nullptr, &error);
 	CL_CHECK(error);
 }
-void			initialize_const_comp(cl_mem &buffer, int nfloats, float value)
+void			initialize_const_comp(cl_mem &buffer, unsigned nfloats, float value)
 {
 	int error=0;
 	if(!buffer)
 		create_resize_buffer(buffer, nfloats);
-	error=p_clEnqueueFillBuffer(commandqueue, buffer, &value, sizeof(float), 0, nfloats*sizeof(float), 0, nullptr, nullptr);
-	CL_CHECK(error);
+	error=p_clEnqueueFillBuffer(commandqueue, buffer, &value, sizeof(float), 0, nfloats*sizeof(float), 0, nullptr, nullptr); CL_CHECK(error);
+#ifdef DEBUG2
+	float testval=0;
+	error=p_clEnqueueReadBuffer(commandqueue, buffer, CL_TRUE, 0, 1*sizeof(float), &testval, 0, nullptr, nullptr);	CL_CHECK(error);
+	LOGI("G2_CL: const = %f", testval);
+#endif
 }
-static size_t	host_sizes[3]={}, host_sizes_local[3]={};
+static size_t	host_sizes[3]={},//{globalwidth, globalheight, globaldepth}
+				host_sizes_local[3]={};//{localwidth, localheight, localdepth}
 static float 	Xstart=0, Xsample=0,
 				Yend=0, mYsample=0;//negative Ysample for C2D
 unsigned		dimension_work_size(unsigned places){return places&~(g_maxlocaldim-1);}
@@ -4430,7 +4534,7 @@ void 			initialize_component(cl_mem &buffer, int nfloats, char varType, float va
 	}
 	if(dimension==-1)
 		initialize_const_comp(buffer, nfloats, data);
-	else if(dimension<2)
+	else if(dimension<2)//C2D: exactly 2 input dimensions
 	{
 		if(!buffer)
 			create_resize_buffer(buffer, nfloats);
@@ -4440,15 +4544,24 @@ void 			initialize_component(cl_mem &buffer, int nfloats, char varType, float va
 			host_args[0]=Xstart, host_args[1]=Xsample;
 		else
 			host_args[0]=Yend, host_args[1]=mYsample;
-		host_args[2]=(float&)dimension;
-		error=p_clEnqueueWriteBuffer(commandqueue, args_buf, blocking, 0, 2*sizeof(float)+sizeof(int), host_args, 0, nullptr, nullptr);	CL_CHECK(error);
+		host_args[2]=(float)dimension;
+		error=p_clEnqueueWriteBuffer(commandqueue, args_buf, blocking, 0, 3*sizeof(float), host_args, 0, nullptr, nullptr);	CL_CHECK(error);
 		cl_kernel k_fill=kernels[V_INITIALIZE_PARAMETER];
 		error=p_clSetKernelArg(k_fill, 0, sizeof(cl_mem), &size_buf);	CL_CHECK(error);
 		error=p_clSetKernelArg(k_fill, 1, sizeof(cl_mem), &buffer);		CL_CHECK(error);
 		error=p_clSetKernelArg(k_fill, 2, sizeof(cl_mem), &args_buf);	CL_CHECK(error);
+		int error0=error;
 		error=p_clEnqueueNDRangeKernel(commandqueue, k_fill, 3, nullptr, host_sizes, host_sizes_local, 0, nullptr, nullptr);	CL_CHECK(error);
+#ifdef DEBUG2
+		LOGI("G2_CL: error: %d -> %d, lsizes={%d, %d, %d}", error0, error, (int)host_sizes_local[0], (int)host_sizes_local[1], (int)host_sizes_local[2]);
+#endif
 		if(blocking)
 			{error=p_clFinish(commandqueue);		CL_CHECK(error);}
+#ifdef DEBUG2
+		float testval=0;
+		error=p_clEnqueueReadBuffer(commandqueue, buffer, CL_TRUE, 0, 1*sizeof(float), &testval, 0, nullptr, nullptr);	CL_CHECK(error);
+		LOGI("G2_CL: buffer[0] = %f", testval);
+#endif
 	}
 }
 void			cl_free_buffer(cl_mem &buffer)
@@ -4484,10 +4597,9 @@ void			colorFunction_bcw(Comp1d const &v, int *color)
 		p[0]=(unsigned char)red, p[1]=(unsigned char)green, p[2]=(unsigned char)blue, p[3]=0xFF;//0xAABBGGRR	//argb
 	}
 }
-void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, double DY, int Xplaces, int Yplaces, double time, unsigned gl_texture)
+void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, double DY, unsigned Xplaces, unsigned Yplaces, double time, unsigned gl_texture)
 {//expression -> OpenGL texture
-	if(OCL_state<CL_KERNELS_LOADED)
-//	if(OCL_API_not_loaded)
+	if(OCL_state<CL_READY)
 		LOGERROR("Solve: OCL_state = %d", OCL_state);
 	else
 	{
@@ -4498,6 +4610,7 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 		//	auto sshort=sizeof(short);			//2
 		//	auto swchar_t=sizeof(wchar_t);		//4
 		//	auto sint=sizeof(int);				//4
+		//	auto suint=sizeof(unsigned);		//4
 		//	auto slong=sizeof(long);			//8
 		//	auto sllong=sizeof(long long);		//8
 		//	auto sfloat=sizeof(float);			//4
@@ -4508,19 +4621,33 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 		prof_add("cl_solve entry");
 		glFlush();
 		prof_add("glFlush");
-		int ndrSize=Xplaces*Yplaces;
+		unsigned ndrSize=Xplaces*Yplaces;
 		Xstart	=float(VX-DX*0.5), Xsample	=float(DX/Xplaces);
 		Yend	=float(VY+DY*0.5), mYsample	=float(-DY/Yplaces);
 		auto ftime=(float)time;
 		int error=0;
-		cl_mem size_buf=p_clCreateBuffer(context, CL_MEM_READ_ONLY, 2*sizeof(int), nullptr, &error);	CL_CHECK(error);
-		cl_mem args_buf=p_clCreateBuffer(context, CL_MEM_READ_ONLY, 2*sizeof(float)+sizeof(int), nullptr, &error);	CL_CHECK(error);
-		host_sizes[0]=dimension_work_size(Xplaces), host_sizes[1]=dimension_work_size(Yplaces), host_sizes[2]=1;
+		cl_mem size_buf=p_clCreateBuffer(context, CL_MEM_READ_ONLY, 5*sizeof(int), nullptr, &error);	CL_CHECK(error);
+		cl_mem args_buf=p_clCreateBuffer(context, CL_MEM_READ_ONLY, 3*sizeof(float), nullptr, &error);	CL_CHECK(error);
+		g_maxlocaldim=(size_t)sqrt(g_maxlocalsize);//determine local work dimensions
+		g_maxlocaldim=1<<floor_log2(g_maxlocaldim);
+		LOGI("\n\n\tg_maxlocalsize = %d\n\n", (int)g_maxlocaldim);
+		unsigned host_sizes32[]=//{globalwidth, globalheight, globaldepth, appwidth, appheight}
+		{
+			dimension_work_size(Xplaces), dimension_work_size(Yplaces), 1,
+			Xplaces, Yplaces
+		};
+		host_sizes[0]=host_sizes32[0], host_sizes[1]=host_sizes32[1], host_sizes[2]=host_sizes32[2];
 		host_sizes_local[0]=g_maxlocaldim, host_sizes_local[1]=g_maxlocaldim, host_sizes_local[2]=1;
-		error=p_clEnqueueWriteBuffer(commandqueue, size_buf, blocking, 0, 2*sizeof(int), host_sizes, 0, nullptr, nullptr);	CL_CHECK(error);//send size buffer
+		error=p_clEnqueueWriteBuffer(commandqueue, size_buf, blocking, 0, 5*sizeof(int), host_sizes32, 0, nullptr, nullptr);	CL_CHECK(error);//send size buffer
+#ifdef DEBUG2
+		LOGI("G2_CL: hsizes={%d, %d, %d, %d, %d}", host_sizes32[0], host_sizes32[1], host_sizes32[2], host_sizes32[3], host_sizes32[4]);
+		int sizes[5]={};
+		error=p_clEnqueueReadBuffer(commandqueue, size_buf, CL_TRUE, 0, 5*sizeof(int), sizes, 0, nullptr, nullptr);	CL_CHECK(error);
+		LOGI("G2_CL: sizes={%d, %d, %d, %d, %d}", sizes[0], sizes[1], sizes[2], sizes[3], sizes[4]);
+#endif
 		int nterms=ex.n.size();
 		std::vector<CLTerm> terms(nterms);
-		prof_add("preparations");
+		prof_add("prep");
 		for(int kn=0;kn<nterms;++kn)//initialize terms
 		{
 			auto &term=terms[kn];
@@ -4661,6 +4788,9 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 				rgb=(int*)realloc(rgb, ndrSize*sizeof(int));
 				error=p_clEnqueueReadBuffer(commandqueue, image, CL_FALSE, 0, ndrSize*sizeof(int), rgb, 0, nullptr, nullptr);	CL_CHECK(error);
 				cl_free_buffer(image);
+#ifdef DEBUG2
+				LOGI("G2_CL: rgb[0] = 0x%08X", rgb[0]);
+#endif
 			}
 			if(blocking)
 				{error=p_clFinish(commandqueue);		CL_CHECK(error);}
@@ -4681,17 +4811,18 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 		auto
 			ndr_r=(float*)malloc(ndrSize*sizeof(float)),
 			ndr_i=(float*)malloc(ndrSize*sizeof(float));
-		error=p_clEnqueueReadBuffer(commandqueue, result.r, CL_TRUE, 0, ndrSize*sizeof(float), ndr_r, 0, nullptr, nullptr);	CL_CHECK(error);//starts at -100
-		error=p_clEnqueueReadBuffer(commandqueue, result.i, CL_TRUE, 0, ndrSize*sizeof(float), ndr_i, 0, nullptr, nullptr);	CL_CHECK(error);//starts at -205
+		error=p_clEnqueueReadBuffer(commandqueue, result.r, CL_TRUE, 0, ndrSize*sizeof(float), ndr_r, 0, nullptr, nullptr);	CL_CHECK(error);
+		error=p_clEnqueueReadBuffer(commandqueue, result.i, CL_TRUE, 0, ndrSize*sizeof(float), ndr_i, 0, nullptr, nullptr);	CL_CHECK(error);
 		prof_add("DEBUG read");
 		rgb=(int*)realloc(rgb, ndrSize*sizeof(int));
-		for(int k=0;k<ndrSize;++k)
+		for(unsigned k=0;k<ndrSize;++k)
 		{
 			colorFunction_bcw(Comp1d(ndr_r[k], ndr_i[k]), rgb+k);
 			//if(!(k&15))
 			//	LOGE("\nXY(%g, %g)\t0x%08X", ndr_r[k], ndr_i[k], rgb[k]);
 		}
 		prof_add("DEBUG rgb");
+		LOGI("G2_CL: TOPRIGHT CORNER = %f + %f i, rgb[0] = 0x%08X", ndr_r[0], ndr_i[0], rgb[0]);//DEBUG2
 	//	display_texture(0, Xplaces, 0, Yplaces, rgb, Xplaces, Yplaces);
 	//	glFlush();
 		free(ndr_r);
@@ -4719,7 +4850,7 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 }
 void			cl_finish()
 {
-	if(OCL_state<CL_KERNELS_LOADED)
+	if(OCL_state<CL_READY)
 		LOGERROR("cl_finish: OCL_state = %d", OCL_state);
 //	if(OCL_API_not_loaded)
 //		LOGERROR("OpenCL API not loaded.");
