@@ -10832,8 +10832,15 @@ namespace	modes
 			{
 				y=y1;
 				for(int ky=kz+Xplaces*y1;y<y2;++y, ky+=Xplaces)
+				{
 					for(x=x1;x<x2;++x)
-						ndr[offset+ky+x]=f();
+					{
+						int idx=offset+ky+x;//weird bug of vectors becoming empty
+						if(idx>=ndr.size())
+							return;
+						ndr[idx]=f();
+					}
+				}
 			}
 		}
 	}
@@ -18539,7 +18546,7 @@ namespace	modes
 			auto &ex=expr[cursorEx];
 			{
 				bool changed=false;
-				if(toSolve)
+				if(OCL_state>=CL_READY_UNTESTED&&(toSolve||time_variance))
 				{
 					if(!paused)
 						solver.synchronize();
@@ -18658,17 +18665,31 @@ namespace	modes
 					doContour(cursorEx, Xs, -DZ/2, +DZ/2, Zstep, 10);
 				}
 			}
-			cl_finish();
 
 		//	read_gl_texture(gl_texture, w, h, rgb);//DEBUG correct
 		//	debug_printrgb(rgb, w, h, 512);
 		//	display_texture(0, w, 0, h, rgb, w, h);//DEBUG correct
-			if(cl_gl_interop)
-				display_gl_texture(gl_texture);//draw the solution
+			if(OCL_state<CL_READY_UNTESTED)
+			{
+				int c1=pen_color, c2=brush_color;
+				double time=now_seconds();
+				unsigned char red=250*0.5*(1+cos(time)), green=196*0.5*(1+cos(time-G2::_pi/3)), blue=69*0.5*(1+cos(time-G2::_pi*2/3));
+				set_color(0xFF000000|blue<<16|green<<8|red);
+				GL2_2D::draw_rectangle(0, w, 0, h);
+				pen_color=c1, brush_color=c2;
+				GUIPrint(0, 3*fontH, "Please wait...");
+			//	GUIPrint(0, 3*fontH, "Please wait while OpenCL is prepared...");
+			}
 			else
 			{
-			//	debug_printrgb(rgb, w, h, 512);
-				display_texture(0, w, 0, h, rgb, w, h);
+				cl_finish();
+				if(cl_gl_interop)
+					display_gl_texture(gl_texture);//draw the solution
+				else
+				{
+				//	debug_printrgb(rgb, w, h, 512);
+					display_texture(0, w, 0, h, rgb, w, h);
+				}
 			}
 		//	display_texture(0, w, 0, h, solver.rgb, w, h);
 		//	if(!contourOnly)
@@ -21691,9 +21712,9 @@ extern "C" JNIEXPORT jstring JNICALL Java_com_example_grapher2_GL2JNILib_init(JN
 	//ButtonReset::set(w>>1, 0, w>>1, h/10);
 	set_font_size(10);
 	gl_initiate();
-	std::thread thr_cl_init(cl_initiate);
-	thr_cl_init.detach();
-	//cl_initiate();
+	//std::thread thr_cl_init(cl_initiate);
+	//thr_cl_init.detach();
+	cl_initiate();
 	//printGLString("Version", GL_VERSION);
 	//printGLString("Vendor", GL_VENDOR);
 	//printGLString("Renderer", GL_RENDERER);

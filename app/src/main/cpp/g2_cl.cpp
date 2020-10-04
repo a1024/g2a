@@ -34,118 +34,179 @@ const int		g_buf_size=1048576;
 static char		g_buf[g_buf_size]={0};//
 int				OCL_state=CL_NOTHING;
 bool			cl_gl_interop=false;
+#define 		EC(x)		case x:a=(const char*)#x;break;
+#define 		EC2(n, x)	case n:a=(const char*)#x;break;
 const char*		clerr2str(int error)
 {
-#define 			EC(x)		case x:a=(const char*)#x;break
-#define 			EC2(n, x)	case n:a=(const char*)#x;break
 	const char *a=nullptr;
 	switch(error)
 	{
-	EC(CL_SUCCESS);
-	EC(CL_DEVICE_NOT_FOUND);
-	EC(CL_DEVICE_NOT_AVAILABLE);
-	EC(CL_COMPILER_NOT_AVAILABLE);
-	EC(CL_MEM_OBJECT_ALLOCATION_FAILURE);
-	EC(CL_OUT_OF_RESOURCES);
-	EC(CL_OUT_OF_HOST_MEMORY);
-	EC(CL_PROFILING_INFO_NOT_AVAILABLE);
-	EC(CL_MEM_COPY_OVERLAP);
-	EC(CL_IMAGE_FORMAT_MISMATCH);
-	EC(CL_IMAGE_FORMAT_NOT_SUPPORTED);
-	EC(CL_BUILD_PROGRAM_FAILURE);
-	EC(CL_MAP_FAILURE);
+	EC(CL_SUCCESS)
+	EC(CL_DEVICE_NOT_FOUND)
+	EC(CL_DEVICE_NOT_AVAILABLE)
+	EC(CL_COMPILER_NOT_AVAILABLE)
+	EC(CL_MEM_OBJECT_ALLOCATION_FAILURE)
+	EC(CL_OUT_OF_RESOURCES)
+	EC(CL_OUT_OF_HOST_MEMORY)
+	EC(CL_PROFILING_INFO_NOT_AVAILABLE)
+	EC(CL_MEM_COPY_OVERLAP)
+	EC(CL_IMAGE_FORMAT_MISMATCH)
+	EC(CL_IMAGE_FORMAT_NOT_SUPPORTED)
+	EC(CL_BUILD_PROGRAM_FAILURE)
+	EC(CL_MAP_FAILURE)
 //#ifdef CL_VERSION_1_1
-	EC(CL_MISALIGNED_SUB_BUFFER_OFFSET);
-	EC(CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST);
+	EC(CL_MISALIGNED_SUB_BUFFER_OFFSET)
+	EC(CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST)
 //#endif
 //#ifdef CL_VERSION_1_2
-	EC(CL_COMPILE_PROGRAM_FAILURE);
-	EC(CL_LINKER_NOT_AVAILABLE);
-	EC(CL_LINK_PROGRAM_FAILURE);
-	EC(CL_DEVICE_PARTITION_FAILED);
-	EC(CL_KERNEL_ARG_INFO_NOT_AVAILABLE);
+	EC(CL_COMPILE_PROGRAM_FAILURE)
+	EC(CL_LINKER_NOT_AVAILABLE)
+	EC(CL_LINK_PROGRAM_FAILURE)
+	EC(CL_DEVICE_PARTITION_FAILED)
+	EC(CL_KERNEL_ARG_INFO_NOT_AVAILABLE)
 //#endif
-	EC(CL_INVALID_VALUE);
-	EC(CL_INVALID_DEVICE_TYPE);
-	EC(CL_INVALID_PLATFORM);
-	EC(CL_INVALID_DEVICE);
-	EC(CL_INVALID_CONTEXT);
-	EC(CL_INVALID_QUEUE_PROPERTIES);
-	EC(CL_INVALID_COMMAND_QUEUE);
-	EC(CL_INVALID_HOST_PTR);
-	EC(CL_INVALID_MEM_OBJECT);
-	EC(CL_INVALID_IMAGE_FORMAT_DESCRIPTOR);
-	EC(CL_INVALID_IMAGE_SIZE);
-	EC(CL_INVALID_SAMPLER);
-	EC(CL_INVALID_BINARY);
-	EC(CL_INVALID_BUILD_OPTIONS);
-	EC(CL_INVALID_PROGRAM);
-	EC(CL_INVALID_PROGRAM_EXECUTABLE);
-	EC(CL_INVALID_KERNEL_NAME);
-	EC(CL_INVALID_KERNEL_DEFINITION);
-	EC(CL_INVALID_KERNEL);
-	EC(CL_INVALID_ARG_INDEX);
-	EC(CL_INVALID_ARG_VALUE);
-	EC(CL_INVALID_ARG_SIZE);
-	EC(CL_INVALID_KERNEL_ARGS);
-	EC(CL_INVALID_WORK_DIMENSION);
-	EC(CL_INVALID_WORK_GROUP_SIZE);
-	EC(CL_INVALID_WORK_ITEM_SIZE);
-	EC(CL_INVALID_GLOBAL_OFFSET);
-	EC(CL_INVALID_EVENT_WAIT_LIST);
-	EC(CL_INVALID_EVENT);
-	EC(CL_INVALID_OPERATION);
-	EC(CL_INVALID_GL_OBJECT);
-	EC(CL_INVALID_BUFFER_SIZE);
-	EC(CL_INVALID_MIP_LEVEL);
-	EC(CL_INVALID_GLOBAL_WORK_SIZE);
+	EC(CL_INVALID_VALUE)
+	EC(CL_INVALID_DEVICE_TYPE)
+	EC(CL_INVALID_PLATFORM)
+	EC(CL_INVALID_DEVICE)
+	EC(CL_INVALID_CONTEXT)
+	EC(CL_INVALID_QUEUE_PROPERTIES)
+	EC(CL_INVALID_COMMAND_QUEUE)
+	EC(CL_INVALID_HOST_PTR)
+	EC(CL_INVALID_MEM_OBJECT)
+	EC(CL_INVALID_IMAGE_FORMAT_DESCRIPTOR)
+	EC(CL_INVALID_IMAGE_SIZE)
+	EC(CL_INVALID_SAMPLER)
+	EC(CL_INVALID_BINARY)
+	EC(CL_INVALID_BUILD_OPTIONS)
+	EC(CL_INVALID_PROGRAM)
+	EC(CL_INVALID_PROGRAM_EXECUTABLE)
+	EC(CL_INVALID_KERNEL_NAME)
+	EC(CL_INVALID_KERNEL_DEFINITION)
+	EC(CL_INVALID_KERNEL)
+	EC(CL_INVALID_ARG_INDEX)
+	EC(CL_INVALID_ARG_VALUE)
+	EC(CL_INVALID_ARG_SIZE)
+	EC(CL_INVALID_KERNEL_ARGS)
+	EC(CL_INVALID_WORK_DIMENSION)
+	EC(CL_INVALID_WORK_GROUP_SIZE)
+	EC(CL_INVALID_WORK_ITEM_SIZE)
+	EC(CL_INVALID_GLOBAL_OFFSET)
+	EC(CL_INVALID_EVENT_WAIT_LIST)
+	EC(CL_INVALID_EVENT)
+	EC(CL_INVALID_OPERATION)
+	EC(CL_INVALID_GL_OBJECT)
+	EC(CL_INVALID_BUFFER_SIZE)
+	EC(CL_INVALID_MIP_LEVEL)
+	EC(CL_INVALID_GLOBAL_WORK_SIZE)
 //#ifdef CL_VERSION_1_1
-	EC(CL_INVALID_PROPERTY);
+	EC(CL_INVALID_PROPERTY)
 //#endif
 //#ifdef CL_VERSION_1_2
-	EC(CL_INVALID_IMAGE_DESCRIPTOR);
-	EC(CL_INVALID_COMPILER_OPTIONS);
-	EC(CL_INVALID_LINKER_OPTIONS);
-	EC(CL_INVALID_DEVICE_PARTITION_COUNT);
+	EC(CL_INVALID_IMAGE_DESCRIPTOR)
+	EC(CL_INVALID_COMPILER_OPTIONS)
+	EC(CL_INVALID_LINKER_OPTIONS)
+	EC(CL_INVALID_DEVICE_PARTITION_COUNT)
 //#endif
 //#ifdef CL_VERSION_2_0
-	EC2(-69, CL_INVALID_PIPE_SIZE);
-	EC2(-70, CL_INVALID_DEVICE_QUEUE);
+	EC2(-69, CL_INVALID_PIPE_SIZE)
+	EC2(-70, CL_INVALID_DEVICE_QUEUE)
 //#endif
 //#ifdef CL_VERSION_2_2
-	EC2(-71, CL_INVALID_SPEC_ID);
-	EC2(-72, CL_MAX_SIZE_RESTRICTION_EXCEEDED);
+	EC2(-71, CL_INVALID_SPEC_ID)
+	EC2(-72, CL_MAX_SIZE_RESTRICTION_EXCEEDED)
 //#endif
-	EC(CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR);
-	EC(CL_PLATFORM_NOT_FOUND_KHR);
-	EC2(-1002, CL_INVALID_D3D10_DEVICE_KHR);
-	EC2(-1003, CL_INVALID_D3D10_RESOURCE_KHR);
-	EC2(-1004, CL_D3D10_RESOURCE_ALREADY_ACQUIRED_KHR);
-	EC2(-1005, CL_D3D10_RESOURCE_NOT_ACQUIRED_KHR);
-	EC2(-1006, CL_INVALID_D3D11_DEVICE_KHR);
-	EC2(-1007, CL_INVALID_D3D11_RESOURCE_KHR);
-	EC2(-1008, CL_D3D11_RESOURCE_ALREADY_ACQUIRED_KHR);
-	EC2(-1009, CL_D3D11_RESOURCE_NOT_ACQUIRED_KHR);
-	EC2(-1010, CL_INVALID_D3D9_DEVICE_NV_or_CL_INVALID_DX9_DEVICE_INTEL);
-	EC2(-1011, CL_INVALID_D3D9_RESOURCE_NV_or_CL_INVALID_DX9_RESOURCE_INTEL);
-	EC2(-1012, CL_D3D9_RESOURCE_ALREADY_ACQUIRED_NV_or_CL_DX9_RESOURCE_ALREADY_ACQUIRED_INTEL);
-	EC2(-1013, CL_D3D9_RESOURCE_NOT_ACQUIRED_NV_or_CL_DX9_RESOURCE_NOT_ACQUIRED_INTEL);
-	EC2(-1092, CL_EGL_RESOURCE_NOT_ACQUIRED_KHR);
-	EC2(-1093, CL_INVALID_EGL_OBJECT_KHR);
-	EC2(-1094, CL_INVALID_ACCELERATOR_INTEL);
-	EC2(-1095, CL_INVALID_ACCELERATOR_TYPE_INTEL);
-	EC2(-1096, CL_INVALID_ACCELERATOR_DESCRIPTOR_INTEL);
-	EC2(-1097, CL_ACCELERATOR_TYPE_NOT_SUPPORTED_INTEL);
-	EC2(-1098, CL_INVALID_VA_API_MEDIA_ADAPTER_INTEL);
-	EC2(-1099, CL_INVALID_VA_API_MEDIA_SURFACE_INTEL);
-	EC2(-1101, CL_VA_API_MEDIA_SURFACE_NOT_ACQUIRED_INTEL);
+	EC(CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR)
+	EC(CL_PLATFORM_NOT_FOUND_KHR)
+	EC2(-1002, CL_INVALID_D3D10_DEVICE_KHR)
+	EC2(-1003, CL_INVALID_D3D10_RESOURCE_KHR)
+	EC2(-1004, CL_D3D10_RESOURCE_ALREADY_ACQUIRED_KHR)
+	EC2(-1005, CL_D3D10_RESOURCE_NOT_ACQUIRED_KHR)
+	EC2(-1006, CL_INVALID_D3D11_DEVICE_KHR)
+	EC2(-1007, CL_INVALID_D3D11_RESOURCE_KHR)
+	EC2(-1008, CL_D3D11_RESOURCE_ALREADY_ACQUIRED_KHR)
+	EC2(-1009, CL_D3D11_RESOURCE_NOT_ACQUIRED_KHR)
+	EC2(-1010, CL_INVALID_D3D9_DEVICE_NV_or_CL_INVALID_DX9_DEVICE_INTEL)
+	EC2(-1011, CL_INVALID_D3D9_RESOURCE_NV_or_CL_INVALID_DX9_RESOURCE_INTEL)
+	EC2(-1012, CL_D3D9_RESOURCE_ALREADY_ACQUIRED_NV_or_CL_DX9_RESOURCE_ALREADY_ACQUIRED_INTEL)
+	EC2(-1013, CL_D3D9_RESOURCE_NOT_ACQUIRED_NV_or_CL_DX9_RESOURCE_NOT_ACQUIRED_INTEL)
+	EC2(-1092, CL_EGL_RESOURCE_NOT_ACQUIRED_KHR)
+	EC2(-1093, CL_INVALID_EGL_OBJECT_KHR)
+	EC2(-1094, CL_INVALID_ACCELERATOR_INTEL)
+	EC2(-1095, CL_INVALID_ACCELERATOR_TYPE_INTEL)
+	EC2(-1096, CL_INVALID_ACCELERATOR_DESCRIPTOR_INTEL)
+	EC2(-1097, CL_ACCELERATOR_TYPE_NOT_SUPPORTED_INTEL)
+	EC2(-1098, CL_INVALID_VA_API_MEDIA_ADAPTER_INTEL)
+	EC2(-1099, CL_INVALID_VA_API_MEDIA_SURFACE_INTEL)
+	EC2(-1101, CL_VA_API_MEDIA_SURFACE_NOT_ACQUIRED_INTEL)
 	default:
 		a="???";
 		break;
 	}
 	return a;
-#undef				EC
 }
+const char*		cl_state2str(int state)
+{
+	const char *a=nullptr;
+	switch(state)
+	{
+	EC(CL_NOTHING)
+	EC(CL_LOADING_API)
+	EC(CL_API_LOADED)
+	EC(CL_CREATING_CONTEXT)
+	EC(CL_CONTEXT_CREATED)
+	EC(CL_COMPILING_ENTRY)
+	EC(CL_COMPILING_PROGRAM00)
+	EC(CL_COMPILING_PROGRAM01)
+	EC(CL_COMPILING_PROGRAM02)
+	EC(CL_COMPILING_PROGRAM03)
+	EC(CL_COMPILING_PROGRAM04)
+	EC(CL_COMPILING_PROGRAM05)
+	EC(CL_COMPILING_PROGRAM06)
+	EC(CL_COMPILING_PROGRAM07)
+	EC(CL_COMPILING_PROGRAM08)
+	EC(CL_COMPILING_PROGRAM09)
+	EC(CL_COMPILING_PROGRAM10)
+	EC(CL_COMPILING_PROGRAM11)
+	EC(CL_COMPILING_PROGRAM12)
+	EC(CL_COMPILING_PROGRAM13)
+	EC(CL_COMPILING_PROGRAM14)
+	EC(CL_COMPILING_PROGRAM15)
+	EC(CL_COMPILING_PROGRAM16)
+	EC(CL_COMPILING_PROGRAM17)
+	EC(CL_COMPILING_PROGRAM18)
+	EC(CL_COMPILING_PROGRAM19)
+	EC(CL_PROGRAMS_COMPILED)
+	EC(CL_RETRIEVING_BINARIES)
+	EC(CL_LOADING_PROGRAM00)
+	EC(CL_LOADING_PROGRAM01)
+	EC(CL_LOADING_PROGRAM02)
+	EC(CL_LOADING_PROGRAM03)
+	EC(CL_LOADING_PROGRAM04)
+	EC(CL_LOADING_PROGRAM05)
+	EC(CL_LOADING_PROGRAM06)
+	EC(CL_LOADING_PROGRAM07)
+	EC(CL_LOADING_PROGRAM08)
+	EC(CL_LOADING_PROGRAM09)
+	EC(CL_LOADING_PROGRAM10)
+	EC(CL_LOADING_PROGRAM11)
+	EC(CL_LOADING_PROGRAM12)
+	EC(CL_LOADING_PROGRAM13)
+	EC(CL_LOADING_PROGRAM14)
+	EC(CL_LOADING_PROGRAM15)
+	EC(CL_LOADING_PROGRAM16)
+	EC(CL_LOADING_PROGRAM17)
+	EC(CL_LOADING_PROGRAM18)
+	EC(CL_LOADING_PROGRAM19)
+	EC(CL_PROGRAMS_LOADED)
+	EC(CL_READY_UNTESTED)
+	EC(CL_TESTING)
+	EC(CL_READY)
+	}
+	return a;
+}
+#undef			EC
+#undef			EC2
 void			cl_check(int err, int line)
 {
 	if(err)
@@ -4127,11 +4188,12 @@ double			cl_progress(std::string &ret)
 {
 	switch(OCL_state)
 	{
-	case CL_NOTHING:			ret="OpenCL API not loaded.";		break;
-	case CL_LOADING_API:		ret="Loading OpenCL API...";		break;
-	case CL_API_LOADED:			ret="OpenCL API loaded.";			break;
-	case CL_CREATING_CONTEXT:	ret="Creating OpenCL context...";	break;
-	case CL_CONTEXT_CREATED:	ret="OpenCL context created.";		break;
+	case CL_NOTHING:			ret="OpenCL API not loaded.";			break;
+	case CL_LOADING_API:		ret="Loading OpenCL API...";			break;
+	case CL_API_LOADED:			ret="OpenCL API loaded.";				break;
+	case CL_CREATING_CONTEXT:	ret="Creating OpenCL context...";		break;
+	case CL_CONTEXT_CREATED:	ret="OpenCL context created.";			break;
+	case CL_COMPILING_ENTRY:	ret="Starting OpenCL compilation...";	break;
 
 	case CL_COMPILING_PROGRAM00:
 	case CL_COMPILING_PROGRAM01:
@@ -4188,6 +4250,9 @@ double			cl_progress(std::string &ret)
 	case CL_PROGRAMS_LOADED:
 		ret="OpenCL programs loaded.";
 		break;
+	case CL_READY_UNTESTED:
+		ret="OpenCL ready, untested.";
+		break;
 	case CL_TESTING:
 		ret="Testing OpenCL";
 		break;
@@ -4200,90 +4265,64 @@ double			cl_progress(std::string &ret)
 	}
 	return (double)OCL_state/CL_READY;
 }
-void 			cl_initiate()
+void			cl_test()
 {
-	load_OpenCL_API();
-	using namespace G2_CL;
-	static_assert(sizeof(kernel_db)/sizeof(KernelDB)==nprograms, "kernel_db size is wrong");
-
-	if(OCL_state<CL_API_LOADED)
-		LOGERROR("Can't create context without OpenCL API");
+	if(OCL_state<CL_READY_UNTESTED)
+		return;
+	//	LOGERROR("cl_test: OpenCL is not ready.");
 	else
 	{
-		OCL_state=CL_CREATING_CONTEXT;
+		OCL_state=CL_TESTING;
+#if 1
+		cl_int error=0;
+		//static cl_platform_id platform0=nullptr;
+		//static cl_device_id device0=nullptr;
+		//static cl_context context0=nullptr;
+		//static cl_command_queue commandqueue0=nullptr;
+		//platform0=platform;
+		//device0=device;
+		//context0=context;
+		//commandqueue0=commandqueue;
+		size_t host_sizes[3]={1, 1, 1}, host_sizes_local[3]={1, 1, 1};//DEBUG		fails after lock
+		float host_args[3]={42, 1, 0};
+		float testvalue=0;
+
+		cl_mem size_buf=p_clCreateBuffer(context, CL_MEM_READ_WRITE, 2*sizeof(int), nullptr, &error);	CL_CHECK(error);
+		error=p_clEnqueueWriteBuffer(commandqueue, size_buf, blocking, 0, 2*sizeof(int), host_sizes, 0, nullptr, nullptr);	CL_CHECK(error);
+		//error=p_clFinish(commandqueue), CL_CHECK(error);//succeeds second time
+		cl_mem args_buf=p_clCreateBuffer(context, CL_MEM_READ_WRITE, 2*sizeof(float)+sizeof(int), nullptr, &error);	CL_CHECK(error);
+		error=p_clEnqueueWriteBuffer(commandqueue, args_buf, blocking, 0, 2*sizeof(float)+sizeof(int), host_args, 0, nullptr, nullptr);	CL_CHECK(error);
+		//error=p_clFinish(commandqueue), CL_CHECK(error);//
+
+		cl_mem buffer=p_clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float), nullptr, &error);	CL_CHECK(error);
+
+		cl_kernel k_fill=kernels[V_INITIALIZE_PARAMETER];
+		error=p_clSetKernelArg(k_fill, 0, sizeof(cl_mem), &size_buf);	CL_CHECK(error);
+		error=p_clSetKernelArg(k_fill, 1, sizeof(cl_mem), &buffer);		CL_CHECK(error);
+		error=p_clSetKernelArg(k_fill, 2, sizeof(cl_mem), &args_buf);	CL_CHECK(error);
+		error=p_clEnqueueNDRangeKernel(commandqueue, k_fill, 3, nullptr, host_sizes, host_sizes_local, 0, nullptr, nullptr);	CL_CHECK(error);
+		error=p_clEnqueueReadBuffer(commandqueue, buffer, CL_FALSE, 0, sizeof(float), &testvalue, 0, nullptr, nullptr);	CL_CHECK(error);
+		error=p_clFinish(commandqueue);		CL_CHECK(error);
+		LOGI("G2_CL: TESTVALUE = %f", testvalue);//
+		if(testvalue!=42)
+			LOGERROR("testvalue = %f", testvalue);
+		float testvalue2=testvalue;//END DEBUG
+#endif
+		if(!error)
+			OCL_state=CL_READY;
+		//	OCL_state=CL_KERNELS_LOADED;
+	}
+}
+void			cl_compile()
+{
+	if(OCL_state<CL_CONTEXT_CREATED)
+		LOGERROR("Can't compile without OpenCL context.");
+	else
+	{
+		OCL_state=CL_COMPILING_ENTRY;
+		using namespace G2_CL;
 		cl_int error=0;
 		size_t retlen=0;
-		//static bool firsttime=true;
-		//if(firsttime)
-		//{
-		//	firsttime=false;
-		unsigned n_platforms=0, n_devices=0;
-		// Fetch the Platform and Device IDs; we only want one.		//https://donkey.vernier.se/~yann/hellocl.c
-		error=p_clGetPlatformIDs(1, &platform, &n_platforms);							CL_CHECK(error);
-		error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, &n_devices);	CL_CHECK(error);//was CL_DEVICE_TYPE_ALL
-
-		error=p_clGetDeviceInfo(device, CL_DEVICE_NAME, g_buf_size, g_buf, &retlen);	CL_CHECK(error);	//query device info
-		LOGI("\n\n\t%*s\n\n", (int)retlen, g_buf);
-		error=p_clGetDeviceInfo(device, CL_DEVICE_VENDOR, g_buf_size, g_buf, &retlen);	CL_CHECK(error);
-		LOGI("\n\n\t%*s\n\n", (int)retlen, g_buf);
-		error=p_clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &g_maxlocalsize, &retlen);	CL_CHECK(error);
-		LOGI("\n\n\tApp resolution: w=%d, h=%d\n\n", w, h);
-		LOGI("\n\n\tCL_DEVICE_MAX_WORK_GROUP_SIZE = %d\n\n", (int)g_maxlocalsize);
-		error=p_clGetDeviceInfo(device, CL_DEVICE_EXTENSIONS, g_buf_size, g_buf, &retlen);	CL_CHECK(error);
-		LOGI("\n\n\t%*s\n\n", (int)retlen, g_buf);
-		std::string extensions=g_buf;
-		auto extpos=extensions.find("cl_khr_gl_sharing");
-		cl_gl_interop=extpos!=std::string::npos;
-		if(!cl_gl_interop)
-			LOGI("cl_khr_gl_sharing not supported");
-		//}
-
-		cl_context_properties properties[8]={};
-		if(cl_gl_interop)
-		{
-			auto gl_context=eglGetCurrentContext();//changes when resuming
-			auto egl_display=eglGetCurrentDisplay();
-			properties[0]=CL_GL_CONTEXT_KHR, properties[1]=(cl_context_properties)gl_context;//https://stackoverflow.com/questions/26802905/getting-opengl-buffers-using-opencl
-			properties[2]=CL_EGL_DISPLAY_KHR, properties[3]=(cl_context_properties)egl_display;
-			properties[4]=CL_CONTEXT_PLATFORM, properties[5]=(cl_context_properties)platform;
-			properties[6]=0, properties[7]=0;
-		}
-		else
-		{
-			properties[0]=CL_CONTEXT_PLATFORM, properties[1]=(cl_context_properties)platform;
-			properties[2]=0, properties[3]=0;
-		}
-		context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);
-		commandqueue=p_clCreateCommandQueue(context, device, 0, &error);				CL_CHECK(error);
-		OCL_state=CL_CONTEXT_CREATED;
-#if 0
-		{
-			error=p_clGetPlatformIDs(1, &platform, &n_platforms);							CL_CHECK(error);//
-			error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &n_devices);	CL_CHECK(error);//
-			cl_context_properties properties[]=//https://stackoverflow.com/questions/26802905/getting-opengl-buffers-using-opencl
-			{
-				CL_GL_CONTEXT_KHR,   (cl_context_properties)eglGetCurrentContext(),
-				CL_EGL_DISPLAY_KHR,  (cl_context_properties)eglGetCurrentDisplay(),
-				CL_CONTEXT_PLATFORM, (cl_context_properties)platform, // OpenCL platform object
-				0, 0,
-			};
-			context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);//
-			commandqueue=p_clCreateCommandQueue(context, device, 0, &error);				CL_CHECK(error);//
-		}
-#endif
-		//if(!error)
-		//	OCL_state=CL_CONTEXT_CREATED;
-#if 0
-		float testvalue=42;//DEBUG		always succeeds
-		cl_mem mem_in1=p_clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float), nullptr, &error);	CL_CHECK(error);
-		error=p_clEnqueueWriteBuffer(commandqueue, mem_in1, CL_FALSE, 0, sizeof(float), &testvalue, 0, nullptr, nullptr);	CL_CHECK(error);
-		testvalue=0;
-		error=p_clEnqueueReadBuffer(commandqueue, mem_in1, CL_FALSE, 0, sizeof(float), &testvalue, 0, nullptr, nullptr);	CL_CHECK(error);
-		error=p_clFinish(commandqueue);		CL_CHECK(error);//END DEBUG
-		//if(NEWPOINTER(platform)||NEWPOINTER(device)||NEWPOINTER(context)||NEWPOINTER(commandqueue))
-		//	int LOL_1=0;
-#endif
-
 		std::string err_msg;
 		if(binaries_valid)
 		{
@@ -4354,39 +4393,96 @@ void 			cl_initiate()
 			}
 			OCL_state=CL_PROGRAMS_LOADED;
 		}
-		OCL_state=CL_TESTING;
-#if 1
-		//static cl_platform_id platform0=nullptr;
-		//static cl_device_id device0=nullptr;
-		//static cl_context context0=nullptr;
-		//static cl_command_queue commandqueue0=nullptr;
-		//platform0=platform;
-		//device0=device;
-		//context0=context;
-		//commandqueue0=commandqueue;
-		size_t host_sizes[3]={1, 1, 1}, host_sizes_local[3]={1, 1, 1};//DEBUG		fails after lock
-		float host_args[3]={42, 1, 0};
-		float testvalue=0;
+		if(!error)
+			OCL_state=CL_READY_UNTESTED;
+	}
+}
+void 			cl_initiate()
+{
+	load_OpenCL_API();
+	using namespace G2_CL;
+	static_assert(sizeof(kernel_db)/sizeof(KernelDB)==nprograms, "kernel_db size is wrong");
 
-		cl_mem size_buf=p_clCreateBuffer(context, CL_MEM_READ_WRITE, 2*sizeof(int), nullptr, &error);	CL_CHECK(error);
-		error=p_clEnqueueWriteBuffer(commandqueue, size_buf, blocking, 0, 2*sizeof(int), host_sizes, 0, nullptr, nullptr);	CL_CHECK(error);
-		//error=p_clFinish(commandqueue), CL_CHECK(error);//succeeds second time
-		cl_mem args_buf=p_clCreateBuffer(context, CL_MEM_READ_WRITE, 2*sizeof(float)+sizeof(int), nullptr, &error);	CL_CHECK(error);
-		error=p_clEnqueueWriteBuffer(commandqueue, args_buf, blocking, 0, 2*sizeof(float)+sizeof(int), host_args, 0, nullptr, nullptr);	CL_CHECK(error);
-		//error=p_clFinish(commandqueue), CL_CHECK(error);//
+	if(OCL_state<CL_API_LOADED)
+		LOGERROR("Can't create context without OpenCL API");
+	else
+	{
+		OCL_state=CL_CREATING_CONTEXT;
+		cl_int error=0;
+		size_t retlen=0;
+		//static bool firsttime=true;
+		//if(firsttime)
+		//{
+		//	firsttime=false;
+		unsigned n_platforms=0, n_devices=0;
+		// Fetch the Platform and Device IDs; we only want one.		//https://donkey.vernier.se/~yann/hellocl.c
+		error=p_clGetPlatformIDs(1, &platform, &n_platforms);							CL_CHECK(error);
+		error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, &n_devices);	CL_CHECK(error);//was CL_DEVICE_TYPE_ALL
 
-		cl_mem buffer=p_clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float), nullptr, &error);	CL_CHECK(error);
+		error=p_clGetDeviceInfo(device, CL_DEVICE_NAME, g_buf_size, g_buf, &retlen);	CL_CHECK(error);	//query device info
+		LOGI("\n\n\t%*s\n\n", (int)retlen, g_buf);
+		error=p_clGetDeviceInfo(device, CL_DEVICE_VENDOR, g_buf_size, g_buf, &retlen);	CL_CHECK(error);
+		LOGI("\n\n\t%*s\n\n", (int)retlen, g_buf);
+		error=p_clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &g_maxlocalsize, &retlen);	CL_CHECK(error);
+		LOGI("\n\n\tApp resolution: w=%d, h=%d\n\n", w, h);
+		LOGI("\n\n\tCL_DEVICE_MAX_WORK_GROUP_SIZE = %d\n\n", (int)g_maxlocalsize);
+		error=p_clGetDeviceInfo(device, CL_DEVICE_EXTENSIONS, g_buf_size, g_buf, &retlen);	CL_CHECK(error);
+		LOGI("\n\n\t%*s\n\n", (int)retlen, g_buf);
+		std::string extensions=g_buf;
+		auto extpos=extensions.find("cl_khr_gl_sharing");
+		cl_gl_interop=extpos!=std::string::npos;
+		if(!cl_gl_interop)
+			LOGI("cl_khr_gl_sharing not supported");
+		//}
 
-		cl_kernel k_fill=kernels[V_INITIALIZE_PARAMETER];
-		error=p_clSetKernelArg(k_fill, 0, sizeof(cl_mem), &size_buf);	CL_CHECK(error);
-		error=p_clSetKernelArg(k_fill, 1, sizeof(cl_mem), &buffer);		CL_CHECK(error);
-		error=p_clSetKernelArg(k_fill, 2, sizeof(cl_mem), &args_buf);	CL_CHECK(error);
-		error=p_clEnqueueNDRangeKernel(commandqueue, k_fill, 3, nullptr, host_sizes, host_sizes_local, 0, nullptr, nullptr);	CL_CHECK(error);
-		error=p_clEnqueueReadBuffer(commandqueue, buffer, CL_FALSE, 0, sizeof(float), &testvalue, 0, nullptr, nullptr);	CL_CHECK(error);
-		error=p_clFinish(commandqueue);		CL_CHECK(error);
-		LOGI("G2_CL: TESTVALUE = %f", testvalue);//
-		float testvalue2=testvalue;//END DEBUG
+		cl_context_properties properties[8]={};
+		if(cl_gl_interop)
+		{
+			auto gl_context=eglGetCurrentContext();//changes when resuming
+			auto egl_display=eglGetCurrentDisplay();
+			properties[0]=CL_GL_CONTEXT_KHR, properties[1]=(cl_context_properties)gl_context;//https://stackoverflow.com/questions/26802905/getting-opengl-buffers-using-opencl
+			properties[2]=CL_EGL_DISPLAY_KHR, properties[3]=(cl_context_properties)egl_display;
+			properties[4]=CL_CONTEXT_PLATFORM, properties[5]=(cl_context_properties)platform;
+			properties[6]=0, properties[7]=0;
+		}
+		else
+		{
+			properties[0]=CL_CONTEXT_PLATFORM, properties[1]=(cl_context_properties)platform;
+			properties[2]=0, properties[3]=0;
+		}
+		context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);
+		commandqueue=p_clCreateCommandQueue(context, device, 0, &error);				CL_CHECK(error);
+		OCL_state=CL_CONTEXT_CREATED;
+		std::thread thr_cl_init(cl_compile);
+		thr_cl_init.detach();
+#if 0
+		{
+			error=p_clGetPlatformIDs(1, &platform, &n_platforms);							CL_CHECK(error);//
+			error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &n_devices);	CL_CHECK(error);//
+			cl_context_properties properties[]=//https://stackoverflow.com/questions/26802905/getting-opengl-buffers-using-opencl
+			{
+				CL_GL_CONTEXT_KHR,   (cl_context_properties)eglGetCurrentContext(),
+				CL_EGL_DISPLAY_KHR,  (cl_context_properties)eglGetCurrentDisplay(),
+				CL_CONTEXT_PLATFORM, (cl_context_properties)platform, // OpenCL platform object
+				0, 0,
+			};
+			context=p_clCreateContext(properties, 1, &device, nullptr, nullptr, &error);	CL_CHECK(error);//
+			commandqueue=p_clCreateCommandQueue(context, device, 0, &error);				CL_CHECK(error);//
+		}
 #endif
+		//if(!error)
+		//	OCL_state=CL_CONTEXT_CREATED;
+#if 0
+		float testvalue=42;//DEBUG		always succeeds
+		cl_mem mem_in1=p_clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float), nullptr, &error);	CL_CHECK(error);
+		error=p_clEnqueueWriteBuffer(commandqueue, mem_in1, CL_FALSE, 0, sizeof(float), &testvalue, 0, nullptr, nullptr);	CL_CHECK(error);
+		testvalue=0;
+		error=p_clEnqueueReadBuffer(commandqueue, mem_in1, CL_FALSE, 0, sizeof(float), &testvalue, 0, nullptr, nullptr);	CL_CHECK(error);
+		error=p_clFinish(commandqueue);		CL_CHECK(error);//END DEBUG
+		//if(NEWPOINTER(platform)||NEWPOINTER(device)||NEWPOINTER(context)||NEWPOINTER(commandqueue))
+		//	int LOL_1=0;
+#endif
+
 #if 0
 		//hellocl.c		//https://donkey.vernier.se/~yann/hellocl.c
 		cl_int error=0;
@@ -4452,9 +4548,6 @@ __kernel void myfunc(__global const float *in1, __global const float *in2, __glo
 		error=p_clFinish(commandqueue);	CL_CHECK(error);
 		unload_OpenCL_API();//
 #endif
-		if(!error)
-			OCL_state=CL_READY;
-		//	OCL_state=CL_KERNELS_LOADED;
 	}
 }
 struct			CLTerm
@@ -4599,10 +4692,13 @@ void			colorFunction_bcw(Comp1d const &v, int *color)
 }
 void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, double DY, unsigned Xplaces, unsigned Yplaces, double time, unsigned gl_texture)
 {//expression -> OpenGL texture
-	if(OCL_state<CL_READY)
-		LOGERROR("Solve: OCL_state = %d", OCL_state);
+	if(OCL_state<CL_READY_UNTESTED)
+		return;
+	//	LOGERROR("Solve: OCL_state = %s", cl_state2str(OCL_state));
 	else
 	{
+		if(OCL_state==CL_READY_UNTESTED)
+			cl_test();
 		//{//size_t
 		//	auto sp=sizeof(void*);				//8
 		//	auto ssize=sizeof(size_t);			//8
@@ -4851,7 +4947,8 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 void			cl_finish()
 {
 	if(OCL_state<CL_READY)
-		LOGERROR("cl_finish: OCL_state = %d", OCL_state);
+		return;
+	//	LOGERROR("cl_finish: OCL_state = %d", OCL_state);
 //	if(OCL_API_not_loaded)
 //		LOGERROR("OpenCL API not loaded.");
 	else

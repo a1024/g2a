@@ -544,7 +544,7 @@ namespace			GL2_2D
 		g_fbuf[4]=X2, g_fbuf[5]=Y2;
 		g_fbuf[6]=X1, g_fbuf[7]=Y2;
 		g_fbuf[8]=X1, g_fbuf[9]=Y1;
-		gl_setProgram(program);							CHECK();
+		gl_setProgram(program);		CHECK();
 		//if(opaque)
 		//	send_color(u_color, 0xFF000000|brush_color);
 		//else
@@ -552,7 +552,7 @@ namespace			GL2_2D
 		CHECK();
 		glEnableVertexAttribArray(a_vertices);			CHECK();
 
-		glBindBuffer(GL_ARRAY_BUFFER, GL2_2D::vertex_buffer);			CHECK();
+		glBindBuffer(GL_ARRAY_BUFFER, GL2_2D::vertex_buffer);				CHECK();
 		glBufferData(GL_ARRAY_BUFFER, 10<<2, g_fbuf, GL_STATIC_DRAW);	CHECK();
 		glVertexAttribPointer(a_vertices, 2, GL_FLOAT, GL_FALSE, 0, 0);	CHECK();
 
