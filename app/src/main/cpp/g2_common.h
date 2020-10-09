@@ -1,5 +1,5 @@
 //common.h - Include for common definitions for Grapher 2A.
-//Copyright (C) 2019-2020  Ayman Wagih Mohsen
+//Copyright (C) 2020  Ayman Wagih Mohsen
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -20,23 +20,25 @@
 
 #ifndef GRAPHER_2_G2_COMMON_H
 #define GRAPHER_2_G2_COMMON_H
-#include		<jni.h>
-#include		<android/log.h>
+#include			<jni.h>
+#include			<android/log.h>
 
-#include 		<math.h>
-#include		<string>
-#include		<complex>
-#include		<vector>
-//#define		LOG_TAG		"libgl2jni"
-#define			LOGI(...)	__android_log_print(ANDROID_LOG_INFO, __FILE__, __VA_ARGS__)
-#define			LOGE(...)	__android_log_print(ANDROID_LOG_ERROR, __FILE__, __VA_ARGS__)
-//extern int 	hard_reset;
+#include 			<math.h>
+#include			<string>
+#include			<complex>
+#include			<vector>
+//#define			LOG_TAG		"libgl2jni"
+#define				LOGI(...)	__android_log_print(ANDROID_LOG_INFO, __FILE__, __VA_ARGS__)
+#define				LOGE(...)	__android_log_print(ANDROID_LOG_ERROR, __FILE__, __VA_ARGS__)
+extern const unsigned g2_version;
+extern const bool loadbinary;
+extern const char appdatapath[], statefoldername[], statefilename[];
 static const int e_msg_size=2048;
-extern char		first_error_msg[e_msg_size], latest_error_msg[e_msg_size];
-void 			log_error(const char *file, int line, const char *format, ...);
-#define 		LOGERROR(...)				log_error(__FILE__, __LINE__, __VA_ARGS__)
-#define 		LOGERROR_LINE(LINE, ...)	log_error(__FILE__, LINE, __VA_ARGS__)
-inline double	now_seconds()
+extern char			first_error_msg[e_msg_size], latest_error_msg[e_msg_size];
+void 				log_error(const char *file, int line, const char *format, ...);
+#define 			LOGERROR(...)				log_error(__FILE__, __LINE__, __VA_ARGS__)
+#define 			LOGERROR_LINE(LINE, ...)	log_error(__FILE__, LINE, __VA_ARGS__)
+inline double		now_seconds()
 {//https://stackoverflow.com/questions/3832097/how-to-get-the-current-time-in-native-android-code/14311780
 	static timespec ts={0, 0};
 	clock_gettime(CLOCK_REALTIME, &ts);//Performance & modes::Solve used CLOCK_PROCESS_CPUTIME_ID, showed less elapsed time
@@ -50,7 +52,7 @@ void prof_start();
 void prof_add(const char *label, int divisor=1);
 void prof_print(int y=0);
 extern const double _HUGE;
-inline int		floor_log2(unsigned n)
+inline int			floor_log2(unsigned n)
 {
 	int logn=0;
 	int sh=(n>=1<<16)<<4;	logn+=sh, n>>=sh;
@@ -60,8 +62,8 @@ inline int		floor_log2(unsigned n)
 		sh= n>=1<< 1;		logn+=sh;
 	return logn;
 }
-void			utf16ToAscii(unsigned short const *utf16, int len, std::string &ascii);
-namespace		G2
+void				utf16ToAscii(unsigned short const *utf16, int len, std::string &ascii);
+namespace			G2
 {
 	enum Map
 	{
@@ -150,7 +152,30 @@ namespace		G2
 					_pi_2=_pi*0.5,	_2pi=2*_pi,	_sqrt_2pi=::sqrt(_2pi), _ln_pi=::log(_pi),	_ln_sqrt_2pi=::log(_sqrt_2pi),	_1_2pi=1/_2pi, _1_pi=1/_pi,
 					_third=1./3;
 }
-enum			InstructionSignature
+enum 				G2ModeIdx
+{
+	MODE_N0D,
+	MODE_I1D, MODE_N1D,
+	MODE_T1D, MODE_T1D_C, MODE_T1D_H,
+	MODE_I2D,
+	MODE_T2D,
+	MODE_C2D,
+	MODE_L2D,
+	MODE_T2D_H,
+	MODE_I3D,
+	MODE_C3D,
+};
+struct 				ModeParameters
+{
+	int mode_idx;
+	double cx, mx, cy, my, cz, mz;//example: ndr[kx]=cx+mx*kx
+//	double VX, DX, VY, DY, VZ, DZ;
+
+	unsigned Xplaces, Yplaces, Zplaces;//product = ndrSize
+	int *shift_args;//Xoffset, Yoffset, Zoffset
+	int *range_args;//x1, x2, y1, y2, z1, z2
+};
+enum				InstructionSignature
 {
 	SIG_NOOP,
 
@@ -179,12 +204,12 @@ enum			InstructionSignature
 	SIG_JUMP='j',
 	SIG_RETURN='r',
 };
-inline int 		maximum(int a, int b, int c)
+inline int 			maximum(int a, int b, int c)
 {
 	int c2=c<<1, temp=a+b+abs(a-b);
 	return (temp+c+abs(temp+c))>>2;
 }
-inline char 	returnMathSet_from_signature(int signature, char op1_ms, char op2_ms=0, char op3_ms=0)
+inline char 		returnMathSet_from_signature(int signature, char op1_ms, char op2_ms=0, char op3_ms=0)
 {
 	switch(signature)
 	{
@@ -222,16 +247,18 @@ inline char 	returnMathSet_from_signature(int signature, char op1_ms, char op2_m
 	}
 	return 0;
 }
-struct			Map
+struct				Map
 {
 	G2::Map _0;
 	int _1;
 	int pos, len;
 	Map(int pos=0, int len=0, G2::Map _0=G2::M_IGNORED, int _1=0):_0(_0), _1(_1), pos(pos), len(len){}
 };
-struct			Value;
-struct			Quat1d;
-struct			Comp1d
+inline bool			is_real(double x){return (x==x)&!isinf(x);}
+inline bool			_1d_zero_in_range(double x0, double x1){return x0<0?x1>=0:x0==0?x1<0||x1>0:x1<0;}
+struct				Value;
+struct				Quat1d;
+struct				Comp1d
 {
 	double r, i;
 	Comp1d(double r=0, double i=0):r(r), i(i){}
@@ -284,12 +311,19 @@ struct			Comp1d
 		return *this;
 	}
 };
-struct			CompRef
+struct				CompRef
 {
 	double &r, &i;
 	CompRef(double &r, double &i):r(r), i(i){}
 	CompRef& operator=(Comp1d const &x){r=x.r, i=x.i; return *this;}
 	CompRef& operator*=(double x){r*=x, i*=x; return *this;}
+};
+struct				CompRef32
+{
+	float &r, &i;
+	CompRef32(float &r, float &i):r(r), i(i){}
+	CompRef32& operator=(Comp1d const &x){r=(float)x.r, i=(float)x.i; return *this;}
+//	CompRef32& operator*=(double x){r*=(float)x, i*=(float)x; return *this;}
 };
 inline Comp1d operator-(CompRef const &a, CompRef const &b){return Comp1d(a.r-b.r, a.i-b.i);}
 inline Comp1d operator*(Comp1d const &a, Comp1d const &b){return Comp1d(a.r*b.r-a.i*b.i, a.r*b.i+a.i*b.r);}
@@ -437,7 +471,7 @@ inline Comp1d operator^(double const &a, Comp1d const &b)
 	sincos(t.i, &sin_ti, &cos_ti);
 	return Comp1d(r0*cos_ti, r0*sin_ti);
 }
-struct			Quat1d
+struct				Quat1d
 {
 	double r, i, j, k;
 	Quat1d(double r=0, double i=0, double j=0, double k=0):r(r), i(i), j(j), k(k){}
@@ -562,12 +596,19 @@ struct			Quat1d
 		return *this;
 	}
 };
-struct			QuatRef
+struct				QuatRef
 {
 	double &r, &i, &j, &k;
 	QuatRef(double &r, double &i, double &j, double &k):r(r), i(i), j(j), k(k){}
 	QuatRef& operator=(Quat1d const &x){r=x.r, i=x.i, j=x.j, k=x.k; return *this;}
 	QuatRef& operator-=(Quat1d const &x){r-=x.r, i-=x.i, j-=x.j, k-=x.k; return *this;}
+};
+struct				QuatRef32
+{
+	float &r, &i, &j, &k;
+	QuatRef32(float &r, float &i, float &j, float &k):r(r), i(i), j(j), k(k){}
+	QuatRef32& operator=(Quat1d const &x){r=(float)x.r, i=(float)x.i, j=(float)x.j, k=(float)x.k; return *this;}
+//	QuatRef32& operator-=(Quat1d const &x){r-=(float)x.r, i-=(float)x.i, j-=(float)x.j, k-=(float)x.k; return *this;}
 };
 inline double operator==(Quat1d const &a, Quat1d const &b){return (a.r==b.r)&(a.i==b.i)&(a.j==b.j)&(a.k==b.k);}
 inline double operator==(Quat1d const &a, Comp1d const &b){return (a.r==b.r)&(a.i==b.i)&(a.j==0)&(a.k==0);}
@@ -1022,7 +1063,7 @@ template<int buffer_size>inline void printValue_unreal		(bool &written, char (&b
 		written=true;
 	}
 }
-struct			Value
+struct				Value
 {
 	double r, i, j, k;//in order
 	Value(double r=0, double i=0, double j=0, double k=0):r(r), i(i), j(j), k(k){}
@@ -1091,7 +1132,7 @@ struct			Value
 		}
 	}
 };
-struct			DiscontinuityFunction
+struct				DiscontinuityFunction
 {
 	bool disc_in, disc_out;//evaluated before/after the function
 	union
@@ -1135,7 +1176,7 @@ struct			DiscontinuityFunction
 	void operator()(bool (*td_i)(Value const&, Value const&, Value const&, Value const&, Value const&, Value const&))
 	{disc_out=!(disc_in=true), this->td_i=td_i;}
 };
-struct			FunctionPointer
+struct				FunctionPointer
 {
 	int type;
 	union
@@ -1208,7 +1249,7 @@ struct			FunctionPointer
 
 	void set(Comp1d (*c_qc)(Quat1d const&, Comp1d const&)){this->c_qc=c_qc, type=26;}
 };
-struct			Instruction
+struct				Instruction
 {
 	// 1	 r(double const &x)
 	// 2	 c(Comp1d const &x)
@@ -1248,7 +1289,7 @@ struct			Instruction
 	//'B' branch if not				if(!data[op1])i=result
 	//'j' jump						i=result
 	//'r' return					data[result]
-	char type;
+	char type;//also the signature
 	int cl_idx, cl_disc_idx;
 
 	int result, op1, op2, op3;
@@ -1292,6 +1333,8 @@ struct			Instruction
 
 	std::vector<int> args;//arg positions
 
+	bool is_binary()const{return (type>=4&&type<=12)||(type>=17&&type<=26);}
+
 	//call
 	Instruction(int function, std::vector<int> const &args, int n_result):type('c'), op1(function), args(std::move(args)), result(n_result),
 		cl_idx(0), cl_disc_idx(0), op2(-1), op3(-1), r_ms(0), op1_ms(0), op2_ms(0), op3_ms(0), r_r(nullptr){}
@@ -1315,7 +1358,7 @@ struct			Instruction
 	Instruction(int op1, char op1_ms, int op2, char op2_ms, int op3, char op3_ms, int result, char r_ms, DiscontinuityFunction &d, int cl_idx, int cl_disc_idx):
 		r_r(0), d(d), type(27), op1(op1), op1_ms(op1_ms), op2(op2), op2_ms(op2_ms), op3(op3), op3_ms(op3_ms), result(result), r_ms(r_ms), cl_idx(cl_idx), cl_disc_idx(cl_disc_idx){}
 };
-struct			Variable
+struct				Variable
 {
 	//std::vector<unsigned short> name;
 	std::string name;
@@ -1350,7 +1393,7 @@ struct			Variable
 //	Variable(unsigned short const *a, int len, int varTypeR, int varTypeI, int varTypeJ, int varTypeK):
 //			name(a, a+len), mathSet('h'), varTypeR(varTypeR), varTypeI(varTypeI), varTypeJ(varTypeJ), varTypeK(varTypeK){}
 };
-struct			UFVariableName
+struct				UFVariableName
 {
 //	std::vector<unsigned short> name;
 	std::string name;
@@ -1361,7 +1404,7 @@ struct			UFVariableName
 		utf16ToAscii(a, len, name);
 	}
 };
-struct			Term
+struct				Term
 {
 	bool constant;
 	char mathSet;//'R' real, 'c' complex, 'h' quaternion	larger value = superset	//'C'==67, 'H'==72, ['R'==82, 'c'==99, 'h'==104], 'r'==114
@@ -1404,7 +1447,7 @@ struct			Term
 	//expr variable
 	Term(char mathSet, int varNo):constant(false), mathSet(mathSet), varNo(varNo){}
 };
-struct			Expression
+struct				Expression
 {
 	std::vector<std::pair<int, int>> syntaxErrors;//highlight text[first, second[
 	void insertSyntaxError(int first, int second)

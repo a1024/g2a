@@ -1,5 +1,5 @@
 //common.cpp - Common definitions for Grapher 2A.
-//Copyright (C) 2019-2020  Ayman Wagih Mohsen
+//Copyright (C) 2020  Ayman Wagih Mohsen
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -20,7 +20,14 @@
 #include"g2_common.h"
 #include"GLESAPI.h"
 
-//int 			hard_reset=0;
+//cl component version 2:
+//state.txt:	version in hexadecimal \n saved user-typed expressions
+//cl_program[00~19].bin:	OpenCL programs compiled for GPU
+const unsigned	g2_version=1<<16|2;//hi: g2 version, lo: cl component version
+const bool 		loadbinary=false;//set to false for debug
+const char		appdatapath[]="/data/data/com.example.grapher2",
+				statefoldername[]="g2state",
+				statefilename[]="state.txt";
 char			first_error_msg[e_msg_size]={0}, latest_error_msg[e_msg_size]={0};
 static char 	g_buf[e_msg_size]={0};
 void 			log_error(const char *file, int line, const char *format, ...)

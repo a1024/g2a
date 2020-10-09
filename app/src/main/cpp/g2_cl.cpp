@@ -27,9 +27,13 @@
 #include		"g2_common.h"
 #include		"g2_cl.h"
 #include		"GLESAPI.h"
+#include		"g2_file.h"
+#include		"g2_sw.h"
 
-	#define		DEBUG2
+//	#define		DEBUG2//performance impact
 
+//const char	appdatapath[]="/data/grapher2";
+//const char	appdatapath[]="/data/data/com.example.grapher2";
 const int		g_buf_size=1048576;
 static char		g_buf[g_buf_size]={0};//
 int				OCL_state=CL_NOTHING;
@@ -139,6 +143,7 @@ const char*		clerr2str(int error)
 	EC2(-1098, CL_INVALID_VA_API_MEDIA_ADAPTER_INTEL)
 	EC2(-1099, CL_INVALID_VA_API_MEDIA_SURFACE_INTEL)
 	EC2(-1101, CL_VA_API_MEDIA_SURFACE_NOT_ACQUIRED_INTEL)
+	case 1:a="Fie failure";break;//
 	default:
 		a="???";
 		break;
@@ -233,6 +238,7 @@ void			LOGE_long(const char *msg, int length)
 #define 		DECL_CL_FUNC(clFunc)	decltype(clFunc) *p_##clFunc __attribute__((weak))=nullptr
 const int 		cl_api_decl_start=__LINE__;
 DECL_CL_FUNC(clGetPlatformIDs);
+DECL_CL_FUNC(clGetPlatformInfo);
 DECL_CL_FUNC(clGetDeviceIDs);
 DECL_CL_FUNC(clGetDeviceInfo);
 DECL_CL_FUNC(clCreateContext);
@@ -292,6 +298,7 @@ void 			load_OpenCL_API()
 #define		GET_CL_FUNC(handle, clFunc)		p_##clFunc=(decltype(p_##clFunc))dlsym(handle, #clFunc), p_check((void*)p_##clFunc, __LINE__, #clFunc)
 			const int cl_api_init_start=__LINE__;
 			GET_CL_FUNC(hOpenCL, clGetPlatformIDs);
+			GET_CL_FUNC(hOpenCL, clGetPlatformInfo);
 			GET_CL_FUNC(hOpenCL, clGetDeviceIDs);
 			GET_CL_FUNC(hOpenCL, clGetDeviceInfo);
 			GET_CL_FUNC(hOpenCL, clCreateContext);
@@ -3250,6 +3257,57 @@ __kernel void initialize_parameter(__global const int *size, __global float *buf
 //	buffer[idx]=args[0]+args[1]*get_global_id(((int*)args)[2]);
 }
 
+float alpha_from_line(float x1, float y1, float x2, float y2)
+{
+	float a=x2-x1, b=y1-y2;
+	return max(0.f, 1.f-fabs(a*y1+b*x1)*rsqrt(a*a+b*b));
+}
+float do_quadrant(float m, float R, float U, float UR)
+{
+	bool down=(m>0)!=(R>0), right=(R>0)!=(UR>0), up=(UR>0)!=(U>0), left=(U>0)!=(m>0);
+//	return (float)(down||right||up||left);//
+	float yL=m/(m-U), xD=m/(m-R), yR=R/(R-UR), xU=U/(U-UR);
+	if(left)
+	{
+		if(down)//case 4 & 16
+			return alpha_from_line(0, yL, xD, 0);
+		if(right)//case 7
+			return alpha_from_line(0, yL, 1, yR);
+		return alpha_from_line(0, yL, xU, 1);//up	case 11
+	}
+	if(down)//cases 6 & 10
+	{
+		if(right)//	case 6
+			return alpha_from_line(xD, 0, 1, yR);
+		return alpha_from_line(xD, 0, xU, 1);//up	case 10
+	}
+	if(up)//&&right	case 13
+		return alpha_from_line(xU, 1, 1, yR);
+	return 0;//case 1
+}
+__kernel void ti2d_rgb(__global const int *size, __global const float *xr, __global const float *curvecolor, __write_only image2d_t rgb)
+{//size{Xplaces, Yplaces}
+	const uint kx=get_global_id(0), ky=get_global_id(1);
+	const int w=size[0], h=size[1], idx=size[0]*ky+kx;
+	const int
+		xsub=1&-(kx>0), xadd=1&-(kx<w-1),//
+		ysub=w&-(ky>0), yadd=w&-(ky<h-1);
+	float
+		Vnw=xr[idx-ysub-xsub], Vnm=xr[idx-ysub], Vne=xr[idx-ysub+xadd],
+		Vmw=xr[idx     -xsub], Vmm=xr[idx     ], Vme=xr[idx     +xadd],
+		Vsw=xr[idx+yadd-xsub], Vsm=xr[idx+yadd], Vse=xr[idx+yadd+xadd];
+	float alpha=Vmm==0;
+	if(alpha!=1)
+	{
+		alpha=do_quadrant(Vmm, Vme, Vnm, Vne);
+		alpha=max(alpha, do_quadrant(Vmm, Vnm, Vmw, Vnw));
+		alpha=max(alpha, do_quadrant(Vmm, Vmw, Vsm, Vsw));
+		alpha=max(alpha, do_quadrant(Vmm, Vsm, Vme, Vse));
+	}
+//	write_imagef(rgb, (int2)(kx, ky), (float4)(curvecolor[0], curvecolor[1], curvecolor[2], alpha));
+//	write_imagef(rgb, (int2)(kx, ky), (float4)(alpha*curvecolor[0], alpha*curvecolor[1], alpha*curvecolor[2], 1));					//plain white
+	write_imagef(rgb, (int2)(kx, ky), (float4)((1-alpha)*curvecolor[0], (1-alpha)*curvecolor[1], (1-alpha)*curvecolor[2], 1));		//points exactly on curve
+}
 #define		COS_PI_6		0.866025403784439f
 #define		SIN_PI_6		0.5f
 #define		THRESHOLD		10
@@ -3335,6 +3393,12 @@ struct 			ProgramBinary
 {
 	unsigned char *bin;
 	size_t size;
+	void free()
+	{
+		if(bin)
+			::free(bin);
+		bin=nullptr, size=0;
+	}
 };
 ProgramBinary	binaries[nprograms]={};
 bool			binaries_valid=false;
@@ -4132,6 +4196,7 @@ namespace 		G2_CL
 
 		//special kernels
 		{V_INITIALIZE_PARAMETER, 0, 0, "initialize_parameter", nullptr},
+		{V_TI2D_RGB, 0, 0, "ti2d_rgb", nullptr},
 		{V_C2D_RGB, 0, 0, "c2d_rgb", nullptr},
 		{V_C2D_RGB2, 0, 0, "c2d_rgb2", nullptr},
 		//{V_INITIALIZE_CONSTANTS, 0, 0, "initialize_constants", nullptr},
@@ -4167,7 +4232,6 @@ float			in1[worksize]={0}, in2[worksize]={0}, out[worksize]={0};
 #endif
 size_t 			g_maxlocalsize=0, g_maxlocaldim=0;
 unsigned		blocking=CL_FALSE;//bad performance when set to true
-//#define		CL_BLOCKING
 void			checkforbuildfailure(int error, cl_program *programs, int prog_idx, cl_device_id device, std::string &err_msg)
 {
 	if(error)
@@ -4307,11 +4371,22 @@ void			cl_test()
 		if(testvalue!=42)
 			LOGERROR("testvalue = %f", testvalue);
 		float testvalue2=testvalue;//END DEBUG
+		//testvalue+=100;
+		//error=p_clEnqueueFillBuffer(commandqueue, buffer, &testvalue, sizeof(float), 0, sizeof(float), 0, nullptr, nullptr); CL_CHECK(error);//CRASH SIGSEGV
+		//testvalue=0;
+		//error=p_clEnqueueReadBuffer(commandqueue, buffer, CL_FALSE, 0, sizeof(float), &testvalue, 0, nullptr, nullptr);	CL_CHECK(error);
+		//error=p_clFinish(commandqueue);		CL_CHECK(error);
+		//LOGI("G2_CL: TESTVALUE = %f", testvalue);//
 #endif
 		if(!error)
 			OCL_state=CL_READY;
 		//	OCL_state=CL_KERNELS_LOADED;
 	}
+}
+void			programname2g_buf(int kp)
+{
+	init_directories();
+	snprintf(g_buf, g_buf_size, "%s/cl_program%02d.bin", statedir, kp);
 }
 void			cl_compile()
 {
@@ -4324,6 +4399,66 @@ void			cl_compile()
 		cl_int error=0;
 		size_t retlen=0;
 		std::string err_msg;
+
+	//	auto language=__cplusplus;//201402
+		//std::string statedir=appdatapath;
+		//statedir+='/';
+		//statedir+=statefoldername;
+		//mkdir_firsttime(statedir.c_str());
+		char *text=nullptr;
+		size_t textlen=0;
+		statefolder_readstate(text, textlen);
+		{
+			std::string str;
+			for(int k=0;k<textlen;++k)
+			{
+				char c=text[k];
+				if(c>=32&&c<127)
+					str+=c;
+				else
+					str+='<'+std::to_string((int)c)+'>';
+			}
+			LOGI("%s: %s", statefilename, str.c_str());
+		}
+		unsigned version=hexstr2uint(text);
+		if(version!=g2_version)
+		{
+			LOGI("G2_CL: Wrong state version, deleting state.");
+			statefolder_deletecontents();
+			statefolder_writestate();
+			//const char *vstr=version2str();
+			//saveFile((statedir+'/'+statefilename).c_str(), vstr, strlen(vstr));
+		}
+#if 0
+		bool statedirexists=false;
+	//	snprintf(g_buf, g_buf_size, "%s/", appdatapath);
+	//	snprintf(g_buf, g_buf_size, "%s", appdatapath);
+	//	snprintf(g_buf, g_buf_size, ".");
+		DIR *d=opendir(appdatapath);	SYS_CHECK();//https://stackoverflow.com/questions/4204666/how-to-list-files-in-a-directory-in-a-c-program/17683417
+		if(d)
+		{
+			struct dirent *dir;
+			while(dir=readdir(d))
+			{
+				SYS_CHECK();
+				LOGI("G2_CL: %s", dir->d_name);
+				if(!strcmp(dir->d_name, statedir))
+				{
+					statedirexists=true;
+					break;
+				}
+			}
+			SYS_CHECK();
+			closedir(d);	SYS_CHECK();
+		}
+		if(!statedirexists)
+		{
+			snprintf(g_buf, g_buf_size, "%s/%s", appdatapath, statedir);
+			mode_t x;
+			auto result=mkdir(g_buf, );
+		}
+#endif
+#if 0
 		if(binaries_valid)
 		{
 			for(int kp=0;kp<nprograms;++kp)
@@ -4338,27 +4473,54 @@ void			cl_compile()
 			OCL_state=CL_PROGRAMS_COMPILED;
 		}
 		else//compile from source first
+#endif
 		{
 			std::string src_common=CLSource::program_common, src[nprograms];
 			for(int kp=0;kp<nprograms;++kp)
 			{
 				OCL_state=CL_COMPILING_PROGRAM00+kp;
-				src[kp]=src_common+CLSource::programs[kp];
-				const char *sources[]=
+				auto &bin=binaries[kp];
+				programname2g_buf(kp);
+			//	snprintf(g_buf, g_buf_size, "%s/cl_program%02d.bin", statedir, kp);
+				if(loadbinary&&!loadFile(g_buf, (char*&)bin.bin, bin.size))//binary file is there
 				{
-					src[kp].c_str(),
-				};
-				size_t srclen[]=
+					int status=0;
+					programs[kp]=p_clCreateProgramWithBinary(context, 1, &device, &bin.size, (const unsigned char**)&bin.bin, &status, &error);	CL_CHECK(error);
+					error=p_clBuildProgram(programs[kp], 0, nullptr, "", nullptr, nullptr);					CL_CHECK(error);
+					checkforbuildfailure(error, programs, kp, device, err_msg);
+					bin.free();
+				}
+				else//compile from source
 				{
-					src[kp].size(),
-				};
-				G2_CL::programs[kp]=p_clCreateProgramWithSource(context, 1, sources, srclen, &error);	CL_CHECK(error);
-				error=p_clBuildProgram(programs[kp], 0, nullptr, "", nullptr, nullptr);					CL_CHECK(error);
-				checkforbuildfailure(error, programs, kp, device, err_msg);
+					src[kp]=src_common+CLSource::programs[kp];
+					const char *sources[]=
+					{
+						src[kp].c_str(),
+					};
+					size_t srclen[]=
+					{
+						src[kp].size(),
+					};
+					G2_CL::programs[kp]=p_clCreateProgramWithSource(context, 1, sources, srclen, &error);	CL_CHECK(error);
+					error=p_clBuildProgram(programs[kp], 0, nullptr, "", nullptr, nullptr);					CL_CHECK(error);
+					checkforbuildfailure(error, programs, kp, device, err_msg);
+					if(!error)//save binary
+					{
+						error=p_clGetProgramInfo(programs[kp], CL_PROGRAM_BINARY_SIZES, sizeof(size_t), &bin.size, &retlen);	CL_CHECK(error);
+						bin.bin=(unsigned char*)malloc(bin.size);
+						error=p_clGetProgramInfo(programs[kp], CL_PROGRAM_BINARIES, sizeof(unsigned char*), &bin.bin, &retlen);	CL_CHECK(error);
+
+						programname2g_buf(kp);
+					//	snprintf(g_buf, g_buf_size, "%s/cl_program%02d.bin", statedir, kp);
+						error=saveFile(g_buf, (char*&)bin.bin, bin.size);		CL_CHECK(error);
+						bin.free();
+					}
+				}
 			}
 			OCL_state=CL_PROGRAMS_COMPILED;
 			if(!err_msg.empty())
 				LOGE_long(err_msg.c_str(), err_msg.size());
+#if 0
 			else//build successful, retrieve binaries
 			{
 				OCL_state=CL_RETRIEVING_BINARIES;
@@ -4368,10 +4530,20 @@ void			cl_compile()
 					error=p_clGetProgramInfo(programs[kp], CL_PROGRAM_BINARY_SIZES, sizeof(size_t), &bin.size, &retlen);	CL_CHECK(error);
 					bin.bin=(unsigned char*)malloc(bin.size);
 					error=p_clGetProgramInfo(programs[kp], CL_PROGRAM_BINARIES, sizeof(unsigned char*), &bin.bin, &retlen);	CL_CHECK(error);
+
+					snprintf(g_buf, g_buf_size, "cl_program%02d.bin", kp);
+					saveFile(g_buf, bin.bin, bin.size);
+					//std::ofstream file(g_buf, std::ios::out|std::ios::binary);
+					//if(file.is_open())
+					//{
+					//	file.write((char*)bin.bin, bin.size);
+					//	file.close();
+					//}
 				}
 				if(!error)
 					binaries_valid=true;
 			}
+#endif
 		}
 		if(!error)//build successful: extract kernel handles
 		{
@@ -4397,6 +4569,13 @@ void			cl_compile()
 			OCL_state=CL_READY_UNTESTED;
 	}
 }
+void 			cl_reset()
+{
+	LOGI("G2_CL: User requested reset, deleting state and quitting.");
+	statefolder_deletecontents();
+	abort();//
+//	cl_compile();
+}
 void 			cl_initiate()
 {
 	load_OpenCL_API();
@@ -4419,6 +4598,8 @@ void 			cl_initiate()
 		error=p_clGetPlatformIDs(1, &platform, &n_platforms);							CL_CHECK(error);
 		error=p_clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, &n_devices);	CL_CHECK(error);//was CL_DEVICE_TYPE_ALL
 
+		error=p_clGetPlatformInfo(platform, CL_PLATFORM_VERSION, g_buf_size, g_buf, &retlen);	CL_CHECK(error);
+		LOGI("%s", g_buf);
 		error=p_clGetDeviceInfo(device, CL_DEVICE_NAME, g_buf_size, g_buf, &retlen);	CL_CHECK(error);	//query device info
 		LOGI("\n\n\t%*s\n\n", (int)retlen, g_buf);
 		error=p_clGetDeviceInfo(device, CL_DEVICE_VENDOR, g_buf_size, g_buf, &retlen);	CL_CHECK(error);
@@ -4589,32 +4770,42 @@ void			debug_printbuffers(DebugBuffer *buffers, int nbuffers, int nfloats, int s
 	}
 	free(result);
 }
+static size_t	host_sizes[3]={},//{globalwidth, globalheight, globaldepth}
+				host_sizes_local[3]={};//{localwidth, localheight, localdepth}
+//static float 	Xstart=0, Xsample=0,
+//				Yend=0, mYsample=0;//negative Ysample for C2D
 void 			create_resize_buffer(cl_mem &buffer, unsigned nfloats)
 {
 	int error=0;
 	buffer=p_clCreateBuffer(context, CL_MEM_READ_WRITE, nfloats*sizeof(float), nullptr, &error);
 	CL_CHECK(error);
 }
-void			initialize_const_comp(cl_mem &buffer, unsigned nfloats, float value)
+void			initialize_const_comp(cl_mem &buffer, unsigned nfloats, float value, cl_mem size_buf, cl_mem args_buf)
 {
 	int error=0;
 	if(!buffer)
 		create_resize_buffer(buffer, nfloats);
-	error=p_clEnqueueFillBuffer(commandqueue, buffer, &value, sizeof(float), 0, nfloats*sizeof(float), 0, nullptr, nullptr); CL_CHECK(error);
+
+	float host_args[3]={value, 0, 0};
+	error=p_clEnqueueWriteBuffer(commandqueue, args_buf, blocking, 0, 3*sizeof(float), host_args, 0, nullptr, nullptr);	CL_CHECK(error);
+	cl_kernel k_fill=kernels[V_INITIALIZE_PARAMETER];
+	error=p_clSetKernelArg(k_fill, 0, sizeof(cl_mem), &size_buf);	CL_CHECK(error);
+	error=p_clSetKernelArg(k_fill, 1, sizeof(cl_mem), &buffer);		CL_CHECK(error);
+	error=p_clSetKernelArg(k_fill, 2, sizeof(cl_mem), &args_buf);	CL_CHECK(error);
+	error=p_clEnqueueNDRangeKernel(commandqueue, k_fill, 3, nullptr, host_sizes, host_sizes_local, 0, nullptr, nullptr);	CL_CHECK(error);
+
+//	float pattern[4]={value};
+//	error=p_clEnqueueFillBuffer(commandqueue, buffer, &value, sizeof(float), 0, nfloats*sizeof(float), 0, nullptr, nullptr); CL_CHECK(error);//CRASH SIGSEGV on Galaxy S5
+	//error=p_clEnqueueFillBuffer(commandqueue, buffer, pattern, sizeof(float), 0, sizeof(float), 0, nullptr, nullptr); CL_CHECK(error);
 #ifdef DEBUG2
 	float testval=0;
 	error=p_clEnqueueReadBuffer(commandqueue, buffer, CL_TRUE, 0, 1*sizeof(float), &testval, 0, nullptr, nullptr);	CL_CHECK(error);
 	LOGI("G2_CL: const = %f", testval);
 #endif
 }
-static size_t	host_sizes[3]={},//{globalwidth, globalheight, globaldepth}
-				host_sizes_local[3]={};//{localwidth, localheight, localdepth}
-static float 	Xstart=0, Xsample=0,
-				Yend=0, mYsample=0;//negative Ysample for C2D
-unsigned		dimension_work_size(unsigned places){return places&~(g_maxlocaldim-1);}
-void 			initialize_component(cl_mem &buffer, int nfloats, char varType, float value, float time, cl_mem size_buf, cl_mem args_buf)
+void 			initialize_component(ModeParameters const &mp, cl_mem &buffer, unsigned nfloats, char varType, float value, float time, cl_mem size_buf, cl_mem args_buf)
 {
-	int dimension=-1;//-1: constant
+	int dimension=-1;//-1: fill with constant 'value'
 	float data=0;
 	switch(varType)
 	{
@@ -4626,17 +4817,24 @@ void 			initialize_component(cl_mem &buffer, int nfloats, char varType, float va
 	default:dimension=3;break;
 	}
 	if(dimension==-1)
-		initialize_const_comp(buffer, nfloats, data);
-	else if(dimension<2)//C2D: exactly 2 input dimensions
+		initialize_const_comp(buffer, nfloats, data, size_buf, args_buf);
+	else if(dimension<3)
+//	else if(dimension<2)//C2D: exactly 2 input dimensions
 	{
 		if(!buffer)
 			create_resize_buffer(buffer, nfloats);
 		int error=0;
 		float host_args[3];
 		if(dimension==0)
-			host_args[0]=Xstart, host_args[1]=Xsample;
+			host_args[0]=(float)mp.cx, host_args[1]=(float)mp.mx;
+		else if(dimension==1)
+			host_args[0]=(float)mp.cy, host_args[1]=(float)mp.my;
 		else
-			host_args[0]=Yend, host_args[1]=mYsample;
+			host_args[0]=(float)mp.cz, host_args[1]=(float)mp.mz;
+		//if(dimension==0)
+		//	host_args[0]=Xstart, host_args[1]=Xsample;
+		//else
+		//	host_args[0]=Yend, host_args[1]=mYsample;
 		host_args[2]=(float)dimension;
 		error=p_clEnqueueWriteBuffer(commandqueue, args_buf, blocking, 0, 3*sizeof(float), host_args, 0, nullptr, nullptr);	CL_CHECK(error);
 		cl_kernel k_fill=kernels[V_INITIALIZE_PARAMETER];
@@ -4668,6 +4866,62 @@ void			cl_free_buffer(cl_mem &buffer)
 	}
 }
 int				*rgb=nullptr;
+#if 0
+inline float	max(float a, float b){return (a+b+abs(a-b))*0.5f;}
+inline float 	rsqrt(float x){return 1.f/sqrt(x);}
+float alpha_from_line(float x1, float y1, float x2, float y2)
+{
+	float a=x2-x1, b=y1-y2;.
+	return max(0.f, 1.f-fabs(a*y1+b*x1)*rsqrt(a*a+b*b));
+}
+float do_quadrant(float m, float R, float U, float UR)
+{
+	bool down=(m>0)!=(R>0), right=(R>0)!=(UR>0), up=(UR>0)!=(U>0), left=(U>0)!=(m>0);
+//	return (float)(down||right||up||left);//
+	float yL=m/(m-U), xD=m/(m-R), yR=R/(R-UR), xU=U/(U-UR);
+	if(left)
+	{
+		if(down)//case 4 & 16
+			return alpha_from_line(0, yL, xD, 0);
+		if(right)//case 7
+			return alpha_from_line(0, yL, 1, yR);
+		return alpha_from_line(0, yL, xU, 1);//up	case 11
+	}
+	if(down)//cases 6 & 10
+	{
+		if(right)//	case 6
+			return alpha_from_line(xD, 0, 1, yR);
+		return alpha_from_line(xD, 0, xU, 1);//up	case 10
+	}
+	if(up)//&&right	case 13
+		return alpha_from_line(xU, 1, 1, yR);
+	return 0;//case 1
+}
+void ti2d_rgb(int kx, int ky, const int *size, const float *xr, const float *curvecolor, int *rgb)
+{//size{Xplaces, Yplaces, 1, appwidth, appheight}
+	const int w=size[0], h=size[1], idx=size[0]*ky+kx;
+	const int
+		xsub=1&-(kx>0), xadd=1&-(kx<w-1),//
+		ysub=w&-(ky>0), yadd=w&-(ky<h-1);
+	float
+		Vnw=xr[idx-ysub-xsub], Vnm=xr[idx-ysub], Vne=xr[idx-ysub+xadd],
+		Vmw=xr[idx     -xsub], Vmm=xr[idx     ], Vme=xr[idx     +xadd],
+		Vsw=xr[idx+yadd-xsub], Vsm=xr[idx+yadd], Vse=xr[idx+yadd+xadd];
+	float alpha=Vmm==0;
+	if(alpha!=1)
+	{
+		alpha=do_quadrant(Vmm, Vme, Vnm, Vne);
+		alpha=max(alpha, do_quadrant(Vmm, Vnm, Vmw, Vnw));
+		alpha=max(alpha, do_quadrant(Vmm, Vmw, Vsm, Vsw));
+		alpha=max(alpha, do_quadrant(Vmm, Vsm, Vme, Vse));
+	}
+//	//write_imagef(rgb, (int2)(kx, ky), (float4)(curvecolor[0], curvecolor[1], curvecolor[2], alpha));
+//	write_imagef(rgb, (int2)(kx, ky), (float4)(alpha*curvecolor[0], alpha*curvecolor[1], alpha*curvecolor[2], 1));//plain white
+//	//write_imagef(rgb, (int2)(kx, ky), (float4)((1-alpha)*curvecolor[0], (1-alpha)*curvecolor[1], (1-alpha)*curvecolor[2], 1));//points exactly on curve
+	unsigned char c=(unsigned char)(255*(1-alpha));
+//	unsigned char c=(unsigned char)(255*alpha);
+	rgb[size[3]*ky+kx]=c<<16|c<<8|c;
+}
 void			colorFunction_bcw(Comp1d const &v, int *color)
 {
 	const double &r=v.r, &i=v.i;
@@ -4690,7 +4944,17 @@ void			colorFunction_bcw(Comp1d const &v, int *color)
 		p[0]=(unsigned char)red, p[1]=(unsigned char)green, p[2]=(unsigned char)blue, p[3]=0xFF;//0xAABBGGRR	//argb
 	}
 }
-void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, double DY, unsigned Xplaces, unsigned Yplaces, double time, unsigned gl_texture)
+#endif
+unsigned		dimension_work_size(unsigned places){return places&~(g_maxlocaldim-1);}
+inline void		read_buffer(cl_mem buffer, float *&data, unsigned nfloats)
+{
+	if(buffer)
+	{
+		data=(float*)malloc(nfloats*sizeof(float));
+		int error=p_clEnqueueReadBuffer(commandqueue, buffer, CL_TRUE, 0, nfloats*sizeof(float), data, 0, nullptr, nullptr);	CL_CHECK(error);
+	}
+}
+void 			cl_solve(Expression const &ex, ModeParameters const &mp, double time, unsigned gl_texture)
 {//expression -> OpenGL texture
 	if(OCL_state<CL_READY_UNTESTED)
 		return;
@@ -4699,41 +4963,78 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 	{
 		if(OCL_state==CL_READY_UNTESTED)
 			cl_test();
-		//{//size_t
-		//	auto sp=sizeof(void*);				//8
-		//	auto ssize=sizeof(size_t);			//8
-		//	auto schar=sizeof(char);			//1
-		//	auto sshort=sizeof(short);			//2
-		//	auto swchar_t=sizeof(wchar_t);		//4
-		//	auto sint=sizeof(int);				//4
-		//	auto suint=sizeof(unsigned);		//4
-		//	auto slong=sizeof(long);			//8
-		//	auto sllong=sizeof(long long);		//8
-		//	auto sfloat=sizeof(float);			//4
-		//	auto sdouble=sizeof(double);		//8
-		//	auto sldouble=sizeof(long double);	//16
-		//	int LOL_1=0;
-		//}//
+		{//size_t								//GA70	GS5
+			auto sp=sizeof(void*);				//8		4
+			auto ssize=sizeof(size_t);			//8		4
+			auto schar=sizeof(char);			//1		1
+			auto sshort=sizeof(short);			//2		2
+			auto swchar_t=sizeof(wchar_t);		//4		4
+			auto sint=sizeof(int);				//4		4
+			auto suint=sizeof(unsigned);		//4		4
+			auto slong=sizeof(long);			//8		4
+			auto sllong=sizeof(long long);		//8		8
+			auto sfloat=sizeof(float);			//4		4
+			auto sdouble=sizeof(double);		//8		8
+			auto sldouble=sizeof(long double);	//16	8
+			int LOL_1=0;
+		}//
 		prof_add("cl_solve entry");
 		glFlush();
 		prof_add("glFlush");
-		unsigned ndrSize=Xplaces*Yplaces;
-		Xstart	=float(VX-DX*0.5), Xsample	=float(DX/Xplaces);
-		Yend	=float(VY+DY*0.5), mYsample	=float(-DY/Yplaces);
+		unsigned ndrSize=mp.Xplaces*mp.Yplaces*mp.Zplaces;
+		//unsigned ndrSize=Xplaces*Yplaces;
+		//Xstart=float(VX-DX*0.5), Xsample	=float(DX/Xplaces);
+		//Yend	=float(VY+DY*0.5), mYsample	=float(-DY/Yplaces);
 		auto ftime=(float)time;
 		int error=0;
 		cl_mem size_buf=p_clCreateBuffer(context, CL_MEM_READ_ONLY, 5*sizeof(int), nullptr, &error);	CL_CHECK(error);
 		cl_mem args_buf=p_clCreateBuffer(context, CL_MEM_READ_ONLY, 3*sizeof(float), nullptr, &error);	CL_CHECK(error);
-		g_maxlocaldim=(size_t)sqrt(g_maxlocalsize);//determine local work dimensions
-		g_maxlocaldim=1<<floor_log2(g_maxlocaldim);
-		LOGI("\n\n\tg_maxlocalsize = %d\n\n", (int)g_maxlocaldim);
-		unsigned host_sizes32[]=//{globalwidth, globalheight, globaldepth, appwidth, appheight}
+		unsigned host_sizes32[6]={};
+		switch(mp.mode_idx)//determine local work dimensions
 		{
-			dimension_work_size(Xplaces), dimension_work_size(Yplaces), 1,
-			Xplaces, Yplaces
-		};
-		host_sizes[0]=host_sizes32[0], host_sizes[1]=host_sizes32[1], host_sizes[2]=host_sizes32[2];
-		host_sizes_local[0]=g_maxlocaldim, host_sizes_local[1]=g_maxlocaldim, host_sizes_local[2]=1;
+		case MODE_I1D:
+		case MODE_T1D:
+		case MODE_T1D_C:
+		case MODE_T1D_H:
+		//	g_maxlocaldim=g_maxlocaldim;
+			g_maxlocaldim=(size_t)sqrt(g_maxlocalsize);
+			g_maxlocaldim=1<<floor_log2(g_maxlocaldim);
+			host_sizes32[0]=dimension_work_size(mp.Xplaces), host_sizes32[1]=1, host_sizes32[2]=1;
+			host_sizes32[3]=mp.Xplaces, host_sizes32[4]=1, host_sizes32[5]=1;
+			host_sizes[0]=host_sizes32[0], host_sizes[1]=host_sizes32[1], host_sizes[2]=host_sizes32[2];
+			host_sizes_local[0]=g_maxlocaldim, host_sizes_local[1]=1, host_sizes_local[2]=1;
+			break;
+		case MODE_I2D:
+		case MODE_T2D:
+		case MODE_C2D:
+		case MODE_T2D_H:
+			g_maxlocaldim=(size_t)sqrt(g_maxlocalsize);
+			g_maxlocaldim=1<<floor_log2(g_maxlocaldim);
+			host_sizes32[0]=dimension_work_size(mp.Xplaces), host_sizes32[1]=dimension_work_size(mp.Yplaces), host_sizes32[2]=1;
+			host_sizes32[3]=mp.Xplaces, host_sizes32[4]=mp.Yplaces, host_sizes32[5]=1;
+			host_sizes[0]=host_sizes32[0], host_sizes[1]=host_sizes32[1], host_sizes[2]=host_sizes32[2];
+			host_sizes_local[0]=g_maxlocaldim, host_sizes_local[1]=g_maxlocaldim, host_sizes_local[2]=1;
+			break;
+		case MODE_I3D:
+		case MODE_C3D:
+			g_maxlocaldim=(size_t)cbrt(g_maxlocalsize);
+		//	g_maxlocaldim=1<<floor_log2(g_maxlocaldim);
+			host_sizes32[0]=dimension_work_size(mp.Xplaces), host_sizes32[1]=dimension_work_size(mp.Yplaces), host_sizes32[2]=dimension_work_size(mp.Zplaces);
+			host_sizes32[3]=mp.Xplaces, host_sizes32[4]=mp.Yplaces, host_sizes32[5]=mp.Zplaces;
+			host_sizes[0]=host_sizes32[0], host_sizes[1]=host_sizes32[1], host_sizes[2]=host_sizes32[2];
+			host_sizes_local[0]=g_maxlocaldim, host_sizes_local[1]=g_maxlocaldim, host_sizes_local[2]=g_maxlocaldim;
+			break;
+		}
+		//g_maxlocaldim=(size_t)sqrt(g_maxlocalsize);//determine local work dimensions
+		//g_maxlocaldim=1<<floor_log2(g_maxlocaldim);
+		//LOGI("\n\n\tg_maxlocaldim = %d\n\n", (int)g_maxlocaldim);
+		//unsigned host_sizes32[]=//{globalwidth, globalheight, globaldepth, appwidth, appheight}
+		//{
+		//	dimension_work_size(mp.Xplaces), dimension_work_size(mp.Yplaces), dimension_work_size(mp.Zplaces),
+		//	mp.Xplaces, mp.Yplaces, mp.Zplaces
+		//};
+		//host_sizes[0]=host_sizes32[0], host_sizes[1]=host_sizes32[1], host_sizes[2]=host_sizes32[2];
+		//host_sizes_local[0]=g_maxlocaldim, host_sizes_local[1]=g_maxlocaldim, host_sizes_local[2]=1;
 		error=p_clEnqueueWriteBuffer(commandqueue, size_buf, blocking, 0, 5*sizeof(int), host_sizes32, 0, nullptr, nullptr);	CL_CHECK(error);//send size buffer
 #ifdef DEBUG2
 		LOGI("G2_CL: hsizes={%d, %d, %d, %d, %d}", host_sizes32[0], host_sizes32[1], host_sizes32[2], host_sizes32[3], host_sizes32[4]);
@@ -4752,14 +5053,14 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 			if(n.constant)
 			{
 				term.mathSet=n.mathSet;
-				initialize_const_comp(term.r, ndrSize, (float)val.r);
+				initialize_const_comp(term.r, ndrSize, (float)val.r, size_buf, args_buf);
 				if(n.mathSet>='c')
 				{
-					initialize_const_comp(term.i, ndrSize, (float)val.i);
+					initialize_const_comp(term.i, ndrSize, (float)val.i, size_buf, args_buf);
 					if(n.mathSet>='h')
 					{
-						initialize_const_comp(term.j, ndrSize, (float)val.j);
-						initialize_const_comp(term.k, ndrSize, (float)val.k);
+						initialize_const_comp(term.j, ndrSize, (float)val.j, size_buf, args_buf);
+						initialize_const_comp(term.k, ndrSize, (float)val.k, size_buf, args_buf);
 					}
 				}
 			}
@@ -4767,14 +5068,14 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 			{
 				auto &var=ex.variables[n.varNo];
 				term.mathSet=var.mathSet;
-				initialize_component(term.r, ndrSize, var.varTypeR, (float)val.r, ftime, size_buf, args_buf);
+				initialize_component(mp, term.r, ndrSize, var.varTypeR, (float)val.r, ftime, size_buf, args_buf);
 				if(n.mathSet>='c')
 				{
-					initialize_component(term.i, ndrSize, var.varTypeI, (float)val.i, ftime, size_buf, args_buf);
+					initialize_component(mp, term.i, ndrSize, var.varTypeI, (float)val.i, ftime, size_buf, args_buf);
 					if(n.mathSet>='h')
 					{
-						initialize_component(term.j, ndrSize, var.varTypeJ, (float)val.j, ftime, size_buf, args_buf);
-						initialize_component(term.k, ndrSize, var.varTypeK, (float)val.k, ftime, size_buf, args_buf);
+						initialize_component(mp, term.j, ndrSize, var.varTypeJ, (float)val.j, ftime, size_buf, args_buf);
+						initialize_component(mp, term.k, ndrSize, var.varTypeK, (float)val.k, ftime, size_buf, args_buf);
 					}
 				}
 			}
@@ -4792,52 +5093,450 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 		}
 #endif
 		prof_add("initialization");
-		for(int i=0, nInstr=ex.i.size();i<nInstr;++i)//solve (C2D doesn't have interpolation or disc)
+		for(int i=0, nInstr=ex.i.size();i<nInstr;++i)//solve
 		{
 			auto &in=ex.i[i];
 			auto kernel=kernels[in.cl_idx];
-			if(kernel&&in.type<SIG_INLINE_IF)//TODO: user function -> OpenCL kernel		TODO: inline if
+			if(mp.mode_idx==MODE_I2D&&i==nInstr-1&&ex.resultLogicType>=2)
 			{
-				int arg_number=0;
-				error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &size_buf);	CL_CHECK(error);	++arg_number;
-				auto &res=terms[in.result], &op1=terms[in.op1];
-				error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &res.r);	CL_CHECK(error);	++arg_number;
-				if(in.r_ms>='c')
+				switch(in.type)
 				{
-					error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &res.i);	CL_CHECK(error);	++arg_number;
-					if(in.r_ms>='h')
-					{
-						error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &res.j);	CL_CHECK(error);	++arg_number;
-						error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &res.j);	CL_CHECK(error);	++arg_number;
-					}
+				case SIG_NOOP:								kernel=kernels[CL_NOOP];	break;
+				case SIG_R_R:case SIG_C_R:					kernel=kernels[R_R_MINUS];	break;
+				case SIG_C_C:case SIG_R_C:					kernel=kernels[C_C_MINUS];	break;
+				case SIG_Q_Q:case SIG_C_Q:case SIG_R_Q:		kernel=kernels[Q_Q_MINUS];	break;
+				case SIG_R_RR:case SIG_C_RR:				kernel=kernels[R_RR_MINUS];	break;
+				case SIG_C_RC:case SIG_R_RC:				kernel=kernels[C_RC_MINUS];	break;
+				case SIG_Q_RQ:case SIG_R_RQ:				kernel=kernels[Q_RQ_MINUS];	break;
+				case SIG_C_CR:case SIG_R_CR:				kernel=kernels[C_CR_MINUS];	break;
+				case SIG_C_CC:case SIG_R_CC:				kernel=kernels[C_CC_MINUS];	break;
+				case SIG_Q_CQ:case SIG_R_CQ:				kernel=kernels[Q_CQ_MINUS];	break;
+				case SIG_Q_QR:case SIG_R_QR:				kernel=kernels[Q_QR_MINUS];	break;
+				case SIG_Q_QC:case SIG_R_QC:case SIG_C_QC:	kernel=kernels[Q_QC_MINUS];	break;
+				case SIG_Q_QQ:case SIG_R_QQ:				kernel=kernels[Q_QQ_MINUS];	break;
+
+				default://unreachable
+				//case SIG_INLINE_IF:
+				//case SIG_CALL:
+				//case SIG_BIF:
+				//case SIG_BIN:
+				//case SIG_JUMP:
+				//case SIG_RETURN:
+					kernel=kernels[CL_NOOP];
+					break;
 				}
-				error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op1.r);	CL_CHECK(error);	++arg_number;
-				if(in.op1_ms>='c')
+			}
+			if(kernel)//TODO: user function -> OpenCL kernel		TODO: inline if
+			{
+				if(in.type<SIG_INLINE_IF)
 				{
-					error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op1.i);	CL_CHECK(error);	++arg_number;
-					if(in.op1_ms>='h')
+					int arg_number=0;
+					error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &size_buf);	CL_CHECK(error);	++arg_number;
+					auto &res=terms[in.result], &op1=terms[in.op1];
+					error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &res.r);	CL_CHECK(error);	++arg_number;
+					if(in.r_ms>='c')
 					{
-						error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op1.j);	CL_CHECK(error);	++arg_number;
-						error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op1.j);	CL_CHECK(error);	++arg_number;
-					}
-				}
-				if(in.op2_ms>='R')
-				{
-					auto &op2=terms[in.op2];
-					error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op2.r);	CL_CHECK(error);	++arg_number;
-					if(in.op2_ms>='c')
-					{
-						error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op2.i);	CL_CHECK(error);	++arg_number;
-						if(in.op2_ms>='h')
+						error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &res.i);	CL_CHECK(error);	++arg_number;
+						if(in.r_ms>='h')
 						{
-							error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op2.j);	CL_CHECK(error);	++arg_number;
-							error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op2.j);	CL_CHECK(error);//	++arg_number;
+							error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &res.j);	CL_CHECK(error);	++arg_number;
+							error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &res.j);	CL_CHECK(error);	++arg_number;
 						}
 					}
+					error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op1.r);	CL_CHECK(error);	++arg_number;
+					if(in.op1_ms>='c')
+					{
+						error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op1.i);	CL_CHECK(error);	++arg_number;
+						if(in.op1_ms>='h')
+						{
+							error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op1.j);	CL_CHECK(error);	++arg_number;
+							error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op1.j);	CL_CHECK(error);	++arg_number;
+						}
+					}
+					if(in.op2_ms>='R')
+					{
+						auto &op2=terms[in.op2];
+						error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op2.r);	CL_CHECK(error);	++arg_number;
+						if(in.op2_ms>='c')
+						{
+							error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op2.i);	CL_CHECK(error);	++arg_number;
+							if(in.op2_ms>='h')
+							{
+								error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op2.j);	CL_CHECK(error);	++arg_number;
+								error=p_clSetKernelArg(kernel, arg_number, sizeof(cl_mem), &op2.j);	CL_CHECK(error);//	++arg_number;
+							}
+						}
+					}
+				}
+				else if(in.type==SIG_INLINE_IF)
+				{
+					auto &res=terms[in.result], &op1=terms[in.op1], &op2=terms[in.op2], &op3=terms[in.op3];
+					error=p_clSetKernelArg(kernel,  0, sizeof(cl_mem), &size_buf);	CL_CHECK(error);
+
+					error=p_clSetKernelArg(kernel,  1, sizeof(cl_mem), &res.r);		CL_CHECK(error);
+					error=p_clSetKernelArg(kernel,  2, sizeof(cl_mem), &res.i);		CL_CHECK(error);
+					error=p_clSetKernelArg(kernel,  3, sizeof(cl_mem), &res.j);		CL_CHECK(error);
+					error=p_clSetKernelArg(kernel,  4, sizeof(cl_mem), &res.k);		CL_CHECK(error);
+
+					error=p_clSetKernelArg(kernel,  5, sizeof(cl_mem), &op1.r);		CL_CHECK(error);
+					error=p_clSetKernelArg(kernel,  6, sizeof(cl_mem), &op1.i);		CL_CHECK(error);
+					error=p_clSetKernelArg(kernel,  7, sizeof(cl_mem), &op1.j);		CL_CHECK(error);
+					error=p_clSetKernelArg(kernel,  8, sizeof(cl_mem), &op1.k);		CL_CHECK(error);
+
+					error=p_clSetKernelArg(kernel,  9, sizeof(cl_mem), &op2.r);		CL_CHECK(error);
+					error=p_clSetKernelArg(kernel, 10, sizeof(cl_mem), &op2.i);		CL_CHECK(error);
+					error=p_clSetKernelArg(kernel, 11, sizeof(cl_mem), &op2.j);		CL_CHECK(error);
+					error=p_clSetKernelArg(kernel, 12, sizeof(cl_mem), &op2.k);		CL_CHECK(error);
+
+					error=p_clSetKernelArg(kernel, 13, sizeof(cl_mem), &op3.r);		CL_CHECK(error);
+					error=p_clSetKernelArg(kernel, 14, sizeof(cl_mem), &op3.i);		CL_CHECK(error);
+					error=p_clSetKernelArg(kernel, 15, sizeof(cl_mem), &op3.j);		CL_CHECK(error);
+					error=p_clSetKernelArg(kernel, 16, sizeof(cl_mem), &op3.k);		CL_CHECK(error);
 				}
 				error=p_clEnqueueNDRangeKernel(commandqueue, kernel, 3, nullptr, host_sizes, host_sizes_local, 0, nullptr, nullptr);	CL_CHECK(error);
 				if(blocking)
 					{error=p_clFinish(commandqueue);		CL_CHECK(error);}
+			}
+			else
+			{//kernel missing, solve in software
+				float
+					*rr=nullptr, *ri=nullptr, *rj=nullptr, *rk=nullptr,
+					*xr=nullptr, *xi=nullptr, *xj=nullptr, *xk=nullptr,
+					*yr=nullptr, *yi=nullptr, *yj=nullptr, *yk=nullptr;
+				auto &res=terms[in.result], &op1=terms[in.op1];
+				read_buffer(res.r, rr, ndrSize);
+				read_buffer(res.i, ri, ndrSize);
+				read_buffer(res.j, rj, ndrSize);
+				read_buffer(res.k, rk, ndrSize);
+
+				read_buffer(op1.r, xr, ndrSize);
+				read_buffer(op1.i, xi, ndrSize);
+				read_buffer(op1.j, xj, ndrSize);
+				read_buffer(op1.k, xk, ndrSize);
+				if(in.is_binary())
+				{
+					auto &op2=terms[in.op2];
+					read_buffer(op2.r, yr, ndrSize);
+					read_buffer(op2.i, yi, ndrSize);
+					read_buffer(op2.j, yj, ndrSize);
+					read_buffer(op2.k, yk, ndrSize);
+				}
+				int Xplaces=(int)mp.Xplaces, Yplaces=(int)mp.Yplaces, Zplaces=(int)mp.Zplaces;
+				int workSize=(int)ndrSize, offset=0;
+				int x1=0, x2=Xplaces, y1=0, y2=Yplaces, z1=0, z2=Zplaces;//
+				int dx=x2-x1, dy=y2-y1;
+				switch(in.type)
+				{
+				//case 'c':
+				//	{
+				//		Solve_UserFunction uf(ex, in, false);
+				//		for(int k=0;k<workSize;++k)
+				//		{
+				//			int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+				//			uf(idx);
+				//		}
+				//	}
+				//	break;
+				case SIG_R_R://r_r
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						rr[idx]=in.r_r(xr[idx]);
+					}
+					break;
+				case SIG_C_C://c_c
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						CompRef32(rr[idx], ri[idx])=in.c_c(Comp1d(xr[idx], xi[idx]));
+					}
+					break;
+				case SIG_Q_Q://q_q
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						QuatRef32(rr[idx], ri[idx], rj[idx], rj[idx])=
+							in.q_q(Quat1d(xr[idx], xi[idx], xj[idx], xk[idx]));
+					}
+					break;
+				case SIG_R_RR://r_rr
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						rr[idx]=in.r_rr(xr[idx], yr[idx]);
+					}
+					break;
+				case SIG_C_RC://c_rc
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						CompRef32(rr[idx], ri[idx])=in.c_rc(xr[idx], Comp1d(yr[idx], yi[idx]));
+					}
+					break;
+				case SIG_Q_RQ://q_rq
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						QuatRef32(rr[idx], ri[idx], rj[idx], rk[idx])=
+							in.q_rq(xr[idx], Quat1d(yr[idx], yi[idx], yj[idx], yk[idx]));
+					}
+					break;
+				case SIG_C_CR://c_cr
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						CompRef32(rr[idx], ri[idx])=in.c_cr(Comp1d(xr[idx], xi[idx]), yr[idx]);
+					}
+					break;
+				case SIG_C_CC://c_cc
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						CompRef32(rr[idx], ri[idx])=in.c_cc(Comp1d(xr[idx], xi[idx]), Comp1d(yr[idx], yi[idx]));
+					}
+					break;
+				case SIG_Q_CQ://q_cq
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						QuatRef32(rr[idx], ri[idx], rj[idx], rk[idx])=
+							in.q_cq(Comp1d(xr[idx], xi[idx]), Quat1d(yr[idx], yi[idx], yj[idx], yk[idx]));
+					}
+					break;
+				case SIG_Q_QR://q_qr
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						QuatRef32(rr[idx], ri[idx], rj[idx], rk[idx])=
+							in.q_qr(Quat1d(xr[idx], xi[idx], xj[idx], xk[idx]), yr[idx]);
+					}
+					break;
+				case SIG_Q_QC://q_qc
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						QuatRef32(rr[idx], ri[idx], rj[idx], rk[idx])=
+							in.q_qc(Quat1d(xr[idx], xi[idx], xj[idx], xk[idx]), Comp1d(yr[idx], yi[idx]));
+					}
+					break;
+				case SIG_Q_QQ://q_qq
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						QuatRef32(rr[idx], ri[idx], rj[idx], rk[idx])=
+							in.q_qq(Quat1d(xr[idx], xi[idx], xj[idx], xk[idx]), Quat1d(yr[idx], yi[idx], yj[idx], yk[idx]));
+					}
+					break;
+
+				case SIG_C_R://c_r
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						CompRef32(rr[idx], ri[idx])=in.c_r(xr[idx]);
+					}
+					break;
+				case SIG_C_Q://c_q
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						CompRef32(rr[idx], ri[idx])=in.c_q(Quat1d(xr[idx], xi[idx], xj[idx], xk[idx]));
+					}
+					break;
+
+				case SIG_R_C://r_c
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						rr[idx]=in.r_c(Comp1d(xr[idx], xi[idx]));
+					}
+					break;
+				case SIG_R_Q://r_q
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						rr[idx]=in.r_q(Quat1d(xr[idx], xi[idx], xj[idx], xk[idx]));
+					}
+					break;
+
+				case SIG_C_RR://c_rr
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						CompRef32(rr[idx], ri[idx])=in.c_rr(xr[idx], yr[idx]);
+					}
+					break;
+
+				case SIG_R_RC://r_rc
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						rr[idx]=in.r_rc(xr[idx], Comp1d(yr[idx], yi[idx]));
+					}
+					break;
+				case SIG_R_RQ://r_rq
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						rr[idx]=in.r_rq(xr[idx], Quat1d(yr[idx], yi[idx], yj[idx], yk[idx]));
+					}
+					break;
+				case SIG_R_CR://r_cr
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						rr[idx]=in.r_cr(Comp1d(xr[idx], xi[idx]), yr[idx]);
+					}
+					break;
+				case SIG_R_CC://r_cc
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						rr[idx]=in.r_cc(Comp1d(xr[idx], xi[idx]), Comp1d(yr[idx], yi[idx]));
+					}
+					break;
+				case SIG_R_CQ://r_cq
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						rr[idx]=in.r_cq(Comp1d(xr[idx], xi[idx]), Quat1d(yr[idx], yi[idx], yj[idx], yk[idx]));
+					}
+					break;
+				case SIG_R_QR://r_qr
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						rr[idx]=in.r_qr(Quat1d(xr[idx], xi[idx], xj[idx], xk[idx]), yr[idx]);
+					}
+					break;
+				case SIG_R_QC://r_qc
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						rr[idx]=in.r_qc(Quat1d(xr[idx], xi[idx], xj[idx], xk[idx]), Comp1d(yr[idx], yi[idx]));
+					}
+					break;
+				case SIG_R_QQ://r_qq
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						rr[idx]=in.r_qq(Quat1d(xr[idx], xi[idx], xj[idx], xk[idx]), Quat1d(yr[idx], yi[idx], yj[idx], yk[idx]));
+					}
+					break;
+
+				case SIG_C_QC://c_qc
+					for(int k=0;k<workSize;++k)
+					{
+						int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+						CompRef32(rr[idx], ri[idx])=in.c_qc(Quat1d(xr[idx], xi[idx], xj[idx], xk[idx]), Comp1d(yr[idx], yi[idx]));
+					}
+					break;
+#if 0
+				case 27://a ? b : c
+					{
+						auto &res=ex.n[in.result], &op1=ex.n[in.op1], &op2=ex.n[in.op2], &op3=ex.n[in.op3];
+						char r_ms=maximum(in.op2_ms, in.op3_ms), op_ms=(in.op2_ms=='c')+2*(in.op2_ms=='h')+3*(in.op3_ms=='c')+6*(in.op3_ms=='h');
+						if(r_ms>='c')
+						{
+							if(ri.size()!=ndrSize)
+								ri.resize(ndrSize);
+							if(r_ms=='h'&&rj.size()!=ndrSize)
+								rj.resize(ndrSize), rk.resize(ndrSize);
+						}
+						switch(op_ms)
+						{
+						case 0://r_rr
+							for(int k=0;k<workSize;++k)
+							{
+								int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+								auto &X=xr[idx], &Y=yr[idx], &Z=op3.r[idx];
+								rr[idx]=X?Y:Z;
+							}
+							break;
+						case 1://c_rc
+							for(int k=0;k<workSize;++k)
+							{
+								int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+								auto X=Comp1d(xr[idx], xi[idx]);
+								auto Y=yr[idx];
+								auto Z=Comp1d(op3.r[idx], op3.i[idx]);
+								Comp1d(rr[idx], ri[idx])=X.c_is_true()?Y:Z;
+							}
+							break;
+						case 2://q_rq
+							for(int k=0;k<workSize;++k)
+							{
+								int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+								auto X=Quat1d(xr[idx], xi[idx], xj[idx], xk[idx]);
+								auto Y=yr[idx];
+								auto Z=Quat1d(op3.r[idx], op3.i[idx], op3.j[idx], op3.k[idx]);
+								Quat1d(rr[idx], ri[idx], rj[idx], rk[idx])=X.q_is_true()?Y:Z;
+							}
+							break;
+						case 3://c_cr
+							for(int k=0;k<workSize;++k)
+							{
+								int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+								auto X=Comp1d(xr[idx], xi[idx]);
+								auto Y=Comp1d(yr[idx], yi[idx]);
+								auto Z=op3.r[idx];
+								Comp1d(rr[idx], ri[idx])=X.c_is_true()?Y:Z;
+							}
+							break;
+						case 4://c_cc
+							for(int k=0;k<workSize;++k)
+							{
+								int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+								auto X=Comp1d(xr[idx], xi[idx]);
+								auto Y=Comp1d(yr[idx], yi[idx]);
+								auto Z=Comp1d(op3.r[idx], op3.i[idx]);
+								Comp1d(rr[idx], ri[idx])=X.c_is_true()?Y:Z;
+							}
+							break;
+						case 5://q_cq
+							for(int k=0;k<workSize;++k)
+							{
+								int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+								auto X=Quat1d(xr[idx], xi[idx], xj[idx], xk[idx]);
+								auto Y=Comp1d(yr[idx], yi[idx]);
+								auto Z=Quat1d(op3.r[idx], op3.i[idx], op3.j[idx], op3.k[idx]);
+								Quat1d(rr[idx], ri[idx], rj[idx], rk[idx])=X.q_is_true()?Y:Z;
+							}
+							break;
+						case 6://q_qr
+							for(int k=0;k<workSize;++k)
+							{
+								int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+								auto X=Quat1d(xr[idx], xi[idx], xj[idx], xk[idx]);
+								auto Y=Quat1d(yr[idx], yi[idx], yj[idx], yk[idx]);
+								auto Z=op3.r[idx];
+								Quat1d(rr[idx], ri[idx], rj[idx], rk[idx])=X.q_is_true()?Y:Z;
+							}
+							break;
+						case 7://q_qc
+							for(int k=0;k<workSize;++k)
+							{
+								int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+								auto X=Quat1d(xr[idx], xi[idx], xj[idx], xk[idx]);
+								auto Y=Quat1d(yr[idx], yi[idx], yj[idx], yk[idx]);
+								auto Z=Comp1d(op3.r[idx], op3.i[idx]);
+								Quat1d(rr[idx], ri[idx], rj[idx], rk[idx])=X.q_is_true()?Y:Z;
+							}
+							break;
+						case 8://q_qq
+							for(int k=0;k<workSize;++k)
+							{
+								int x=x1+k%dx, y=y1+(k/dx)%dy, z=z1+k/(dy*dx), idx=offset+Xplaces*(Yplaces*z+y)+x;
+								auto X=Quat1d(xr[idx], xi[idx], xj[idx], xk[idx]);
+								auto Y=Quat1d(yr[idx], yi[idx], yj[idx], yk[idx]);
+								auto Z=Quat1d(op3.r[idx], op3.i[idx], op3.j[idx], op3.k[idx]);
+								Quat1d(rr[idx], ri[idx], rj[idx], rk[idx])=X.q_is_true()?Y:Z;
+							}
+							break;
+						}
+					}
+					break;
+#endif
+				}
 			}
 		}
 #if 0
@@ -4853,45 +5552,97 @@ void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, doub
 		}
 #endif
 		prof_add("solve");
-		static cl_context context0=nullptr;
-		static cl_mem image=nullptr;
-		auto &result=terms[ex.resultTerm];					//result -> rgb
-		if(result.mathSet=='c')//always true for C2D
+		switch(mp.mode_idx)
 		{
-			cl_kernel kernel=nullptr;
-			if(cl_gl_interop)
+		case MODE_I2D://TODO: multiple expressions
 			{
-				kernel=kernels[V_C2D_RGB];
-				if(context0!=context)
-				{
-					context0=context;
-				//	image=p_clCreateFromGLTexture(context, CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, gl_texture, &error);	CL_CHECK(error);//
-					image=p_clCreateFromGLTexture(context, CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, gl_texture, &error);	CL_CHECK(error);
-				}
-			}
-			else
-			{
-				kernel=kernels[V_C2D_RGB2];
-				image=p_clCreateBuffer(context, CL_MEM_WRITE_ONLY, ndrSize*sizeof(int), nullptr, &error);	CL_CHECK(error);
-			}
-			error=p_clSetKernelArg(kernel, 0, sizeof(cl_mem), &size_buf);	CL_CHECK(error);
-			error=p_clSetKernelArg(kernel, 1, sizeof(cl_mem), &result.r);	CL_CHECK(error);
-			error=p_clSetKernelArg(kernel, 2, sizeof(cl_mem), &result.i);	CL_CHECK(error);
-			error=p_clSetKernelArg(kernel, 3, sizeof(cl_mem), &image);		CL_CHECK(error);
-			error=p_clEnqueueNDRangeKernel(commandqueue, kernel, 2, nullptr, host_sizes, host_sizes_local, 0, nullptr, nullptr);	CL_CHECK(error);
-			if(!cl_gl_interop)
-			{
+				auto &result=terms[ex.resultTerm];
+#if 0//DEBUG
+				auto xr=(float*)malloc(ndrSize*sizeof(float));
+				error=p_clEnqueueReadBuffer(commandqueue, result.r, CL_TRUE, 0, ndrSize*sizeof(float), xr, 0, nullptr, nullptr);	CL_CHECK(error);
 				rgb=(int*)realloc(rgb, ndrSize*sizeof(int));
-				error=p_clEnqueueReadBuffer(commandqueue, image, CL_FALSE, 0, ndrSize*sizeof(int), rgb, 0, nullptr, nullptr);	CL_CHECK(error);
-				cl_free_buffer(image);
-#ifdef DEBUG2
-				LOGI("G2_CL: rgb[0] = 0x%08X", rgb[0]);
+				int size[]={(int)dimension_work_size(mp.Xplaces), (int)dimension_work_size(mp.Yplaces), 1, (int)mp.Xplaces, (int)mp.Yplaces, 1};
+				float curvecolor[]={1, 1, 1};
+				for(int ky=0;ky<mp.Yplaces;++ky)
+					for(int kx=0;kx<mp.Xplaces;++kx)
+						ti2d_rgb(kx, ky, size, xr, curvecolor, rgb);
+				free(xr);
+#endif
+#if 1
+				cl_kernel kernel=nullptr;
+				static cl_context context0=nullptr;
+				static cl_mem image=nullptr;
+			//	if(cl_gl_interop)
+			//	{
+					kernel=kernels[V_TI2D_RGB];
+					if(context0!=context)
+					{
+						context0=context;
+						cl_free_buffer(image);
+						image=p_clCreateFromGLTexture(context, CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, gl_texture, &error);	CL_CHECK(error);
+					}
+			//	}
+			//	else
+			//	{
+			//		kernel=kernels[];
+			//		image=p_clCreateBuffer(context, CL_MEM_WRITE_ONLY, ndrSize*sizeof(int), nullptr, &error);	CL_CHECK(error);
+			//	}
+				cl_mem color_buf=p_clCreateBuffer(context, CL_MEM_READ_ONLY, 3*sizeof(float), nullptr, &error);	CL_CHECK(error);
+				float color[]={1, 1, 1};//white for debug purposes
+				error=p_clEnqueueWriteBuffer(commandqueue, color_buf, CL_FALSE, 0, 3*sizeof(float), color, 0, nullptr, nullptr);	CL_CHECK(error);
+				error=p_clSetKernelArg(kernel, 0, sizeof(cl_mem), &size_buf);	CL_CHECK(error);
+				error=p_clSetKernelArg(kernel, 1, sizeof(cl_mem), &result.r);	CL_CHECK(error);
+				error=p_clSetKernelArg(kernel, 2, sizeof(cl_mem), &color_buf);	CL_CHECK(error);
+				error=p_clSetKernelArg(kernel, 3, sizeof(cl_mem), &image);		CL_CHECK(error);
+				error=p_clEnqueueNDRangeKernel(commandqueue, kernel, 2, nullptr, host_sizes, host_sizes_local, 0, nullptr, nullptr);	CL_CHECK(error);
 #endif
 			}
-			if(blocking)
-				{error=p_clFinish(commandqueue);		CL_CHECK(error);}
+			break;
+		case MODE_C2D:
+			{
+				static cl_context context0=nullptr;
+				static cl_mem image=nullptr;
+				auto &result=terms[ex.resultTerm];					//result -> rgb
+				if(result.mathSet=='c')//always true for C2D
+				{
+					cl_kernel kernel=nullptr;
+					if(cl_gl_interop)
+					{
+						kernel=kernels[V_C2D_RGB];
+						if(context0!=context)
+						{
+							context0=context;
+							cl_free_buffer(image);
+						//	image=p_clCreateFromGLTexture(context, CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, gl_texture, &error);	CL_CHECK(error);//
+							image=p_clCreateFromGLTexture(context, CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, gl_texture, &error);	CL_CHECK(error);
+						}
+					}
+					else
+					{
+						kernel=kernels[V_C2D_RGB2];
+						image=p_clCreateBuffer(context, CL_MEM_WRITE_ONLY, ndrSize*sizeof(int), nullptr, &error);	CL_CHECK(error);
+					}
+					error=p_clSetKernelArg(kernel, 0, sizeof(cl_mem), &size_buf);	CL_CHECK(error);
+					error=p_clSetKernelArg(kernel, 1, sizeof(cl_mem), &result.r);	CL_CHECK(error);
+					error=p_clSetKernelArg(kernel, 2, sizeof(cl_mem), &result.i);	CL_CHECK(error);
+					error=p_clSetKernelArg(kernel, 3, sizeof(cl_mem), &image);		CL_CHECK(error);
+					error=p_clEnqueueNDRangeKernel(commandqueue, kernel, 2, nullptr, host_sizes, host_sizes_local, 0, nullptr, nullptr);	CL_CHECK(error);
+					if(!cl_gl_interop)
+					{
+						rgb=(int*)realloc(rgb, ndrSize*sizeof(int));
+						error=p_clEnqueueReadBuffer(commandqueue, image, CL_FALSE, 0, ndrSize*sizeof(int), rgb, 0, nullptr, nullptr);	CL_CHECK(error);
+						cl_free_buffer(image);
+#ifdef DEBUG2
+						LOGI("G2_CL: rgb[0] = 0x%08X", rgb[0]);
+#endif
+					}
+					if(blocking)
+						{error=p_clFinish(commandqueue);		CL_CHECK(error);}
+				}
+				prof_add("rgb");
+			}
+			break;
 		}
-		prof_add("rgb");
 #if 0
 		{
 			DebugBuffer buffers[]=

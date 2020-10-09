@@ -25,8 +25,9 @@
 enum 			CLKernelIdx
 {
 	CL_NOOP,
-//	V_INITIALIZE_CONSTANTS,
+
 	V_INITIALIZE_PARAMETER,
+	V_TI2D_RGB,
 	V_C2D_RGB, V_C2D_RGB2,//second version for devices without gl-cl inter-operation
 
 	R_R_SETZERO, C_C_SETZERO, Q_Q_SETZERO,
@@ -257,9 +258,11 @@ enum			OpenCL_state
 extern int		OCL_state;
 extern bool		cl_gl_interop;
 double			cl_progress(std::string &ret);
+void 			cl_reset();
 void 			cl_initiate();
 extern int 		*rgb;//for devices not supporting gl-cl inter-operation
-void 			cl_solve_c2d(Expression const &ex, double VX, double DX, double VY, double DY, unsigned Xplaces, unsigned Yplaces, double time, unsigned gl_texture);
+void 			cl_solve(Expression const &ex, ModeParameters const &mp, double time, unsigned gl_texture);
+//void 			cl_solve(Expression const &ex, double VX, double DX, double VY, double DY, double VZ, double DZ, unsigned Xplaces, unsigned Yplaces, unsigned Zplaces, double time, unsigned gl_texture, int mode_idx);
 void			cl_finish();
 //void 			show_c2d();
 #endif //GRAPHER_2_G2_CL_H

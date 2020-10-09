@@ -27,7 +27,9 @@ add_library( # Sets the name of the library.
         g2_common.cpp
         native-lib.cpp
         GLESAPI.cpp
+        g2_sw.cpp
         g2_cl.cpp
+        g2_file.cpp
 
 #        zeta.cpp
 #        gamma.c
