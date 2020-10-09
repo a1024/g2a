@@ -3304,9 +3304,8 @@ __kernel void ti2d_rgb(__global const int *size, __global const float *xr, __glo
 		alpha=max(alpha, do_quadrant(Vmm, Vmw, Vsm, Vsw));
 		alpha=max(alpha, do_quadrant(Vmm, Vsm, Vme, Vse));
 	}
-//	write_imagef(rgb, (int2)(kx, ky), (float4)(curvecolor[0], curvecolor[1], curvecolor[2], alpha));
-//	write_imagef(rgb, (int2)(kx, ky), (float4)(alpha*curvecolor[0], alpha*curvecolor[1], alpha*curvecolor[2], 1));					//plain white
-	write_imagef(rgb, (int2)(kx, ky), (float4)((1-alpha)*curvecolor[0], (1-alpha)*curvecolor[1], (1-alpha)*curvecolor[2], 1));		//points exactly on curve
+	write_imagef(rgb, (int2)(kx, ky), (float4)(curvecolor[0], curvecolor[1], curvecolor[2], alpha));
+//	write_imagef(rgb, (int2)(kx, ky), (float4)((1-alpha)*curvecolor[0], (1-alpha)*curvecolor[1], (1-alpha)*curvecolor[2], 1));
 }
 #define		COS_PI_6		0.866025403784439f
 #define		SIN_PI_6		0.5f
@@ -4871,7 +4870,7 @@ inline float	max(float a, float b){return (a+b+abs(a-b))*0.5f;}
 inline float 	rsqrt(float x){return 1.f/sqrt(x);}
 float alpha_from_line(float x1, float y1, float x2, float y2)
 {
-	float a=x2-x1, b=y1-y2;.
+	float a=x2-x1, b=y1-y2;
 	return max(0.f, 1.f-fabs(a*y1+b*x1)*rsqrt(a*a+b*b));
 }
 float do_quadrant(float m, float R, float U, float UR)
@@ -5554,7 +5553,7 @@ void 			cl_solve(Expression const &ex, ModeParameters const &mp, double time, un
 		prof_add("solve");
 		switch(mp.mode_idx)
 		{
-		case MODE_I2D://TODO: multiple expressions
+		case MODE_I2D:
 			{
 				auto &result=terms[ex.resultTerm];
 #if 0//DEBUG
@@ -5575,12 +5574,12 @@ void 			cl_solve(Expression const &ex, ModeParameters const &mp, double time, un
 			//	if(cl_gl_interop)
 			//	{
 					kernel=kernels[V_TI2D_RGB];
-					if(context0!=context)
-					{
+				//	if(context0!=context)
+				//	{
 						context0=context;
 						cl_free_buffer(image);
 						image=p_clCreateFromGLTexture(context, CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, gl_texture, &error);	CL_CHECK(error);
-					}
+				//	}
 			//	}
 			//	else
 			//	{
@@ -5588,7 +5587,12 @@ void 			cl_solve(Expression const &ex, ModeParameters const &mp, double time, un
 			//		image=p_clCreateBuffer(context, CL_MEM_WRITE_ONLY, ndrSize*sizeof(int), nullptr, &error);	CL_CHECK(error);
 			//	}
 				cl_mem color_buf=p_clCreateBuffer(context, CL_MEM_READ_ONLY, 3*sizeof(float), nullptr, &error);	CL_CHECK(error);
-				float color[]={1, 1, 1};//white for debug purposes
+				float color[3];
+				if(mp.nExpr>1)
+					color[0]=(unsigned char)ex.color*inv255, color[1]=(unsigned char)(ex.color>>8)*inv255, color[2]=(unsigned char)(ex.color>>16)*inv255;
+				else
+					color[0]=color[1]=color[2]=0;
+			//	float color[]={1, 1, 1};//white for debug purposes
 				error=p_clEnqueueWriteBuffer(commandqueue, color_buf, CL_FALSE, 0, 3*sizeof(float), color, 0, nullptr, nullptr);	CL_CHECK(error);
 				error=p_clSetKernelArg(kernel, 0, sizeof(cl_mem), &size_buf);	CL_CHECK(error);
 				error=p_clSetKernelArg(kernel, 1, sizeof(cl_mem), &result.r);	CL_CHECK(error);
@@ -5596,6 +5600,7 @@ void 			cl_solve(Expression const &ex, ModeParameters const &mp, double time, un
 				error=p_clSetKernelArg(kernel, 3, sizeof(cl_mem), &image);		CL_CHECK(error);
 				error=p_clEnqueueNDRangeKernel(commandqueue, kernel, 2, nullptr, host_sizes, host_sizes_local, 0, nullptr, nullptr);	CL_CHECK(error);
 #endif
+				prof_add("raster");
 			}
 			break;
 		case MODE_C2D:

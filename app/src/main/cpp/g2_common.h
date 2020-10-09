@@ -27,9 +27,12 @@
 #include			<string>
 #include			<complex>
 #include			<vector>
+#include			<mutex>
 //#define			LOG_TAG		"libgl2jni"
 #define				LOGI(...)	__android_log_print(ANDROID_LOG_INFO, __FILE__, __VA_ARGS__)
 #define				LOGE(...)	__android_log_print(ANDROID_LOG_ERROR, __FILE__, __VA_ARGS__)
+extern int			nthreads;
+extern std::mutex	g_mutex;
 extern const unsigned g2_version;
 extern const bool loadbinary;
 extern const char appdatapath[], statefoldername[], statefilename[];
@@ -167,7 +170,8 @@ enum 				G2ModeIdx
 };
 struct 				ModeParameters
 {
-	int mode_idx;
+	int mode_idx,
+		nExpr;//number of expressions of this type (for color condition)
 	double cx, mx, cy, my, cz, mz;//example: ndr[kx]=cx+mx*kx
 //	double VX, DX, VY, DY, VZ, DZ;
 

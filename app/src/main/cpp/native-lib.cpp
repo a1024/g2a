@@ -32,7 +32,6 @@
 #include	<algorithm>
 
 int			w, h, X0, Y0;
-int			nthreads=0;//
 static const int	g_buf_size=1024;//maximum line length
 static char			g_buf[g_buf_size]={0};
 #include	"g2_common.h"
@@ -11094,6 +11093,7 @@ namespace	modes
 		}
 		void draw()
 		{
+			std::lock_guard<std::mutex> lock(g_mutex);
 			if(toSolve)
 			{
 				auto old_time_variance=time_variance;
@@ -11484,6 +11484,7 @@ namespace	modes
 		void function1(){derive_step(DX, w, step, prec);}
 		void draw()
 		{
+			std::lock_guard<std::mutex> lock(g_mutex);
 			double Xr=w/DX;
 			if(!clearScreen)
 			{
@@ -11622,9 +11623,9 @@ namespace	modes
 				}
 				setBkMode(bkMode);
 			}
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_DST_COLOR);
-		//	glBlendFunc(GL_SRC_COLOR, GL_DST_COLOR);
+		//	glEnable(GL_BLEND);
+		//	glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_DST_COLOR);
+		//	//glBlendFunc(GL_SRC_COLOR, GL_DST_COLOR);
 		//	draw_line(0, 0, w, h);//
 			for(int e=0, eSize=expr.size();e<eSize;++e)//draw the solutions
 			{
@@ -11663,7 +11664,7 @@ namespace	modes
 //					}
 				}
 			}
-			glDisable(GL_BLEND);
+		//	glDisable(GL_BLEND);
 		}
 		void i_draw();
 		void a_draw();
@@ -11950,6 +11951,7 @@ namespace	modes
 		}
 		void draw()
 		{
+			std::lock_guard<std::mutex> lock(g_mutex);
 			double DY=DX*h/(w*AR_Y);
 			if(DY<=0)
 				DY=1;
@@ -12664,6 +12666,7 @@ namespace	modes
 
 		void draw()
 		{
+			std::lock_guard<std::mutex> lock(g_mutex);
 			int X0=w>>1, Y0=h>>1;
 			for(int k=0, kEnd=touchInfo.size();k<kEnd;++k)//move camera
 			{
@@ -13480,6 +13483,7 @@ namespace	modes
 		}
 		void draw()
 		{
+			std::lock_guard<std::mutex> lock(g_mutex);
 			double DY=DX*h/(w*AR_Y);
 			if(DY<=0)
 				DY=1;
@@ -13837,7 +13841,9 @@ namespace	modes
 
 		void draw()
 		{
-			static unsigned gl_texture=0;
+			std::lock_guard<std::mutex> lock(g_mutex);
+			typedef std::pair<unsigned, unsigned> ExTx;
+			static std::vector<ExTx> gl_textures;
 			double DY=DX*h/(w*AR_Y);
 			if(DY<=0)
 				DY=1;
@@ -13848,23 +13854,39 @@ namespace	modes
 				if(!paused)
 					solver.synchronize();
 				Xplaces=w, Yplaces=h;
-				generate_glcl_texture(gl_texture, Xplaces, Yplaces);
 				ModeParameters mp=
 				{
-					MODE_I2D,
+					MODE_I2D, nExpr[11],
 					VX-DX*0.5, DX/Xplaces,//Xstart, Xsample
 					VY+DY*0.5, -DY/Yplaces,//Yend, -Ysample
 					0, 0,
 					(unsigned)Xplaces, (unsigned)Yplaces, 1,//ndr dimensions
 					nullptr, nullptr,
 				};
-				for(int ke=0, ne=expr.size();ke<ne;++ke)
+				unsigned prevsize=gl_textures.size(), newsize=nExpr[11];//IDE CRASHES ON MOUSE HOVER
+				if(prevsize<newsize)
+				{
+					gl_textures.resize(newsize);
+					for(int k=prevsize;k<newsize;++k)
+						glGenTextures(1, &gl_textures[k].second);
+				}
+				else if(prevsize>newsize)
+				{
+					for(int k=newsize;k<prevsize;++k)
+						glDeleteTextures(1, &gl_textures[k].second);
+					gl_textures.resize(newsize);
+				}
+				for(int ke=0, ktx=0, ne=expr.size();ke<ne;++ke)
 				{
 					auto ex=expr[ke];
 					if(ex.rmode[0]==11)
 					{
-						cl_solve(ex, mp, solver.T, gl_texture);
-						break;
+						auto &gl_tx=gl_textures[ktx];
+						gl_tx.first=ke;
+						generate_glcl_texture(gl_tx.second, Xplaces, Yplaces);
+						cl_solve(ex, mp, solver.T, gl_tx.second);
+						cl_finish();
+						++ktx;
 					}
 				}
 #if 0
@@ -13998,18 +14020,23 @@ namespace	modes
 
 			if(OCL_state<CL_READY_UNTESTED)
 				display_wait_animation();
-			else if(rgb)//debug
-				display_texture(0, w, 0, h, rgb, w, h);//
 			else
 			{
-				cl_finish();
-			//	if(cl_gl_interop)
-					display_gl_texture(gl_texture);//draw the solution
-			//	else
-			//	{
-			//	//	debug_printrgb(rgb, w, h, 512);
-			//		display_texture(0, w, 0, h, rgb, w, h);
-			//	}
+				_2dMode_DrawCheckboard(_2dCheckColor, VX, VY, DX, DY, Xstep, Ystep);
+				//if(rgb)//debug
+				//	display_texture(0, w, 0, h, rgb, w, h);//
+				//else
+				{
+				//	if(cl_gl_interop)
+					//if(gl_textures.size())display_gl_texture(gl_textures[0].second);//debug
+					for(int ktx=0, ntx=gl_textures.size();ktx<ntx;++ktx)
+						display_gl_texture(gl_textures[ktx].second);//draw the solution
+				//	else
+				//	{
+				//	//	debug_printrgb(rgb, w, h, 512);
+				//		display_texture(0, w, 0, h, rgb, w, h);
+				//	}
+				}
 			}
 		//	_2dMode_DrawCheckboard(_2dCheckColor, VX, VY, DX, DY, Xstep, Ystep);//draw grid and time-fixed expressions on solver bitmap
 		//	//for(int k=0;k<solver.ndrSize;++k)//set alpha to half
@@ -14057,6 +14084,8 @@ namespace	modes
 				}
 				setBkMode(bkMode);
 			}
+			prof_add("number axes");
+			prof_print();
 		}
 		void i_draw();
 		void a_draw();
@@ -14447,6 +14476,7 @@ namespace	modes
 
 		void draw()
 		{
+			std::lock_guard<std::mutex> lock(g_mutex);
 			int X0=w>>1, Y0=h>>1;
 			for(int k=0, kEnd=touchInfo.size();k<kEnd;++k)//move camera
 			{
@@ -15446,6 +15476,7 @@ namespace	modes
 
 		void draw()
 		{
+			std::lock_guard<std::mutex> lock(g_mutex);
 			static unsigned gl_texture=0;
 			int full_solve=0;
 			double DY=DX*h/(w*AR_Y);
@@ -15462,7 +15493,7 @@ namespace	modes
 					generate_glcl_texture(gl_texture, Xplaces, Yplaces);
 					ModeParameters mp=
 					{
-						MODE_C2D,
+						MODE_C2D, 1,
 						VX-DX*0.5, DX/Xplaces,//Xstart, Xsample
 						VY+DY*0.5, -DY/Yplaces,//Yend, -Ysample
 						0, 0,
@@ -15914,6 +15945,7 @@ namespace	modes
 
 		void draw()
 		{
+			std::lock_guard<std::mutex> lock(g_mutex);
 			double DY=DX*h/(w*AR_Y);
 			if(DY<=0)
 				DY=1;
@@ -16354,6 +16386,7 @@ namespace	modes
 
 		void draw()
 		{
+			std::lock_guard<std::mutex> lock(g_mutex);
 			int X0=w>>1, Y0=h>>1;
 			for(int k=0, kEnd=touchInfo.size();k<kEnd;++k)//move camera
 			{
@@ -17927,6 +17960,7 @@ namespace	modes
 
 		void draw()
 		{
+			std::lock_guard<std::mutex> lock(g_mutex);
 			int X0=w>>1, Y0=h>>1;
 			for(int k=0, kEnd=touchInfo.size();k<kEnd;++k)//move camera
 			{
@@ -18654,8 +18688,8 @@ extern "C" JNIEXPORT jstring JNICALL Java_com_example_grapher2_GL2JNILib_init(JN
 }
 extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_step(JNIEnv *env, jclass obj, jint cursor)
 {
-	if(nthreads>0)
-		return;
+	//if(nthreads>0)//UNCOMMENT THIS
+	//	return;
 	++nthreads;
 	if(tb_cursor!=cursor)
 	{
@@ -18702,6 +18736,12 @@ extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_step(JNIEn
 //		tb_draw();
 //	else
 //		mode_draw();
+#if 1//DEBUG
+	static int max_threads=0;
+	if(max_threads<nthreads)
+		max_threads=nthreads;
+	GUIPrint(0, (h>>2)-fontH*2, "max threads=%d", max_threads);
+#endif
 	--nthreads;
 }
 void push_buttons(TouchInfo &ti)
@@ -18761,6 +18801,7 @@ extern "C" JNIEXPORT unsigned char JNICALL Java_com_example_grapher2_GL2JNILib_t
 //extern "C" JNIEXPORT void JNICALL Java_com_example_grapher2_GL2JNILib_changeText(JNIEnv *env, jclass obj, jstring jstr, jint start, jint before, jint count, jint cursor)
 extern "C" JNIEXPORT int JNICALL Java_com_example_grapher2_GL2JNILib_changeText(JNIEnv *env, jclass obj, jstring jstr, jint start, jint before, jint count)
 {
+	std::lock_guard<std::mutex> lock(g_mutex);
 	int quit=0;
 	++nthreads;
 	auto a=env->GetStringChars(jstr, nullptr);//utf16
@@ -18800,8 +18841,8 @@ extern "C" JNIEXPORT int JNICALL Java_com_example_grapher2_GL2JNILib_changeText(
 	int forHeaderPLevel=0;
 
 	int e=exprChangeStart, function=functionChangeStart;
-	for(int bound=boundChangeStart;bound<boundInsertEnd;++bound)//bound loop
-	{
+	for(int bound=boundChangeStart;bound<boundInsertEnd;++bound)
+	{//bound loop
 		int kStart=bound?bounds[bound-1].first:0, kEnd=bounds[bound].first;
 		bool exprBound=bounds[bound].second=='e';
 		int old_rmode;
@@ -18816,7 +18857,8 @@ extern "C" JNIEXPORT int JNICALL Java_com_example_grapher2_GL2JNILib_changeText(
 		else
 		{
 			it=&userFunctionDefinitions[function];
-			*it=Expression();
+		//	*it=Expression();
+			it->free();
 			ufVarNames.clear();
 
 			//parse function header		correct header syntax checked by profiler

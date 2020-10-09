@@ -20,6 +20,8 @@
 #include"g2_common.h"
 #include"GLESAPI.h"
 
+int				nthreads=0;//
+std::mutex		g_mutex;
 //cl component version 2:
 //state.txt:	version in hexadecimal \n saved user-typed expressions
 //cl_program[00~19].bin:	OpenCL programs compiled for GPU

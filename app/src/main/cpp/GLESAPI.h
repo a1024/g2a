@@ -437,10 +437,7 @@ inline int		print(int x, int y, const char *format, ...)
 	return result;
 }
 extern int		pen_color, brush_color;
-inline void 	set_color(int color)
-{
-	pen_color=brush_color=color;
-}
+inline void 	set_color(int color){pen_color=brush_color=color;}
 namespace		GL2_2D
 {
 	extern bool	continuous;

@@ -856,7 +856,8 @@ namespace			GL2_Text
 	unsigned		tx_id_sf10=0, tx_id_sf8=0, tx_id_sf7=0, tx_id_sf6=0,
 					font_tx_id=0;
 }
-float			sf10_txcoords[128<<2]={0}, sf8_txcoords[128<<2]={0}, sf7_txcoords[128<<2]={0}, sf6_txcoords[128<<2]={0},//txx1 txx2 txy1 txy2
+const int		txcoords_size=128<<2;
+float			sf10_txcoords[txcoords_size]={0}, sf8_txcoords[txcoords_size]={0}, sf7_txcoords[txcoords_size]={0}, sf6_txcoords[txcoords_size]={0},//txx1 txx2 txy1 txy2
 				*text_txcoords=nullptr;
 const char		*font_widths=nullptr;
 int				gl_tabWidth=0;
@@ -1039,6 +1040,13 @@ void 			generate_glcl_texture(unsigned &tx_id, int Xplaces, int Yplaces)
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Xplaces, Yplaces, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgb);	CHECK();
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Xplaces, Yplaces, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);	CHECK();
 }
+namespace			GL2_Texture
+{//font & textures
+	unsigned		program=0;
+	int				a_coords=-1,
+					u_mytexture=-1, u_alpha=-1;
+//	unsigned		buffer=0;
+}
 void 			display_gl_texture(unsigned &tx_id)
 {
 	float _2_w=2.f/w, _2_h=2.f/h;
@@ -1058,16 +1066,23 @@ void 			display_gl_texture(unsigned &tx_id)
 		rect[2], rect[1],		1, 0,//top right
 		rect[0], rect[1],		0, 0,//top left
 	};
-	gl_setProgram(GL2_Text::program);
-	glUniform2f(GL2_Text::u_isTexture, 1, 0);		CHECK();
-	select_texture(tx_id, GL2_Text::u_mytexture);
-	glBindBuffer(GL_ARRAY_BUFFER, GL2_Text::buffer);					CHECK();
-	glBufferData(GL_ARRAY_BUFFER, 24<<2, vrtx, GL_STATIC_DRAW);	CHECK();//send vertices & texcoords
-	glVertexAttribPointer(GL2_Text::a_coord2d, 4, GL_FLOAT, GL_FALSE, 4<<2, nullptr);	CHECK();//select vertices & texcoord
+	gl_setProgram(GL2_Texture::program);
+//	glUniform2f(GL2_Text::u_isTexture, 1, 0);			CHECK();
+	select_texture(tx_id, GL2_Texture::u_mytexture);
+	glUniform1f(GL2_Texture::u_alpha, 1);		CHECK();
 
-	glEnableVertexAttribArray(GL2_Text::a_coord2d);		CHECK();
+	//if(!GL2_Texture::buffer)
+	//	glGenBuffers(1, &GL2_Texture::buffer);
+	//glBindBuffer(GL_ARRAY_BUFFER, GL2_Texture::buffer);	CHECK();
+	//glBufferData(GL_ARRAY_BUFFER, 24<<2, vrtx, GL_STATIC_DRAW);	CHECK();//send vertices & texcoords
+	//glVertexAttribPointer(GL2_Texture::a_coords, 4, GL_FLOAT, GL_FALSE, 4<<2, vrtx);	CHECK();//select vertices & texcoord
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);		CHECK();
+	glVertexAttribPointer(GL2_Texture::a_coords, 4, GL_FLOAT, GL_FALSE, 4<<2, vrtx);	CHECK();//select vertices & texcoord
+
+	glEnableVertexAttribArray(GL2_Texture::a_coords);	CHECK();
 	glDrawArrays(GL_TRIANGLES, 0, 6);		CHECK();//draw the quad
-	glDisableVertexAttribArray(GL2_Text::a_coord2d);	CHECK();
+	glDisableVertexAttribArray(GL2_Texture::a_coords);	CHECK();
 }
 void			display_texture(int x1, int x2, int y1, int y2, int *rgb, int txw, int txh, unsigned char alpha)
 {
@@ -1117,10 +1132,11 @@ void			display_texture(int x1, int x2, int y1, int y2, int *rgb, int txw, int tx
 		else
 #endif
 			rgb2=rgb, w2=txw, h2=txh;
-		gl_setProgram(GL2_Text::program);						CHECK();//select Text program
-		glUniform2f(GL2_Text::u_isTexture, 1, 0);		CHECK();//send isTexture
-	//	glUniform1i(GL2_Text::u_isTexture, true);				CHECK();
-		send_color(GL2_Text::u_bkColor, alpha<<24);		CHECK();//send apha
+		gl_setProgram(GL2_Texture::program);						CHECK();//select Text program
+		glUniform1f(GL2_Texture::u_alpha, alpha*(1.f/255.f));	CHECK();
+	//	glUniform2f(GL2_Text::u_isTexture, 1, 0);		CHECK();//send isTexture
+		//glUniform1i(GL2_Text::u_isTexture, true);		CHECK();
+	//	send_color(GL2_Text::u_bkColor, alpha<<24);		CHECK();//send apha
 		if(!tx_id)
 			{glGenTextures(1, &tx_id);										CHECK();}//generate texture id once
 		glBindTexture(GL_TEXTURE_2D, tx_id);									CHECK();
@@ -1128,20 +1144,22 @@ void			display_texture(int x1, int x2, int y1, int y2, int *rgb, int txw, int tx
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);		CHECK();
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w2, h2, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgb2);	CHECK();//send bitmap to GPU
 
-		select_texture(tx_id, GL2_Text::u_mytexture);
-		glBindBuffer(GL_ARRAY_BUFFER, GL2_Text::buffer);										CHECK();
-		glBufferData(GL_ARRAY_BUFFER, 24<<2, vrtx, GL_STATIC_DRAW);						CHECK();//send vertices & texcoords
-		glVertexAttribPointer(GL2_Text::a_coord2d, 4, GL_FLOAT, GL_FALSE, 4<<2, nullptr);	CHECK();//select vertices & texcoord
+		select_texture(tx_id, GL2_Texture::u_mytexture);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);								CHECK();
+		//glBindBuffer(GL_ARRAY_BUFFER, GL2_Texture::buffer);								CHECK();
+		//glBufferData(GL_ARRAY_BUFFER, 24<<2, vrtx, GL_STATIC_DRAW);						CHECK();//send vertices & texcoords
+		glVertexAttribPointer(GL2_Texture::a_coords, 4, GL_FLOAT, GL_FALSE, 4<<2, nullptr);	CHECK();//select vertices & texcoord
 
-		glEnableVertexAttribArray(GL2_Text::a_coord2d);		CHECK();
+		glEnableVertexAttribArray(GL2_Texture::a_coords);	CHECK();
 		glDrawArrays(GL_TRIANGLES, 0, 6);		CHECK();//draw the quad
-		glDisableVertexAttribArray(GL2_Text::a_coord2d);	CHECK();
+		glDisableVertexAttribArray(GL2_Texture::a_coords);	CHECK();
 #ifdef NPOT_ATIX2300_FIX
 		if(expand)
 			free(rgb2);
 #endif
 	}
 }
+#if 0
 namespace		GL2_TI2D
 {
 	unsigned	program=0;
@@ -1229,6 +1247,7 @@ namespace		GL2_TI2D
 		}
 	}
 }
+#endif
 int				gl_setTextSize(int size)
 {//size in {0, ..., 9}
 	using namespace GL2_Text;
@@ -1303,7 +1322,7 @@ void			gl_initiate()
 
 	//if(one_shot)
 	//{
-	ShaderVar _2d_attr[]=
+	ShaderVar _2d_attr[]=								//2D program
 	{
 		{&GL2_2D::a_vertices, "a_vertex", __LINE__}
 	};
@@ -1311,7 +1330,7 @@ void			gl_initiate()
 	{
 		{&GL2_2D::u_color, "u_color", __LINE__}
 	};
-	GL2_2D::program=LoadShaders(				//2D program
+	GL2_2D::program=LoadShaders(
 		"#version 100\n"
 		"attribute vec2 a_vertex;\n"
 		"void main()\n"
@@ -1330,7 +1349,7 @@ void			gl_initiate()
 	//if(!GL2_2D::program)
 	//	ERROR("2D program not compiled.");
 
-	ShaderVar l3d_attr[]=
+	ShaderVar l3d_attr[]=								//3D program
 	{
 		{&GL2_L3D::a_vertices, "a_vertex", __LINE__},
 		{&GL2_L3D::a_normals, "a_normal", __LINE__},
@@ -1349,7 +1368,7 @@ void			gl_initiate()
 		{&GL2_L3D::u_lightpos, "u_lightpos", __LINE__},
 		{&GL2_L3D::u_viewpos, "u_viewpos", __LINE__},
 	};
-	GL2_L3D::program=LoadShaders(						//3D program
+	GL2_L3D::program=LoadShaders(
 		"#version 300 es\n"
 		"uniform mat4 u_vpmatrix, u_modelmatrix;\n"
 		"uniform mat3 u_normalmatrix;\n"
@@ -1404,7 +1423,7 @@ void			gl_initiate()
 		l3d_attr, sizeof(l3d_attr)/sizeof(ShaderVar), l3d_unif, sizeof(l3d_unif)/sizeof(ShaderVar));
 
 //	glEnable(GL_PROGRAM_POINT_SIZE);
-	ShaderVar _3d_attr[]=
+	ShaderVar _3d_attr[]=								//3D program
 	{
 		{&GL2_3D::a_vertices, "a_vertex", __LINE__},
 	//	{&GL2_3D::a_normals, "a_normal", __LINE__},
@@ -1418,7 +1437,7 @@ void			gl_initiate()
 		{&GL2_3D::u_isTextured, "u_isTextured", __LINE__},
 		{&GL2_3D::u_color, "u_color", __LINE__}
 	};
-	GL2_3D::program=LoadShaders(						//3D program
+	GL2_3D::program=LoadShaders(
 		"#version 300 es\n"
 		"uniform mat4 u_matrix;\n"
 	//	"uniform float u_pointSize;\n"//can't get u_pointSize, -1
@@ -1481,7 +1500,7 @@ void			gl_initiate()
 		_3d_attr, sizeof(_3d_attr)/sizeof(ShaderVar), _3d_unif, sizeof(_3d_unif)/sizeof(ShaderVar));
 	if(!GL2_3D::program)
 		ERROR("3D program not compiled");
-
+#if 0
 	ShaderVar ti2d_attr[]=
 	{
 		{&GL2_TI2D::a_coords, "coords", __LINE__},
@@ -1557,8 +1576,8 @@ void			gl_initiate()
 		ti2d_attr, sizeof(ti2d_attr)/sizeof(ShaderVar), ti2d_unif, sizeof(ti2d_unif)/sizeof(ShaderVar));
 	if(!GL2_TI2D::program)
 		ERROR("TI2D prigram not compiled.");
-
-	ShaderVar text_attr[]=
+#endif
+	ShaderVar text_attr[]=									//Text program
 	{
 		{&GL2_Text::a_coord2d, "coords", __LINE__},
 	//	{&GL2_Text::a_coord2d, "coord2d", __LINE__},
@@ -1571,7 +1590,7 @@ void			gl_initiate()
 		{&GL2_Text::u_txtColor, "txtColor", __LINE__},
 		{&GL2_Text::u_bkColor, "bkColor", __LINE__}
 	};
-	GL2_Text::program=LoadShaders(					//Text program
+	GL2_Text::program=LoadShaders(
 		"#version 100\n"
 		"attribute vec4 coords;"
 		//"attribute vec2 coord2d;\n"			//coord2d, texcoord
@@ -1612,6 +1631,39 @@ void			gl_initiate()
 		"}",
 		text_attr, sizeof(text_attr)/sizeof(ShaderVar), text_unif, sizeof(text_unif)/sizeof(ShaderVar));
 	if(!GL2_Text::program)
+		ERROR("Text program not compiled.");
+
+	ShaderVar texture_attr[]=								//Texture program
+	{
+		{&GL2_Texture::a_coords, "coords", __LINE__},
+	};
+	ShaderVar texture_unif[]=
+	{
+		{&GL2_Texture::u_mytexture, "mytexture", __LINE__},
+		{&GL2_Texture::u_alpha, "alpha", __LINE__},
+	};
+	GL2_Texture::program=LoadShaders(
+		"#version 100\n"
+		"attribute vec4 coords;"			//coords
+		"varying vec2 f_texcoord;\n"
+		"void main()\n"
+		"{\n"
+		"    gl_Position=vec4(coords.xy, 0., 1.);\n"
+		"    f_texcoord=coords.zw;\n"
+		"}",
+		"#version 100\n"
+		"precision lowp float;\n"
+		"varying vec2 f_texcoord;\n"
+		"uniform sampler2D mytexture;\n"	//mytexture, alpha
+  		"uniform float alpha;\n"
+		"void main()\n"
+		"{\n"
+		"    vec4 color=texture2D(mytexture, f_texcoord);\n"
+  		"    color.a*=alpha;\n"
+		"    gl_FragColor=color;\n"
+		"}",
+		texture_attr, sizeof(texture_attr)/sizeof(ShaderVar), texture_unif, sizeof(texture_unif)/sizeof(ShaderVar));
+	if(!GL2_Texture::program)
 		ERROR("Text program not compiled.");
 //	prof_add("Compile shaders");//26.7ms
 	//}
@@ -1688,10 +1740,14 @@ void			gl_finish()
 	glDeleteBuffers(1, &GL2_3D::vertex_buffer);
 	glDeleteBuffers(1, &GL2_3D::texcoord_buffer);
 
-	glDeleteProgram(GL2_TI2D::program);
+//	glDeleteProgram(GL2_TI2D::program);
 
 	glDeleteProgram(GL2_Text::program);
 	glDeleteBuffers(1, &GL2_Text::buffer);
+
+	glDeleteProgram(GL2_Texture::program);
+	//if(GL2_Texture::buffer)
+	//	glDeleteBuffers(1, &GL2_Texture::buffer);
 
 	current_program=0;
 }
